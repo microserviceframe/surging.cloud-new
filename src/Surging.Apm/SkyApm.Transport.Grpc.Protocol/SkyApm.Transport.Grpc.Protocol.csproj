@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+
+    <PropertyGroup>
+        <PackageId>Surging.Cloud.SkyApm.Transport.Grpc.Protocol</PackageId>
+        <Description>$(Product) gRPC data transmitter.</Description>
+        <AssemblyTitle>SkyApm.Transport.Grpc.Protocol</AssemblyTitle>
+        <AssemblyName>SkyApm.Transport.Grpc.Protocol</AssemblyName>
+        <PackageId>SkyApm.Transport.Grpc.Protocol</PackageId>
+        <PackageTags>SkyWalking;Grpc</PackageTags>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <RootNamespace>SkyApm.Transport.Grpc.Protocol</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.6.1" />
+        <PackageReference Include="Grpc" Version="1.17.0" />
+        <PackageReference Include="Grpc.Tools" Version="1.17.0" PrivateAssets="All" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Protobuf Include="protocol/**/*.proto" ProtoRoot="protocol" OutputDir="%(RelativePath)generated" CompileOutputs="false" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <Protobuf_NoWarnMissingExpected>true</Protobuf_NoWarnMissingExpected>
+        <Protobuf_TouchMissingExpected>true</Protobuf_TouchMissingExpected>
+    </PropertyGroup>
+</Project>

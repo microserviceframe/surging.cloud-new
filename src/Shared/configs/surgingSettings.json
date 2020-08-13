@@ -1,0 +1,153 @@
+{
+  "Surging": {
+    "Ip": "${Surging_Server_IP}|0.0.0.0",
+    "WatchInterval": 30,
+    "Port": "${Surging_Server_Port}|100",
+    "MappingIp": "${Mapping_ip}",
+    "MappingPort": "${Mapping_Port}",
+    "Token": "true",
+    "WanIp": "${WanIp}|0.0.0.0",
+    "Libuv": true,
+    "SoBacklog": 100,
+    "MaxConcurrentRequests": 500,
+    "DisconnTimeInterval": 1000,
+    "ExecutionTimeoutInMilliseconds": 18000,
+    "HealthCheckTimeout": 100,
+    "BreakeSleepWindowInMilliseconds": 5000,
+    "Protocol": "${Protocol}|None", //Http、Tcp、None
+    "RootPath": "${RootPath}|./userapp",
+    "WebRootPath": "${WebRootPath}|./userapp/wwwroot",
+    "IsModulePerLifetimeScope": false,
+    "ReloadOnChange": false,
+    "RequestCacheEnabled": true,
+    "Ports": {
+      "HttpPort": "${HttpPort}|8080",
+      "WSPort": "${WSPort}|96",
+      "MQTTPort": "${MQTTPort}|97"
+    },
+    "Environment": "${Environment}|Development",
+    "Packages": [
+      {
+        "TypeName": "EnginePartModule",
+        "Using": "${UseEngineParts}|ServiceProxyModule;DotNettyModule;Log4netModule;MessagePackModule;ConsulModule;EventBusRabbitMQModule;CachingModule;KestrelHttpModule;ApiGeteWayModule;AutoMapperModule;DapperModule"
+      },
+      {
+        "TypeName": "KestrelHttpModule",
+        "Using": "${UseKestrelHttpParts}"
+      }
+    ]
+  }, //如果引用多个同类型的组件，需要配置Packages，如果是自定义按需引用，无需配置Packages
+  "DbSetting": {
+    "DbType": "${DbType}|MySql", //MySql SqlServer, Oracle, Postgres
+    "ConnectionString": "${ConnectionString}|Server=mysql;Database=surging_demo;Uid=root;Port=3306;Pwd=Surging!P4ss"
+  },
+  "Automapper": {
+    "Assemblies": "Surging.*.Application;Surging.*.Common;"
+  },
+  "Stage": {
+    "EnableHttps": false, // 不设置ports，默认httpsPort:443
+    "CertificateFileName": "${CertificateFileName}|",
+    "CertificateLocation": "${CertificateLocation}|pfxs",
+    "CertificatePassword": "${CertificatePassword}|",
+    "IsCamelCaseResolver": "${IsCamelCaseResolver}|true",
+    "Protocols": "Http1AndHttp2",
+    "ApiGetWay": {
+      "AccessTokenExpireTimeSpan": "10080",
+      "AuthenticationRoutePath": "api/user/authentication",
+      "AuthenticationServiceKey": "",
+      "AuthorizationRoutePath": "",
+      "AuthorizationServiceKey": "",
+      "TokenEndpointPath": "api/oauth2/token",
+      "CacheMode": "ddlCache.Redis", //MemoryCache or  gateway.Redis save token
+      "IsUsingTerminal": false,
+      "Terminals": "dashboard,web,iosapp,androidapp"
+    },
+    "AccessPolicy": {
+      "Origins": [ "*" ],
+      "AllowAnyHeader": true,
+      "AllowAnyMethod": true
+    },
+    "AccessSetting": [
+      {
+        "BlackList": "${blacklist}|127.0.0.1",
+        "Enable": false
+      },
+      {
+        "WhiteList": "${whitelist}|192.168.10.50,192.168.43.0/24",
+        "BlackList": "${blacklist}|192.168.2.50,192.168.1.0/16",
+        "RoutePath": "api/user/exists",
+        "Enable": true
+      }
+    ],
+    "HttpsPort": "${StageHttpsPorts}|449,446",
+    "HttpPorts": "${StageHttpPorts}"
+  },
+  "EventBus": {
+    "EventBusConnection": "${EventBusConnection}|rabbitmq",
+    "EventBusUserName": "${EventBusUserName}|guest", //用户名
+    "EventBusPassword": "${EventBusPassword}|guest", //密码
+    "VirtualHost": "${VirtualHost}|/",
+    "MessageTTL": "${MessageTTL}|30000", //消息过期时间，比如过期时间是30分钟就是1800000
+    "RetryCount": "${RetryCount}|1", //重试次数，这里设置的延迟队列，只能设置为1
+    "FailCount": "${FailCount}|3", //处理失败流程重试次数，如果出现异常，会进行重试
+    "PrefetchCount": "${PrefetchCount}|0", //设置均匀分配消费者消息的个数
+    "BrokerName": "surging_demo",
+    "Port": "${EventBusPort}|5672"
+  },
+  "Dns": {
+    "RootDnsAddress": "192.168.1.1",
+    "QueryTimeout": 1000
+  },
+  "Swagger": {
+    "Info": {
+      "Version": "${SwaggerVersion}|V1", // "127.0.0.1:8500",
+      "Title": "${SwaggerTitle}|hero",
+      "Description": "${SwaggerDes}|hero web api",
+      "Contact": {
+        "Name": "${SupportName}|hero",
+        "Url": "",
+        "Email": "${SupportEmail}|support@hero.com"
+      },
+      "License": {
+        "Name": "",
+        "Url": ""
+      }
+    },
+    "Options": {
+      "IgnoreFullyQualified": false,
+      "MapRoutePaths": [
+        {
+          "SourceRoutePath": "api/user/authentication",
+          "TargetRoutePath": "api/oauth2/token"
+        }
+      ],
+      "IsOnlyGenerateLocalHostDocs": "${IsOnlyGenerateLocalHostDocs}|false",
+      "AnnotationXmlDir": "${AnnotationXmlDir}|/app/annotationxmldir"
+      // "IngressName": "Notice"
+    }
+  },
+  "WebSocket": {
+    "WaitTime": 2,
+    "KeepClean": false,
+    "Behavior": {
+      "IgnoreExtensions": true,
+      "EmitOnPing": false
+    }
+  },
+  "Logging": {
+    "Debug": {
+      "LogLevel": {
+        "Default": "Information"
+      }
+    },
+    "Console": {
+      "IncludeScopes": true,
+      "LogLevel": {
+        "Default": "${LogLevel}|Debug"
+      }
+    },
+    "LogLevel": {
+      "Default": "${LogLevel}|Debug"
+    }
+  }
+}

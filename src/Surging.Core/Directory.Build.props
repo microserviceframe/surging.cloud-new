@@ -1,0 +1,23 @@
+<Project>
+  <Import Project="..\version.props" />
+  <PropertyGroup>    
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <PackageIconUrl>https://www.nuget.org/profiles/SurgingX/avatar?imageSize=512</PackageIconUrl>
+    <PackageProjectUrl>https://www.nuget.org/profiles/SurgingX</PackageProjectUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/liuhll/surging.cloud/develop/LICENSE</PackageLicenseUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/liuhll/surging.cloud</RepositoryUrl>
+	  <Company>Surging.Cloud</Company>
+	  <Authors>liuhll</Authors>
+    <Product>Surging Micro Service Framework</Product>
+    <Copyright>Copyright © Liuhll All Rights Reserved.</Copyright>
+	  <PackageTags>surging;surging.cloud;microservice</PackageTags>
+	   <PackagePrefix>Surging.Cloud</PackagePrefix>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' ">
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
+ 
+
+</Project>

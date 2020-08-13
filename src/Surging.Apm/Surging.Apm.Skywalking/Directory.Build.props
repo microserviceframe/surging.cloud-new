@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup>
+    <Version>2.0.0-bate.1</Version>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <PackageIconUrl>https://github.com/liuhll/surging.cloud/raw/9940b690ce0d50cb4a41c71f4b44626aada40a64/logo.jpg</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/liuhll/surging.cloud</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/liuhll/surging.cloud/raw/master/LICENSE</PackageLicenseUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/liuhll/surging.cloud.git</RepositoryUrl>
+	  <Company>surging.cloud</Company>
+	  <Authors>surging.cloud</Authors>
+    <Product>Surging Micro Service Framework</Product>
+    <Copyright>Copyright © surging.cloud All Rights Reserved.</Copyright>
+	  <PackageTags>surging;microservice</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' ">
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
+ 
+
+</Project>
