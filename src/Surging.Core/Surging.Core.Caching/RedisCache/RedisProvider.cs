@@ -70,7 +70,7 @@ namespace Surging.Core.Caching.RedisCache
         /// </remarks>
         public void Add(string key, object value)
         {
-            this.Add(key, value, TimeSpan.FromSeconds(ExpireTime));
+            this.Add(key, value, TimeSpan.FromMinutes(ExpireTime));
         }
 
         /// <summary>
@@ -82,9 +82,9 @@ namespace Surging.Core.Caching.RedisCache
         /// 	<para>创建：范亮</para>
         /// 	<para>日期：2016/4/2</para>
         /// </remarks>
-        public void AddAsync(string key, object value)
+        public async Task AddAsync(string key, object value)
         {
-            this.AddTaskAsync(key, value, TimeSpan.FromSeconds(ExpireTime));
+            await this.AddTaskAsync(key, value, TimeSpan.FromMinutes(ExpireTime));
         }
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace Surging.Core.Caching.RedisCache
         /// </remarks>
         public void Add(string key, object value, bool defaultExpire)
         {
-            this.Add(key, value, TimeSpan.FromSeconds(defaultExpire ? DefaultExpireTime : ExpireTime));
+            this.Add(key, value, TimeSpan.FromMinutes(defaultExpire ? DefaultExpireTime : ExpireTime));
         }
 
         /// <summary>
@@ -112,9 +112,9 @@ namespace Surging.Core.Caching.RedisCache
         /// 	<para>创建：范亮</para>
         /// 	<para>日期：2016/4/2</para>
         /// </remarks>
-        public void AddAsync(string key, object value, bool defaultExpire)
+        public async Task AddAsync(string key, object value, bool defaultExpire)
         {
-            this.AddTaskAsync(key, value, TimeSpan.FromSeconds(defaultExpire ? DefaultExpireTime : ExpireTime));
+            await this.AddTaskAsync(key, value, TimeSpan.FromSeconds(defaultExpire ? DefaultExpireTime : ExpireTime));
         }
 
         /// <summary>
@@ -143,9 +143,9 @@ namespace Surging.Core.Caching.RedisCache
         /// 	<para>创建：范亮</para>
         /// 	<para>日期：2016/4/2</para>
         /// </remarks>
-        public void AddAsync(string key, object value, long numOfMinutes)
+        public async Task AddAsync(string key, object value, long numOfMinutes)
         {
-            this.AddTaskAsync(key, value, TimeSpan.FromMinutes(numOfMinutes));
+            await this.AddTaskAsync(key, value, TimeSpan.FromMinutes(numOfMinutes));
         }
 
 
@@ -184,9 +184,9 @@ namespace Surging.Core.Caching.RedisCache
         /// 	<para>创建：范亮</para>
         /// 	<para>日期：2016/4/2</para>
         /// </remarks>
-        public void AddAsync(string key, object value, TimeSpan timeSpan)
+        public async Task AddAsync(string key, object value, TimeSpan timeSpan)
         {
-            this.AddTaskAsync(key, value, timeSpan);
+            await this.AddTaskAsync(key, value, timeSpan);
         }
 
         /// <summary>
@@ -376,11 +376,18 @@ namespace Surging.Core.Caching.RedisCache
             if (key.Contains("*"))
             {
                 var keys = redisServer.Keys(database: redisEndpoint.DbIndex, pattern: redisKey).ToArray();
-                redis.KeyDeleteAsync(keys);
+                if (keys.Length > 0) 
+                {
+                    redis.KeyDeleteAsync(keys);
+                }
+                
             }
             else 
             {
-                redis.Remove(redisKey);
+                if (redis.KeyExists(redisKey)) 
+                {
+                    redis.Remove(redisKey);
+                }
             }
            
 
@@ -394,9 +401,9 @@ namespace Surging.Core.Caching.RedisCache
         /// 	<para>创建：范亮</para>
         /// 	<para>日期：2016/4/2</para>
         /// </remarks>
-        public void RemoveAsync(string key)
+        public async Task RemoveAsync(string key)
         {
-            this.RemoveTaskAsync(key);
+            await this.RemoveTaskAsync(key);
         }
 
         public long DefaultExpireTime
@@ -473,19 +480,19 @@ namespace Surging.Core.Caching.RedisCache
             return await Task.Run(() => this.Get<T>(key));
         }
 
-        private async void AddTaskAsync(string key, object value, TimeSpan timeSpan)
+        private async Task AddTaskAsync(string key, object value, TimeSpan timeSpan)
         {
             await Task.Run(() => this.Add(key, value, timeSpan));
         }
 
-        private async void RemoveTaskAsync(string key)
+        private async Task RemoveTaskAsync(string key)
         {
             await Task.Run(() => this.Remove(key));
         }
 
         private string GetKeySuffix(string key)
         {
-            return string.IsNullOrEmpty(KeySuffix) ? key : string.Format("_{0}_{1}", KeySuffix, key);
+            return string.IsNullOrEmpty(KeySuffix) ? key : string.Format("{0}:{1}", KeySuffix, key);
         }
 
         public async Task<bool> ConnectionAsync(CacheEndpoint endpoint)

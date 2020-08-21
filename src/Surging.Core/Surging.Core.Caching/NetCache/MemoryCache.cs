@@ -106,9 +106,9 @@ namespace Surging.Core.Caching.NetCache
             return isSuccess;
         }
 
-        public static void Set(string key, object value, double cacheSecond)
+        public static void Set(string key, object value, double cacheExpireTime)
         {
-            DateTime cacheTime = DateTime.Now.AddSeconds(cacheSecond);
+            DateTime cacheTime = DateTime.Now.AddMinutes(cacheExpireTime);
             var cacheValue = new Tuple<string, object, DateTime>(key, value, cacheTime);
             cache.AddOrUpdate(key, cacheValue, (v, oldValue) => cacheValue);
         }

@@ -14,7 +14,7 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
 {
     public class DefaultHealthCheckService : IHealthCheckService
     {
-        private readonly int _timeout = 30000;
+        private readonly int _timeout = 60000;
         private readonly Timer _timer;
         private readonly ConcurrentDictionary<ValueTuple<string, int>, MonitorEntry> _dictionary =
     new ConcurrentDictionary<ValueTuple<string, int>, MonitorEntry>();
@@ -56,13 +56,13 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
 
         #region Private Method
 
-        private static async Task<bool> Check(AddressModel address, int timeout)
+        private async Task<bool> Check(AddressModel address, int timeout)
         {
             var ipEndpoint = address.CreateEndPoint() as IPEndPoint;
             return SocketCheck.TestConnection(ipEndpoint.Address, ipEndpoint.Port, timeout);
         }
 
-        private static async Task Check(IEnumerable<MonitorEntry> entrys, int timeout)
+        private async Task Check(IEnumerable<MonitorEntry> entrys, int timeout)
         {
             foreach (var entry in entrys)
             {

@@ -9,6 +9,6 @@ namespace Surging.Core.Caching.AddressResolvers
 {
     public interface IAddressResolver
     {
-        ValueTask<ConsistentHashNode> Resolver(string cacheId, string item);
+        Task<ConsistentHashNode> Resolver(string cacheId, string item);
     }
 }

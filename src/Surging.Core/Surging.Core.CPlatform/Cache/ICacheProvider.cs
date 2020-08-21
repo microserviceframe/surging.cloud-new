@@ -9,13 +9,13 @@ namespace Surging.Core.CPlatform.Cache
     {
         Task<bool> ConnectionAsync(CacheEndpoint endpoint);
         void Add(string key, object value);
-        void AddAsync(string key, object value);
+        Task AddAsync(string key, object value);
         void Add(string key, object value, bool defaultExpire);
-        void AddAsync(string key, object value, bool defaultExpire);
+        Task AddAsync(string key, object value, bool defaultExpire);
         void Add(string key, object value, long numOfMinutes);
-        void AddAsync(string key, object value, long numOfMinutes);
+        Task AddAsync(string key, object value, long numOfMinutes);
         void Add(string key, object value, TimeSpan timeSpan);
-        void AddAsync(string key, object value, TimeSpan timeSpan);
+        Task AddAsync(string key, object value, TimeSpan timeSpan);
 
         IDictionary<string, T> Get<T>(IEnumerable<string> keys);
         Task<IDictionary<string, T>> GetAsync<T>(IEnumerable<string> keys);
@@ -25,7 +25,7 @@ namespace Surging.Core.CPlatform.Cache
         Task<T> GetAsync<T>(string key);
         bool GetCacheTryParse(string key, out object obj);
         void Remove(string key);
-        void RemoveAsync(string key);
+        Task RemoveAsync(string key);
         long DefaultExpireTime { get; set; }
         string KeySuffix { get; set; }
     }

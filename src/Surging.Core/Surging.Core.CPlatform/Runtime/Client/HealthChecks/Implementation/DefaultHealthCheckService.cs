@@ -30,7 +30,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         private EventHandler<HealthCheckEventArgs> _removed;
 
         private EventHandler<HealthCheckEventArgs> _changed;
-        private static ILogger<DefaultHealthCheckService> _logger;
+        private readonly ILogger<DefaultHealthCheckService> _logger;
         public event EventHandler<HealthCheckEventArgs> Removed
         {
             add { _removed += value; }
@@ -54,12 +54,12 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
             _serviceRouteManager = serviceRouteManager;
             //建立计时器
-            _timer = new Timer(s =>
+            _timer = new Timer(async s =>
             {
                 //检查服务是否可用
-                Check(_dictionaries.ToArray().Select(i => i.Value), _timeout);
+                await Check(_dictionaries.ToArray().Select(i => i.Value), _timeout);
                 //移除不可用的服务地址
-                RemoveUnhealthyAddress(_dictionaries.ToArray().Select(i => i.Value).Where(m => m.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes));
+                ///RemoveUnhealthyAddress(_dictionaries.ToArray().Select(i => i.Value).Where(m => m.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes));
             }, null, timeSpan, timeSpan);
             
             //去除监控。
@@ -131,10 +131,10 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 await Check(entry, _timeout);
                 _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), entry);
             }
-            
-            if (entry.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes) 
+
+            if (entry.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes)
             {
-                RemoveUnhealthyAddress(entry);
+               await RemoveUnhealthyAddress(entry);
             }
             OnChanged(new HealthCheckEventArgs(address, entry.Health));
             return entry.Health;
@@ -256,16 +256,16 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         }
 
 
-        private void RemoveUnhealthyAddress(MonitorEntry monitorEntry)
+        private async Task RemoveUnhealthyAddress(MonitorEntry monitorEntry)
         {
             var ipEndPoint = monitorEntry.EndPoint as IPEndPoint;
             var address = new IpAddressModel(ipEndPoint.Address.ToString(), ipEndPoint.Port);
-            _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { address }).Wait();
+            await _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { address });
             _dictionaries.TryRemove(new Tuple<string, int>(address.Ip, address.Port), out MonitorEntry value);
             OnRemoved(new HealthCheckEventArgs(address));
         }
 
-        private static async Task Check(MonitorEntry entry, int timeout)
+        private async Task Check(MonitorEntry entry, int timeout)
         {
             var ipEndpoint = entry.EndPoint as IPEndPoint;
             if (SocketCheck.TestConnection(ipEndpoint.Address, ipEndpoint.Port, timeout))
@@ -275,15 +275,23 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             }
             else
             {
-                entry.UnhealthyTimes++;
-                entry.Health = false;
-                _logger.LogWarning($"服务地址{entry.EndPoint}当前不健康,UnhealthyTimes={entry.UnhealthyTimes}");
+                if (entry.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes)
+                {
+                    _logger.LogWarning($"服务地址{entry.EndPoint}不健康,UnhealthyTimes={entry.UnhealthyTimes},服务将会被移除");
+                    await RemoveUnhealthyAddress(entry);
+                }
+                else 
+                {
+                    entry.UnhealthyTimes++;
+                    entry.Health = false;
+                    _logger.LogWarning($"服务地址{entry.EndPoint}不健康,UnhealthyTimes={entry.UnhealthyTimes}");
+                }
             }
 
 
         }
 
-        private static void Check(IEnumerable<MonitorEntry> entrys, int timeout)
+        private async Task Check(IEnumerable<MonitorEntry> entrys, int timeout)
         {
             foreach (var entry in entrys)
             {
@@ -295,9 +303,17 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 }
                 else
                 {
-                    entry.UnhealthyTimes++;
-                    entry.Health = false;
-                    _logger.LogWarning($"服务地址{entry.EndPoint}当前不健康,UnhealthyTimes={entry.UnhealthyTimes}");
+                    if (entry.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes)
+                    {
+                        _logger.LogWarning($"服务地址{entry.EndPoint}不健康,UnhealthyTimes={entry.UnhealthyTimes},服务将会被移除");
+                        await RemoveUnhealthyAddress(entry);
+                    }
+                    else
+                    {
+                        entry.UnhealthyTimes++;
+                        entry.Health = false;
+                        _logger.LogWarning($"服务地址{entry.EndPoint}不健康,UnhealthyTimes={entry.UnhealthyTimes}");
+                    }
                 }
 
             }

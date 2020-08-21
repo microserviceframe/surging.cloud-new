@@ -61,7 +61,8 @@ namespace Surging.Core.Consul
               provider.GetRequiredService<IServiceRouteFactory>(),
               provider.GetRequiredService<ILogger<ConsulServiceRouteManager>>(),
                provider.GetRequiredService<IServiceHeartbeatManager>(), 
-               provider.GetRequiredService<IConsulClientProvider>()));
+               provider.GetRequiredService<IConsulClientProvider>()
+               ));
             return this;
         }
 

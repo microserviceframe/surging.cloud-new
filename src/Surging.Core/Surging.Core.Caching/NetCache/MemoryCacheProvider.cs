@@ -62,7 +62,7 @@ namespace Surging.Core.Caching.NetCache
             MemoryCache.Set(GetKeySuffix(key), value, _defaultExpireTime.Value);
         }
 
-        public async void AddAsync(string key, object value)
+        public async Task AddAsync(string key, object value)
         {
             await Task.Run(() => MemoryCache.Set(GetKeySuffix(key), value, DefaultExpireTime));
         }
@@ -72,7 +72,7 @@ namespace Surging.Core.Caching.NetCache
             MemoryCache.Set(GetKeySuffix(key), value, defaultExpire ? DefaultExpireTime : ExpireTime);
         }
 
-        public async void AddAsync(string key, object value, bool defaultExpire)
+        public async Task AddAsync(string key, object value, bool defaultExpire)
         {
             await Task.Run(() => MemoryCache.Set(GetKeySuffix(key), value, defaultExpire ? DefaultExpireTime : ExpireTime));
         }
@@ -82,7 +82,7 @@ namespace Surging.Core.Caching.NetCache
             MemoryCache.Set(GetKeySuffix(key), value, numOfMinutes*60);
         }
 
-        public async void AddAsync(string key, object value, long numOfMinutes)
+        public async Task AddAsync(string key, object value, long numOfMinutes)
         {
             await Task.Run(() => MemoryCache.Set(GetKeySuffix(key), value, numOfMinutes*60));
         }
@@ -92,7 +92,7 @@ namespace Surging.Core.Caching.NetCache
             MemoryCache.Set(GetKeySuffix(key), value, timeSpan.TotalSeconds);
         }
 
-        public async void AddAsync(string key, object value, TimeSpan timeSpan)
+        public async Task AddAsync(string key, object value, TimeSpan timeSpan)
         {
             await Task.Run(() => MemoryCache.Set(GetKeySuffix(key), value, timeSpan.TotalSeconds));
         }
@@ -142,7 +142,7 @@ namespace Surging.Core.Caching.NetCache
             MemoryCache.RemoveByPattern(GetKeySuffix(key));
         }
 
-        public async void RemoveAsync(string key)
+        public async Task RemoveAsync(string key)
         {
             await Task.Run(() => MemoryCache.Remove(GetKeySuffix(key)));
         }
@@ -191,7 +191,7 @@ namespace Surging.Core.Caching.NetCache
         #region 私有变量
         private string GetKeySuffix(string key)
         {
-            return string.IsNullOrEmpty(KeySuffix) ? key : string.Format("_{0}_{1}", KeySuffix, key);
+            return string.IsNullOrEmpty(KeySuffix) ? key : string.Format("{0}:{1}", KeySuffix, key);
         }
         #endregion
 

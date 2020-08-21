@@ -12,7 +12,7 @@ namespace Surging.Core.System.Intercept
     public class InterceptMethodAttribute : Attribute
     {
         #region 字段
-        int _time = 60;
+        int _time = 60 * 24 * 3;
         CacheTargetType _mode = CacheTargetType.MemoryCache;
         CachingMethod _method;
         string[] _correspondingKeys;

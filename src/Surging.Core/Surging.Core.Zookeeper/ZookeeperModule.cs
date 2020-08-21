@@ -91,13 +91,13 @@ namespace Surging.Core.Zookeeper
         public ZookeeperModule UseZooKeeperRouteManager(ContainerBuilderWrapper builder, ConfigInfo configInfo)
         {
             UseRouteManager(builder, provider =>
-          new ZooKeeperServiceRouteManager(
+            new ZooKeeperServiceRouteManager(
              GetConfigInfo(configInfo),
-           provider.GetRequiredService<ISerializer<byte[]>>(),
+             provider.GetRequiredService<ISerializer<byte[]>>(),
              provider.GetRequiredService<ISerializer<string>>(),
              provider.GetRequiredService<IServiceRouteFactory>(),
              provider.GetRequiredService<ILogger<ZooKeeperServiceRouteManager>>(),
-                  provider.GetRequiredService<IZookeeperClientProvider>()));
+             provider.GetRequiredService<IZookeeperClientProvider>()));
             return this;
         }
 

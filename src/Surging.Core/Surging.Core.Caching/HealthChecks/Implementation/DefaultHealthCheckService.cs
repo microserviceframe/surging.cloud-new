@@ -5,9 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Surging.Core.Caching.Interfaces;
 using Surging.Core.CPlatform;
 using Surging.Core.CPlatform.Cache;
+using Surging.Core.CPlatform.Utilities;
 
 namespace Surging.Core.Caching.HealthChecks.Implementation
 {
@@ -20,16 +22,17 @@ namespace Surging.Core.Caching.HealthChecks.Implementation
         private readonly ConcurrentDictionary<ValueTuple<string, int>, MonitorEntry> _dictionary =
     new ConcurrentDictionary<ValueTuple<string, int>, MonitorEntry>();
         private readonly IServiceCacheManager _serviceCacheManager;
-
+        private readonly ILogger<DefaultHealthCheckService> _logger;
 
         public DefaultHealthCheckService(IServiceCacheManager serviceCacheManager)
         {
+            _logger = ServiceLocator.GetService<ILogger<DefaultHealthCheckService>>();
             var timeSpan = TimeSpan.FromSeconds(10);
             _serviceCacheManager = serviceCacheManager;
             _timer = new Timer(async s =>
             {
                 await Check(_dictionary.ToArray().Select(i => i.Value));
-                RemoveUnhealthyAddress(_dictionary.ToArray().Select(i => i.Value).Where(m => m.UnhealthyTimes >= 6));
+                //RemoveUnhealthyAddress(_dictionary.ToArray().Select(i => i.Value).Where(m => m.UnhealthyTimes >= 6));
             }, null, timeSpan, timeSpan);
 
             //去除监控。
@@ -101,8 +104,17 @@ namespace Surging.Core.Caching.HealthChecks.Implementation
                 }
                 catch
                 {
-                    entry.UnhealthyTimes++;
-                    entry.Health = false;
+                    if (entry.UnhealthyTimes >= 6)
+                    {
+                        _logger.LogWarning($"服务地址{entry.EndPoint}不健康,UnhealthyTimes={entry.UnhealthyTimes},服务将会被移除");
+                        await RemoveUnhealthyAddress(entry);
+                    }
+                    else
+                    {
+                        entry.UnhealthyTimes++;
+                        entry.Health = false;
+                        _logger.LogWarning($"服务地址{entry.EndPoint}不健康,UnhealthyTimes={entry.UnhealthyTimes}");
+                    }
                 }
             }
         }
@@ -130,7 +142,12 @@ namespace Surging.Core.Caching.HealthChecks.Implementation
 
             }
         }
-
+        private async Task RemoveUnhealthyAddress(MonitorEntry monitorEntry)
+        {
+            var addresses = monitorEntry.EndPoint;
+            await _serviceCacheManager.RemveAddressAsync(new List<CacheEndpoint>() { addresses } );
+            _dictionary.TryRemove(new ValueTuple<string, int>(addresses.Host, addresses.Port), out MonitorEntry value);
+        }
 
         #region Help Class
 

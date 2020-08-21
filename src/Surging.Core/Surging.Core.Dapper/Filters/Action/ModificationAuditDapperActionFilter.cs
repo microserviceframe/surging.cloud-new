@@ -16,7 +16,10 @@ namespace Surging.Core.Dapper.Filters.Action
             {
 
                 var record = entity as IModificationAudited;
-                record.LastModifierUserId = _loginUser.UserId;
+                if (_loginUser.UserId.HasValue) 
+                {
+                    record.LastModifierUserId = _loginUser.UserId;
+                }               
                 record.LastModificationTime = DateTime.Now;
 
             }

@@ -155,7 +155,7 @@ namespace Surging.Core.System.Intercept
                     {
                         await invocation.Proceed();
                         var keys = attribute.CorrespondingKeys.Select(correspondingKey => string.Format(correspondingKey, invocation.CacheKey)).ToList();
-                        keys.ForEach(cacheProvider.RemoveAsync);
+                        keys.ForEach(cacheProvider.Remove);
                         break;
                     }
             }

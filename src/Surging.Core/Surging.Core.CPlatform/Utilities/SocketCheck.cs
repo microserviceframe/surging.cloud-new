@@ -11,42 +11,64 @@ namespace Surging.Core.CPlatform.Utilities
     public static class SocketCheck
     {
         private static ILogger _logger = ServiceLocator.GetService<ILogger>();
-        public static bool TestConnection(string host, int port, int timeout = 5) 
+
+        public static bool TestConnection(EndPoint endPoint, int millisecondsTimeout = 500)
         {
-            var client = new TcpClient();
-            try
+            bool isHealth = false;
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { SendTimeout = millisecondsTimeout })
             {
-                var ar = client.BeginConnect(host, port, null, null);
-                ar.AsyncWaitHandle.WaitOne(timeout);
-                return client.Connected;
-            }
-            catch (Exception e)
-            {
-                return false;
-            }
-            finally
-            {
-                client.Close();
+                try
+                {
+                    socket.Connect(endPoint);
+                    isHealth = true;
+                }
+                catch
+                {
+
+                }
+                return isHealth;
+
             }
         }
 
-        public static bool TestConnection(IPAddress iPAddress, int port, int millisecondsTimeout = 5)
+        public static bool TestConnection(string host, int port, int millisecondsTimeout = 500) 
         {
-            var client = new TcpClient();
-            try
+            bool isHealth = false;
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { SendTimeout = millisecondsTimeout })
             {
-                var ar = client.BeginConnect(iPAddress, port, null, null);
-                ar.AsyncWaitHandle.WaitOne(millisecondsTimeout);
-                return client.Connected;
+                try
+                {
+                    socket.Connect(host, port);
+                    isHealth = true;
+                }
+                catch
+                {
+
+                }
+                return isHealth;
+
             }
-            catch (Exception e)
+        }
+
+        public static bool TestConnection(IPAddress iPAddress, int port, int millisecondsTimeout = 50)
+        {
+            
+            bool isHealth = false;
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { SendTimeout = millisecondsTimeout }) 
             {
-                return false;
+                try
+                {
+                    socket.Connect(iPAddress,port);
+                    isHealth = true;
+                }
+                catch
+                {
+
+                }
+                return isHealth;
+
             }
-            finally
-            {
-                client.Close();
-            }
+
         }
 
 

@@ -38,7 +38,7 @@ new ConcurrentDictionary<string, ServiceCache>();
             _serviceCacheManager.Created += ServiceCacheManager_Add;
         }
 
-        public async ValueTask<ConsistentHashNode> Resolver(string cacheId, string item)
+        public async Task<ConsistentHashNode> Resolver(string cacheId, string item)
         {
 
             _concurrent.TryGetValue(cacheId, out ServiceCache descriptor);

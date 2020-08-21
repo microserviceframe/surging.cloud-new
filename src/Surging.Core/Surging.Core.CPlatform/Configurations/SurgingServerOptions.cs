@@ -64,7 +64,7 @@ namespace Surging.Core.CPlatform.Configurations
 
         public bool ForceDisplayStackTrace { get; set; }
 
-        public int HealthCheckTimeout { get; set; } = 50;
+        public int HealthCheckTimeout { get; set; } = 1000;
 
         public string HostName { get; set; } = "";
     }

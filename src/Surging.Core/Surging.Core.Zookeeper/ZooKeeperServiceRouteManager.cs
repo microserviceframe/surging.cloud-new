@@ -4,6 +4,7 @@ using Rabbit.Zookeeper;
 using Surging.Core.CPlatform.Address;
 using Surging.Core.CPlatform.Routing;
 using Surging.Core.CPlatform.Routing.Implementation;
+using Surging.Core.CPlatform.Runtime.Client.HealthChecks;
 using Surging.Core.CPlatform.Serialization;
 using Surging.Core.CPlatform.Support;
 using Surging.Core.CPlatform.Transport.Implementation;
@@ -282,6 +283,7 @@ namespace Surging.Core.Zookeeper
         {
             var hostAddr = NetUtils.GetHostAddress();
             var serviceRoutes = await GetRoutes(routes.Select(p => p.ServiceDescriptor.Id));
+            await RemoveExceptRoutesAsync(routes, hostAddr);
             if (serviceRoutes.Any())
             {
                 foreach (var route in routes)
@@ -289,19 +291,20 @@ namespace Surging.Core.Zookeeper
                     var serviceRoute = serviceRoutes.Where(p => p.ServiceDescriptor.Id == route.ServiceDescriptor.Id).FirstOrDefault();
                     if (serviceRoute != null)
                     {
-                        var addresses = serviceRoute.Address.Concat(
-                          route.Address.Except(serviceRoute.Address)).ToList();
-
-                        foreach (var address in route.Address)
+                        var addresses = serviceRoute.Address.Concat(route.Address).Distinct();
+                        var newAddresses = new List<AddressModel>();
+                        foreach (var address in addresses)
                         {
-                            addresses.Remove(addresses.Where(p => p.ToString() == address.ToString()).FirstOrDefault());
-                            addresses.Add(address);
+                            if (!newAddresses.Any(p => p.ToString() == address.ToString()))
+                            {
+                                newAddresses.Add(address);
+                            }
                         }
-                        route.Address = addresses;
+                        route.Address = newAddresses;
                     }
                 }
             }
-            //await RemoveExceptRoutesAsync(routes, hostAddr);
+
             await base.SetRoutesAsync(routes);
         }
 
@@ -316,17 +319,28 @@ namespace Surging.Core.Zookeeper
             {
                 if (_routes != null)
                 {
-                    var oldRouteIds = _routes.Where(p=> !p.Address.Any()).Select(i => i.ServiceDescriptor.Id).ToArray();
+                    var oldRouteIds = _routes.Select(i => i.ServiceDescriptor.Id).ToArray();
                     var newRouteIds = routes.Select(i => i.ServiceDescriptor.Id).ToArray();
                     var deletedRouteIds = oldRouteIds.Except(newRouteIds).ToArray();
                     foreach (var deletedRouteId in deletedRouteIds)
                     {
-                        var addresses = _routes.Where(p => p.ServiceDescriptor.Id == deletedRouteId).Select(p => p.Address).First();
-                        var nodePath = $"{path}{deletedRouteId}";
-                        if (await zooKeeper.ExistsAsync(nodePath))
+                        var addresses = _routes.Where(p => p.ServiceDescriptor.Id == deletedRouteId).Select(p => p.Address).FirstOrDefault();
+                        if (addresses != null && addresses.Any(p=> p.ToString() == hostAddr.ToString())) 
                         {
-                            await zooKeeper.DeleteAsync(nodePath);
+                            try 
+                            {
+                                var nodePath = $"{path}{deletedRouteId}";
+                                if (await zooKeeper.ExistsAsync(nodePath))
+                                {
+                                    await zooKeeper.DeleteAsync(nodePath);
+                                }
+                            } catch (NoNodeException ex) 
+                            {
+                                _logger.LogWarning(ex.Message);
+                            }
+                            
                         }
+                        
                     }
                 }
             }
