@@ -9,6 +9,7 @@ using Surging.Core.CPlatform.Support;
 using Surging.Core.CPlatform.Support.Attributes;
 using Surging.Core.KestrelHttpServer;
 using Surging.Core.KestrelHttpServer.Internal;
+using Surging.Core.ProxyGenerator.Interceptors.Implementation.Metadatas;
 using Surging.Core.System.Intercept;
 using Surging.IModuleServices.Common.Models;
 using System;
