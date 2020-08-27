@@ -3,6 +3,7 @@ using Surging.Core.Caching.HashAlgorithms;
 using Surging.Core.Caching.Interfaces;
 using Surging.Core.Caching.Utilities;
 using Surging.Core.CPlatform.Cache;
+using Surging.Core.ProxyGenerator.Interceptors.Implementation.Metadatas;
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;

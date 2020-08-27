@@ -70,29 +70,22 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             //重新监控。
             serviceRouteManager.Created += async (s, e) =>
             {
-                var hostAddr = NetUtils.GetHostAddress() as IpAddressModel;
-                foreach (var address in e.Route.Address)
+                var keys = e.Route.Address.Select(address =>
                 {
                     var ipAddress = address as IpAddressModel;
-                    if (ipAddress != hostAddr)
-                    {
-                        await Monitor(ipAddress);
-                    }
-                }
+                    return new Tuple<string, int>(ipAddress.Ip, ipAddress.Port);
+                });
+                await Check(_dictionaries.Where(i => keys.Contains(i.Key)).Select(i => i.Value), _timeout);
 
             };
             //重新监控。
             serviceRouteManager.Changed += async (s, e) =>
             {
-                 var hostAddr = NetUtils.GetHostAddress() as IpAddressModel;
-                foreach (var address in e.Route.Address)
-                {
+                var keys = e.Route.Address.Select(address => {
                     var ipAddress = address as IpAddressModel;
-                    if (ipAddress != hostAddr) 
-                    {
-                        await Monitor(ipAddress);
-                    }
-                }
+                    return new Tuple<string, int>(ipAddress.Ip, ipAddress.Port);
+                });
+                await Check(_dictionaries.Where(i => keys.Contains(i.Key)).Select(i => i.Value), _timeout);
             };
         }
 
@@ -226,18 +219,18 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             }
         }
 
-        private void RemoveUnhealthyAddress(IEnumerable<MonitorEntry> monitorEntry)
+        private async Task RemoveUnhealthyAddress(IEnumerable<MonitorEntry> monitorEntry)
         {
             if (monitorEntry.Any())
             {
                 var addresses = monitorEntry.Select(p =>
                 {
-                    var ipEndPoint = p.EndPoint as IPEndPoint;
-                    return new IpAddressModel(ipEndPoint.Address.ToString(), ipEndPoint.Port);
+                    var ipAddress = p.Address as IpAddressModel;
+                    return new IpAddressModel(ipAddress.Ip, ipAddress.Port);
                 }).ToList();
                 if (addresses.Any()) 
                 {
-                    _serviceRouteManager.RemveAddressAsync(addresses).Wait();
+                    await _serviceRouteManager.RemveAddressAsync(addresses);
                     addresses.ForEach(p => {
                         var ipAddress = p as IpAddressModel;
                         _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry value);
@@ -250,25 +243,24 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
         private void RemoveTimeoutAddress(MonitorEntry monitorEntry, string serviceId) 
         {
-            var ipEndPoint = monitorEntry.EndPoint as IPEndPoint;
-            var address = new IpAddressModel(ipEndPoint.Address.ToString(), ipEndPoint.Port);
+            var ipAddress = monitorEntry.Address as IpAddressModel;
+            var address = new IpAddressModel(ipAddress.Ip, ipAddress.Port);
             _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { address }, serviceId).Wait();
         }
 
 
         private async Task RemoveUnhealthyAddress(MonitorEntry monitorEntry)
         {
-            var ipEndPoint = monitorEntry.EndPoint as IPEndPoint;
-            var address = new IpAddressModel(ipEndPoint.Address.ToString(), ipEndPoint.Port);
-            await _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { address });
-            _dictionaries.TryRemove(new Tuple<string, int>(address.Ip, address.Port), out MonitorEntry value);
-            OnRemoved(new HealthCheckEventArgs(address));
+            var ipAddress = monitorEntry.Address as IpAddressModel;            
+            await _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { ipAddress });
+            _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry value);
+            OnRemoved(new HealthCheckEventArgs(ipAddress));
         }
 
         private async Task Check(MonitorEntry entry, int timeout)
         {
-            var ipEndpoint = entry.EndPoint as IPEndPoint;
-            if (SocketCheck.TestConnection(ipEndpoint.Address, ipEndpoint.Port, timeout))
+            var ipAddress = entry.Address as IpAddressModel;
+            if (SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout))
             {
                 entry.UnhealthyTimes = 0;
                 entry.Health = true;
@@ -277,14 +269,14 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             {
                 if (entry.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes)
                 {
-                    _logger.LogWarning($"服务地址{entry.EndPoint}不健康,UnhealthyTimes={entry.UnhealthyTimes},服务将会被移除");
+                    _logger.LogWarning($"服务地址{entry.Address}不健康,UnhealthyTimes={entry.UnhealthyTimes},服务将会被移除");
                     await RemoveUnhealthyAddress(entry);
                 }
                 else 
                 {
                     entry.UnhealthyTimes++;
                     entry.Health = false;
-                    _logger.LogWarning($"服务地址{entry.EndPoint}不健康,UnhealthyTimes={entry.UnhealthyTimes}");
+                    _logger.LogWarning($"服务地址{entry.Address}不健康,UnhealthyTimes={entry.UnhealthyTimes}");
                 }
             }
 
@@ -295,8 +287,8 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         {
             foreach (var entry in entrys)
             {
-                var ipEndpoint = entry.EndPoint as IPEndPoint;
-                if (SocketCheck.TestConnection(ipEndpoint.Address, ipEndpoint.Port, timeout))
+                var ipAddress = entry.Address as IpAddressModel;
+                if (SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout))
                 {
                     entry.UnhealthyTimes = 0;
                     entry.Health = true;
@@ -305,14 +297,14 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 {
                     if (entry.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes)
                     {
-                        _logger.LogWarning($"服务地址{entry.EndPoint}不健康,UnhealthyTimes={entry.UnhealthyTimes},服务将会被移除");
+                        _logger.LogWarning($"服务地址{entry.Address}不健康,UnhealthyTimes={entry.UnhealthyTimes},服务将会被移除");
                         await RemoveUnhealthyAddress(entry);
                     }
                     else
                     {
                         entry.UnhealthyTimes++;
                         entry.Health = false;
-                        _logger.LogWarning($"服务地址{entry.EndPoint}不健康,UnhealthyTimes={entry.UnhealthyTimes}");
+                        _logger.LogWarning($"服务地址{entry.Address}不健康,UnhealthyTimes={entry.UnhealthyTimes}");
                     }
                 }
 
@@ -327,7 +319,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         {
             public MonitorEntry(AddressModel addressModel)
             {
-                EndPoint = addressModel.CreateEndPoint();
+                Address = addressModel;
                 Health = false;
                 UnhealthyTimes = 0;
 
@@ -337,7 +329,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
             public int TimeOutTimes { get; set; }
 
-            public EndPoint EndPoint { get; set; }
+            public AddressModel Address { get; set; }
 
             public bool Health { get; set; }
         }

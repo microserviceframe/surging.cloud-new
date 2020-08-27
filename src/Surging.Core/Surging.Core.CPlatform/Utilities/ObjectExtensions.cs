@@ -1,7 +1,12 @@
-﻿using System;
+﻿using Surging.Core.CPlatform.Serialization;
+using System;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Surging.Core.CPlatform.Utilities
 {
@@ -50,5 +55,13 @@ namespace Surging.Core.CPlatform.Utilities
         {
             return list.Contains(item);
         }
+
+        public static T DeepCopy<T>(this object obj)
+        {
+            var serializer = ServiceLocator.GetService<ISerializer<string>>();
+            return (T)serializer.Deserialize(serializer.Serialize(obj), typeof(T));
+
+        }
+       
     }
 }

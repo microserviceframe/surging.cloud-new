@@ -138,9 +138,11 @@ namespace Surging.Core.CPlatform.Routing.Implementation
         public abstract Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId);
        
 
-        public abstract Task RemveAddressAsync(IEnumerable<AddressModel> Address);
+        public abstract Task RemveAddressAsync(IEnumerable<AddressModel> address);
 
-        public abstract Task RemveAddressAsync(IEnumerable<AddressModel> Address, string serviceId);
+        public abstract Task RemveAddressAsync(IEnumerable<AddressModel> address, string serviceId);
+
+        protected abstract Task RemveAddressAsync(IEnumerable<AddressModel> address, ServiceRoute route);
 
         /// <summary>
         /// 清空所有的服务路由。

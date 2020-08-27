@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Surging.Core.CPlatform.Address;
 using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Runtime.Server;
 using Surging.Core.CPlatform.Transport.Implementation;
@@ -45,11 +46,26 @@ namespace Surging.Core.CPlatform.Routing.Implementation
                 route = routes.FirstOrDefault(i => i.ServiceDescriptor.Id == serviceId);
                 if (route == null)
                 {
-                    if (_logger.IsEnabled(LogLevel.Warning))
-                        _logger.LogWarning($"根据服务id：{serviceId}，找不到相关服务信息。");
+                    routes = await _serviceRouteManager.GetRoutesAsync(true);
+                    route = routes.FirstOrDefault(i => i.ServiceDescriptor.Id == serviceId);
+                    if (route == null)
+                    {
+                        if (_logger.IsEnabled(LogLevel.Warning))
+                        {
+                            _logger.LogWarning($"根据服务Id：{serviceId}，找不到相关服务信息。");
+                            if (route == null)
+                            {
+                                throw new CPlatformException($"根据服务Id：{serviceId}，找不到相关服务信息。");
+                            }
+                        }
+                    }
+                        
                 }
-                else
+                if (route != null) 
+                {
                     _concurrent.GetOrAdd(serviceId, route);
+                }
+                    
             }
             return route;
         }
@@ -261,6 +277,12 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             }
             
             return route;
+        }
+
+        public async Task RemoveHostAddress(string serviceId)
+        {
+            var hostAddr = NetUtils.GetHostAddress();
+            await _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { hostAddr }, serviceId);
         }
 
         #endregion

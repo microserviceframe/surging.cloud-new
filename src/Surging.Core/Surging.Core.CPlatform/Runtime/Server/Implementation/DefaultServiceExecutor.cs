@@ -85,6 +85,7 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation
             {
                 if (_logger.IsEnabled(LogLevel.Error))
                     _logger.LogError($"根据服务Id：{remoteInvokeMessage.ServiceId}，找不到服务条目。");
+                await _serviceRouteProvider.RemoveHostAddress(remoteInvokeMessage.ServiceId);
                 return;
             }
 

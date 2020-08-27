@@ -8,8 +8,8 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks
 {
    public interface IHealthCheckService
     {
-        void Monitor(AddressModel address);
+        Task Monitor(AddressModel address);
 
-        ValueTask<bool> IsHealth(AddressModel address);
+        Task<bool> IsHealth(AddressModel address);
     }
 }

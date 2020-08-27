@@ -166,12 +166,12 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             throw new NotImplementedException();
         }
 
-        public override async Task RemveAddressAsync(IEnumerable<AddressModel> Address)
+        public override async Task RemveAddressAsync(IEnumerable<AddressModel> address)
         {
-            var routes = await GetRoutesAsync(true);
+            var routes = (await GetRoutesAsync(true)).Where(route => route.Address.Any(p => address.Any(q => q.ToString() == p.ToString())));
             foreach (var route in routes)
             {
-                route.Address = route.Address.Except(Address).ToList();
+                route.Address = route.Address.Except(address).ToList();
             }
             await base.SetRoutesAsync(routes);
         }
@@ -186,6 +186,11 @@ namespace Surging.Core.CPlatform.Routing.Implementation
                 await base.SetRoutesAsync(new List<ServiceRoute>() { route });
             }
 
+        }
+        protected override async Task RemveAddressAsync(IEnumerable<AddressModel> address, ServiceRoute route) 
+        {
+            route.Address = route.Address.Except(address).ToList();
+            await base.SetRoutesAsync(new List<ServiceRoute>() { route });
         }
 
         #endregion Overrides of ServiceRouteManagerBase

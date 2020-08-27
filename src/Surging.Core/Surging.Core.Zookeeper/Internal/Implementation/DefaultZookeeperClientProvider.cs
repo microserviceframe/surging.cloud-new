@@ -37,28 +37,20 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
             _zookeeperAddressSelector = zookeeperAddressSelector;
             _logger = logger;
         }
-        public async Task Check()
-        {
-            foreach (var address in _config.Addresses)
-            {
-                if (!await _healthCheckService.IsHealth(address))
-                {
-                    throw new RegisterConnectionException(string.Format("注册中心{0}连接异常，请联系管理园", address.ToString()));
-                }
-            }
-        }
+
 
         public async Task<IZookeeperClient> GetZooKeeperClient()
         {
             var address = new List<AddressModel>();
             foreach (var addressModel in _config.Addresses)
             {
-                _healthCheckService.Monitor(addressModel);
-                var task = _healthCheckService.IsHealth(addressModel);
-                if (!(task.IsCompletedSuccessfully ? task.Result : await task))
-                {
-                    continue;
-                }
+                //await _healthCheckService.Monitor(addressModel);
+                //var isHealth = await _healthCheckService.IsHealth(addressModel);
+                //if (!isHealth)
+                //{
+                //    _logger.LogWarning($"服务注册中心地址{addressModel.ToString()}不健康。");
+                //    continue;
+                //}
                 address.Add(addressModel);
             }
             if (!address.Any())
@@ -68,12 +60,11 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
                 throw new CPlatformException("找不到可用的Zookeeper注册中心地址");
             }
 
-            var vt = _zookeeperAddressSelector.SelectAsync(new AddressSelectContext
+            var addr = await _zookeeperAddressSelector.SelectAsync(new AddressSelectContext
             {
                 Descriptor = new ServiceDescriptor { Id = nameof(DefaultZookeeperClientProvider) },
                 Address = address
             });
-            var addr = vt.IsCompletedSuccessfully ? vt.Result : await vt;
             if (addr != null)
             {
                 var ipAddress = addr as IpAddressModel;
@@ -88,6 +79,7 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
             {
                 var options = new ZookeeperClientOptions(ipAddress.ToString()) { ConnectionTimeout = _config.SessionTimeout, SessionTimeout = _config.SessionTimeout };
                 zookeeperClient = new ZookeeperClient(options);
+
                 _zookeeperClients.AddOrUpdate(ipAddress, zookeeperClient, (k,v)=> zookeeperClient);
             }
             return zookeeperClient;
@@ -99,11 +91,12 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
             foreach (var address in _config.Addresses)
             {
                 var ipAddress = address as IpAddressModel;
-                if (await _healthCheckService.IsHealth(address))
-                {
-                    result.Add(CreateZooKeeper(ipAddress));
+                //if (await _healthCheckService.IsHealth(address))
+                //{
+                //    result.Add(CreateZooKeeper(ipAddress));
 
-                }
+                //}
+                result.Add(CreateZooKeeper(ipAddress));
             }
             return result;
         }

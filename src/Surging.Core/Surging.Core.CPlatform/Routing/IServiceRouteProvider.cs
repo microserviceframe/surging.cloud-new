@@ -46,6 +46,6 @@ namespace Surging.Core.CPlatform.Routing
         /// <returns></returns>
         Task RegisterRoutes(decimal processorTime);
 
-        
+        Task RemoveHostAddress(string serviceId);
     }
 }

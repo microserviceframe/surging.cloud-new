@@ -14,6 +14,14 @@
 
         public int RequestTimeout { get; set; } = 5000;
 
+        //public string Analyzer = "standard";
+
+        //public string SearchAnalyzer = "standard";
+
+        public int NumberOfShards { get; set; } = 12;
+
+        public int NumberOfReplicas { get; set; } = 1;
+
         public static ElasticSearchSetting Instance { get; internal set; }
     }
 }

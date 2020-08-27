@@ -41,8 +41,7 @@ namespace Surging.Core.ProxyGenerator.Interceptors.Implementation
                 }) as IInvocation;
         }
 
-        public IInvocation GetCacheInvocation(object proxy, IDictionary<string, object> parameters,
-    string serviceId, Type returnType)
+        public IInvocation GetCacheInvocation(object proxy, IDictionary<string, object> parameters, string serviceId, Type returnType)
         {
             var entry = (from q in _serviceEntryManager.GetAllEntries()
                          let k = q.Attributes
@@ -62,6 +61,12 @@ namespace Surging.Core.ProxyGenerator.Interceptors.Implementation
                     proxy
                 }) as IInvocation;
         }
+
+        public string[] GetCacheKeyVaule(IDictionary<string, object> parameterValue)
+        {
+            return this.GetKey(parameterValue);
+        }
+
 
         private string[] GetKey(IDictionary<string, object> parameters, string serviceId)
         {
@@ -117,7 +122,34 @@ namespace Surging.Core.ProxyGenerator.Interceptors.Implementation
             return result.ToArray();
         }
 
-        
+        private string[] GetKey(IDictionary<string, object> parameterValue)
+        {
+            if (parameterValue != null) 
+            {
+                var param = parameterValue.Values.FirstOrDefault();
+                var reuslt = default(string[]);
+                if (parameterValue.Count() > 0)
+                {
+                    reuslt = new string[] { param.ToString() };
+                    if (!(param is IEnumerable))
+                    {
+                        var runtimeProperties = param.GetType().GetRuntimeProperties();
+                        var properties = (from q in runtimeProperties
+                                          let k = q.GetCustomAttribute<KeyAttribute>()
+                                          where k != null
+                                          orderby (k as KeyAttribute).SortIndex
+                                          select q).ToList();
+
+                        reuslt = properties.Count() > 0 ?
+                                  properties.Select(p => p.GetValue(parameterValue.Values.FirstOrDefault()).ToString()).ToArray() : reuslt;
+                    }
+                }
+                return reuslt;
+            }
+            return null;
+          
+        }
+
 
         private bool IsKeyAttributeDerivedType(Type baseType,Type derivedType)
         {

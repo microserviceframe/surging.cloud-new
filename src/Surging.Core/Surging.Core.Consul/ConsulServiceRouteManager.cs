@@ -97,20 +97,20 @@ namespace Surging.Core.Consul
             var locks = await CreateLock();
             try
             {
-                await _consulClientProvider.Check();
+                //await _consulClientProvider.Check();
                 var hostAddr = NetUtils.GetHostAddress();
                 await RemoveExceptRoutesAsync(routes, hostAddr);
                 var serviceRoutes = await GetRoutes(routes.Select(p => $"{ _configInfo.RoutePath}{p.ServiceDescriptor.Id}"));
                 foreach (var route in routes)
                 {
-                    var serviceRoute = serviceRoutes.Where(p => p.ServiceDescriptor.Id == route.ServiceDescriptor.Id).FirstOrDefault();
+                    var serviceRoute = serviceRoutes.FirstOrDefault(p => p.ServiceDescriptor.Id == route.ServiceDescriptor.Id);
                     if (serviceRoute != null)
                     {
                         var addresses = serviceRoute.Address.Concat(route.Address).Distinct();
                         var newAddresses = new List<AddressModel>();
                         foreach (var address in addresses)
                         {
-                            if (!newAddresses.Any(p => p.ToString() == address.ToString()))
+                            if (!newAddresses.Any(p => p.Equals(address)))
                             {
                                 newAddresses.Add(address);
                             }
@@ -183,16 +183,16 @@ namespace Surging.Core.Consul
             return _routes.FirstOrDefault(p => p.ServiceDescriptor.Id == serviceId);
         }
 
-        public override async Task RemveAddressAsync(IEnumerable<AddressModel> Address)
+        public override async Task RemveAddressAsync(IEnumerable<AddressModel> address)
         {
-            var routes = await GetRoutesAsync(true);
+            var routes = (await GetRoutesAsync(true)).Where(route => route.Address.Any(p => address.Any(q => q.Equals(p))));
             try
             {
                 foreach (var route in routes)
                 {
-                    route.Address = route.Address.Except(Address).ToList();
+                    await RemveAddressAsync(address, route);
                 }
-                _logger.LogInformation($"地址为{Address.Select(p => p.ToString()).JoinAsString(",")}的服务当前不健康,将会从服务列表中移除");
+                _logger.LogInformation($"地址为{address.Select(p => p.ToString()).JoinAsString(",")}将会从服务列表中移除");
             }
             catch (Exception ex)
             {
@@ -207,9 +207,9 @@ namespace Surging.Core.Consul
             var oldRoute = routes.FirstOrDefault(p => p.ServiceDescriptor.Id == serviceId);
             if (oldRoute != null)
             {
-                var newRoute = (ServiceRoute)_stringSerializer.Deserialize(_stringSerializer.Serialize(oldRoute),typeof(ServiceRoute));
+                var newRoute = oldRoute.Copy(); //(ServiceRoute)_stringSerializer.Deserialize(_stringSerializer.Serialize(oldRoute),typeof(ServiceRoute));
                 newRoute.Address = newRoute.Address.Except(Address).ToList();
-                _logger.LogInformation($"地址为{Address.Select(p => p.ToString()).JoinAsString(",")}的服务当前不健康,将会从服务{serviceId}列表中移除");
+                _logger.LogInformation($"地址为{Address.Select(p => p.ToString()).JoinAsString(",")}将会从服务{serviceId}列表中移除");
                 var routeDescriptor = new ServiceRouteDescriptor()
                 {
                     AddressDescriptors = newRoute.Address?.Select(address => new ServiceAddressDescriptor
@@ -220,9 +220,27 @@ namespace Surging.Core.Consul
                 };
 
                 await SetRouteAsync(routeDescriptor);
-                OnChanged(new ServiceRouteChangedEventArgs(newRoute, oldRoute));
             }           
             
+        }
+
+        protected override async Task RemveAddressAsync(IEnumerable<AddressModel> Address, ServiceRoute route)
+        {
+
+            var newRoute = route.Copy(); //(ServiceRoute)_stringSerializer.Deserialize(_stringSerializer.Serialize(oldRoute),typeof(ServiceRoute));
+            newRoute.Address = newRoute.Address.Except(Address).ToList();
+            _logger.LogInformation($"地址为{Address.Select(p => p.ToString()).JoinAsString(",")}将会从服务{route.ServiceDescriptor.Id}列表中移除");
+            var routeDescriptor = new ServiceRouteDescriptor()
+            {
+                AddressDescriptors = newRoute.Address?.Select(address => new ServiceAddressDescriptor
+                {
+                    Value = _stringSerializer.Serialize(address)
+                }) ?? Enumerable.Empty<ServiceAddressDescriptor>(),
+                ServiceDescriptor = newRoute.ServiceDescriptor
+            };
+
+            await SetRouteAsync(routeDescriptor);
+
         }
 
         protected override async Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes)
@@ -258,7 +276,6 @@ namespace Surging.Core.Consul
 
         private async Task RemoveExceptRoutesAsync(IEnumerable<ServiceRoute> routes, AddressModel hostAddr)
         {
-            routes = routes.ToArray();
             var clients = await _consulClientProvider.GetClients();
             foreach (var client in clients)
             {
@@ -266,15 +283,16 @@ namespace Surging.Core.Consul
                 {
                     var oldRouteIds = _routes.Select(i => i.ServiceDescriptor.Id).ToArray();
                     var newRouteIds = routes.Select(i => i.ServiceDescriptor.Id).ToArray();
-                    var deletedRouteIds = oldRouteIds.Except(newRouteIds).ToArray();
-                    foreach (var deletedRouteId in deletedRouteIds)
+                    var removeRouteIds = oldRouteIds.Except(newRouteIds).ToArray();
+                    foreach (var removeRouteId in removeRouteIds)
                     {
-                        var addresses = _routes.Where(p => p.ServiceDescriptor.Id == deletedRouteId).Select(p => p.Address).FirstOrDefault();
-                        if (addresses != null && addresses.Any(p => p.ToString() == hostAddr.ToString()))
+                        var removeRoute = _routes.FirstOrDefault(p => p.ServiceDescriptor.Id == removeRouteId);
+                        removeRoute.Address = removeRoute.Address.Where(p => !p.Equals(hostAddr)).ToList();
+                        if (removeRoute != null && removeRoute.Address != null && removeRoute.Address.Any(p => p.Equals(hostAddr)))
                         {
-                            await client.KV.Delete($"{_configInfo.RoutePath}{deletedRouteId}");
+                            var nodePath = $"{_configInfo.RoutePath}{removeRouteId}";
+                            await SetRouteAsync(removeRoute);
                         }
-                        
 
                     }
                 }

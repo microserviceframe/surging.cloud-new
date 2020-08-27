@@ -11,6 +11,5 @@ namespace Surging.Core.Zookeeper.Internal
 
         Task<IEnumerable<IZookeeperClient>> GetZooKeeperClients();
 
-        Task Check();
     }
 }

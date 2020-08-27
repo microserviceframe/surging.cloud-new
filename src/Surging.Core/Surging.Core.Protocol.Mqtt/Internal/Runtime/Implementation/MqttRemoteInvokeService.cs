@@ -68,7 +68,7 @@ namespace Surging.Core.Protocol.Mqtt.Internal.Runtime.Implementation
                         if (address != null)
                         {
                             _logger.LogError($"使用地址：'{address.ToString()}'调用服务{context.InvokeMessage.ServiceId}超时,原因:{ex.Message}");
-                            await _healthCheckService.MarkTimeout(address, invokeMessage.ServiceId);
+                            //await _healthCheckService.MarkTimeout(address, invokeMessage.ServiceId);
                         }
                         throw;
                     }
@@ -114,7 +114,7 @@ namespace Surging.Core.Protocol.Mqtt.Internal.Runtime.Implementation
                             if (address != null)
                             {
                                 _logger.LogError($"使用地址：'{address.ToString()}'调用服务{context.InvokeMessage.ServiceId}超时,原因:{ex.Message}");
-                                await _healthCheckService.MarkTimeout(address, invokeMessage.ServiceId);
+                                // await _healthCheckService.MarkTimeout(address, invokeMessage.ServiceId);
                             }
                             throw;
                         }

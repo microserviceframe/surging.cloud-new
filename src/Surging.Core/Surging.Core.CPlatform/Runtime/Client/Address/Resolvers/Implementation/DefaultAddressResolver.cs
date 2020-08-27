@@ -23,34 +23,33 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
     {
         #region Field
 
-        private readonly IServiceRouteManager _serviceRouteManager;
+        private readonly IServiceRouteProvider _serviceRouteProvider;
         private readonly ILogger<DefaultAddressResolver> _logger;
         private readonly IHealthCheckService _healthCheckService;
         private readonly CPlatformContainer _container;
         private readonly ConcurrentDictionary<string, IAddressSelector> _addressSelectors=new
             ConcurrentDictionary<string, IAddressSelector>();
         private readonly IServiceCommandProvider _commandProvider;
-        private readonly ConcurrentDictionary<string, ServiceRoute> _concurrent =
-  new ConcurrentDictionary<string, ServiceRoute>();
         private readonly IServiceHeartbeatManager _serviceHeartbeatManager;
+
         #endregion Field
 
         #region Constructor
 
-        public DefaultAddressResolver(IServiceCommandProvider commandProvider, IServiceRouteManager serviceRouteManager, ILogger<DefaultAddressResolver> logger, CPlatformContainer container,
+        public DefaultAddressResolver(IServiceCommandProvider commandProvider,
+            ILogger<DefaultAddressResolver> logger,
+            CPlatformContainer container,
             IHealthCheckService healthCheckService,
-            IServiceHeartbeatManager serviceHeartbeatManager)
+            IServiceHeartbeatManager serviceHeartbeatManager, 
+            IServiceRouteProvider serviceRouteProvider)
         {
             _container = container;
-            _serviceRouteManager = serviceRouteManager;
             _logger = logger;
             LoadAddressSelectors();
             _commandProvider = commandProvider;
             _healthCheckService = healthCheckService;
             _serviceHeartbeatManager = serviceHeartbeatManager;
-            serviceRouteManager.Changed += ServiceRouteManager_Removed;
-            serviceRouteManager.Removed += ServiceRouteManager_Removed;
-            serviceRouteManager.Created += ServiceRouteManager_Add;
+            _serviceRouteProvider = serviceRouteProvider;
         }
 
         #endregion Constructor
@@ -76,91 +75,47 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.LogDebug($"准备为服务id：{serviceId}，解析可用地址。");
 
-            _concurrent.TryGetValue(serviceId, out ServiceRoute descriptor);
-            var descriptorIsFromCache = true;
-            if (descriptor == null || descriptor.Address == null || !descriptor.Address.Any())
+            var serviceRoute = await _serviceRouteProvider.Locate(serviceId);
+            if (serviceRoute == null)
             {
-                descriptor = await _serviceRouteManager.GetAsync(serviceId);
-                descriptorIsFromCache = false;
-                if (descriptor == null)
-                {
-                    throw new CPlatformException($"通过{serviceId}获取服务路由失败,请检查服务集群信息");
-                }
-            }   
-            var address = await ResolverAddressFormDescriptor(serviceId,descriptor);
-
-            if (!address.Any())
-            {
-                if (descriptorIsFromCache) 
-                {
-                    descriptor = await _serviceRouteManager.GetAsync(serviceId);
-                    address = await ResolverAddressFormDescriptor(serviceId, descriptor);
-                }
-                if (!address.Any()) 
-                {
-                    if (_logger.IsEnabled(LogLevel.Warning))
-                        _logger.LogWarning($"根据服务id：{serviceId}，找不到可用的地址。");
-                    _concurrent.TryRemove(serviceId, out ServiceRoute serviceRoute);
-                    return null;
-                }
+                if (_logger.IsEnabled(LogLevel.Warning))
+                    _logger.LogWarning($"根据服务id：{serviceId}，找不到相关服务信息。");
+                return null;
             }
-
-            if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation($"根据服务id：{serviceId}，找到以下可用地址：{string.Join(",", address.Select(i => i.ToString()))}。");
-            var command = await _commandProvider.GetCommand(serviceId);
-            var addressSelector = _addressSelectors[command.ShuntStrategy.ToString()];
-
-            var selectAddr = await addressSelector.SelectAsync(new AddressSelectContext
-            {
-                Descriptor = descriptor.ServiceDescriptor,
-                Address = address,
-                Item = item
-            });
-            return selectAddr;
-        }
-
-        private async Task<List<AddressModel>> ResolverAddressFormDescriptor(string serviceId, ServiceRoute descriptor)
-        {
-            var address = new List<AddressModel>();
-            _concurrent.AddOrUpdate(serviceId, descriptor,(k,d) => descriptor);
             _serviceHeartbeatManager.AddWhitelist(serviceId);
-
-            foreach (var addressModel in descriptor.Address)
+            var address = new List<AddressModel>();
+            foreach (var addressModel in serviceRoute.Address)
             {
                 await _healthCheckService.Monitor(addressModel);
                 var isHealth = await _healthCheckService.IsHealth(addressModel);
                 if (!isHealth)
                 {
-                    _logger.LogInformation($"服务地址：{addressModel.ToString()}处于不健康状态。");
                     continue;
                 }
-                else
-                {
-                    address.Add(addressModel);
-                }
-
+                address.Add(addressModel);
             }
 
-            return address;
-        }
+            if (!address.Any())
+            {
+                if (_logger.IsEnabled(LogLevel.Warning))
+                    _logger.LogWarning($"根据服务id：{serviceId}，找不到可用的地址。");
+                return null;
+            }
 
-        private static string GetCacheKey(ServiceDescriptor descriptor)
-        {
-            return descriptor.Id;
-        }
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation($"根据服务id：{serviceId}，找到以下可用地址：{string.Join(",", address.Select(i => i.ToString()))}。");
+            var vtCommand = _commandProvider.GetCommand(serviceId);
+            var command = vtCommand.IsCompletedSuccessfully ? vtCommand.Result : await vtCommand;
+            var addressSelector = _addressSelectors[command.ShuntStrategy.ToString()];
 
-        private void ServiceRouteManager_Removed(object sender, ServiceRouteEventArgs e)
-        {
-            var key = GetCacheKey(e.Route.ServiceDescriptor);
-            ServiceRoute value;
-            _concurrent.TryRemove(key, out value);
-        }
-
-        private void ServiceRouteManager_Add(object sender, ServiceRouteEventArgs e)
-        {
-            var key = GetCacheKey(e.Route.ServiceDescriptor);
-            _concurrent.GetOrAdd(key, e.Route);
-        }
+            var selectAddress = await addressSelector.SelectAsync(new AddressSelectContext
+            {
+                Descriptor = serviceRoute.ServiceDescriptor,
+                Address = address,
+                Item = item
+            });
+            return selectAddress;
+        }  
 
         private void LoadAddressSelectors()
         {

@@ -44,12 +44,13 @@ namespace Surging.Core.Consul.Internal.Implementation
             var address = new List<AddressModel>();
             foreach (var addressModel in _config.Addresses)
             {
-                _healthCheckService.Monitor(addressModel);
-                var task = _healthCheckService.IsHealth(addressModel);
-                if (!(task.IsCompletedSuccessfully ? task.Result : await task))
-                {
-                    continue;
-                }
+                //await _healthCheckService.Monitor(addressModel);
+                //var isHealth = await _healthCheckService.IsHealth(addressModel);
+                //if (!isHealth)
+                //{
+                //    _logger.LogWarning($"服务注册中心地址{addressModel.ToString()}不健康。");
+                //    continue;
+                //}
                 address.Add(addressModel);
             }
             if (address.Count == 0)
@@ -82,27 +83,31 @@ namespace Surging.Core.Consul.Internal.Implementation
             foreach (var address in _config.Addresses)
             {
                 var ipAddress = address as IpAddressModel;
-                if (await _healthCheckService.IsHealth(address))
-                {
-                    result.Add(_consulClients.GetOrAdd(ipAddress, new ConsulClient(config =>
-                    {
-                        config.Address = new Uri($"http://{ipAddress.Ip}:{ipAddress.Port}");
-                    }, null, h => { h.UseProxy = false; h.Proxy = null; })));
+                //if (await _healthCheckService.IsHealth(address))
+                //{
+                //    result.Add(_consulClients.GetOrAdd(ipAddress, new ConsulClient(config =>
+                //    {
+                //        config.Address = new Uri($"http://{ipAddress.Ip}:{ipAddress.Port}");
+                //    }, null, h => { h.UseProxy = false; h.Proxy = null; })));
 
-                }
+                //}
+                result.Add(_consulClients.GetOrAdd(ipAddress, new ConsulClient(config =>
+                {
+                    config.Address = new Uri($"http://{ipAddress.Ip}:{ipAddress.Port}");
+                }, null, h => { h.UseProxy = false; h.Proxy = null; })));
             }
             return result;
         }
 
-        public async Task Check()
-        {
-            foreach (var address in _config.Addresses)
-            {
-                if (!await _healthCheckService.IsHealth(address))
-                {
-                    throw new RegisterConnectionException(string.Format("注册中心{0}连接异常，请联系管理员", address.ToString()));
-                }
-            }
-        }
+        //public async Task Check()
+        //{
+        //    foreach (var address in _config.Addresses)
+        //    {
+        //        if (!await _healthCheckService.IsHealth(address))
+        //        {
+        //            throw new RegisterConnectionException(string.Format("注册中心{0}连接异常，请联系管理员", address.ToString()));
+        //        }
+        //    }
+        //}
     }
 }

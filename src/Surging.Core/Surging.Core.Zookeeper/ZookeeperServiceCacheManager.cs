@@ -271,6 +271,7 @@ namespace Surging.Core.Zookeeper
 
         private static bool DataEquals(IReadOnlyList<byte> data1, IReadOnlyList<byte> data2)
         {
+        
             if (data1.Count != data2.Count)
                 return false;
             for (var i = 0; i < data1.Count; i++)
@@ -285,12 +286,10 @@ namespace Surging.Core.Zookeeper
 
         private async Task<ServiceCache> GetCache(byte[] data)
         {
-            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
-                _logger.LogDebug($"准备转换服务缓存，配置内容：{Encoding.UTF8.GetString(data)}。");
-
             if (data == null)
                 return null;
-
+            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+                _logger.LogDebug($"准备转换服务缓存，配置内容：{Encoding.UTF8.GetString(data)}。");
             var descriptor = _serializer.Deserialize<byte[], ServiceCacheDescriptor>(data);
             return (await _serviceCacheFactory.CreateServiceCachesAsync(new[] { descriptor })).First();
         }
@@ -334,20 +333,31 @@ namespace Surging.Core.Zookeeper
                 return;
 
             var newCache = await GetCache(newData);
-            //得到旧的缓存。
-            var oldCache = _serviceCaches.FirstOrDefault(i => i.CacheDescriptor.Id == newCache.CacheDescriptor.Id);
-
-            lock (_serviceCaches)
+            if (_serviceCaches != null && _serviceCaches.Any())
             {
-                //删除旧缓存，并添加上新的缓存。
-                _serviceCaches =
-                    _serviceCaches
-                        .Where(i => i.CacheDescriptor.Id != newCache.CacheDescriptor.Id)
-                        .Concat(new[] { newCache }).ToArray();
+                //得到旧的缓存。
+                var oldCache = _serviceCaches.FirstOrDefault(i => i.CacheDescriptor.Id == newCache.CacheDescriptor.Id);
+
+                lock (_serviceCaches)
+                {
+                    //删除旧缓存，并添加上新的缓存。
+                    _serviceCaches =
+                        _serviceCaches
+                            .Where(i => i.CacheDescriptor.Id != newCache.CacheDescriptor.Id)
+                            .Concat(new[] { newCache }).ToArray();
+                }//触发缓存变更事件。
+
+                if (newCache == null)
+                    //触发删除事件。
+                    OnRemoved(new ServiceCacheEventArgs(oldCache));
+
+                else if (oldCache == null)
+                    OnCreated(new ServiceCacheEventArgs(newCache));
+
+                else
+                    //触发缓存变更事件。
+                    OnChanged(new ServiceCacheChangedEventArgs(newCache, oldCache));
             }
-            
-            //触发缓存变更事件。
-             OnChanged(new ServiceCacheChangedEventArgs(newCache, oldCache));
         }
 
         private async Task ChildrenChange(string[] oldChildrens, string[] newChildrens)

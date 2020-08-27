@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Linq;
+using Surging.Core.ProxyGenerator.Interceptors.Implementation.Metadatas;
 
 namespace Surging.Core.Caching.RedisCache
 {

@@ -62,11 +62,13 @@ namespace Surging.Core.CPlatform.Routing
         /// <param name="serviceId"></param>
         /// <returns></returns>
         Task RemveAddressAsync(IEnumerable<AddressModel> Address, string serviceId);
+
         /// <summary>
         /// 清空所有的服务路由。
         /// </summary>
         /// <returns>一个任务。</returns>
         Task ClearAsync();
+        
     }
 
     /// <summary>

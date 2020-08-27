@@ -1,6 +1,7 @@
 ﻿using Surging.Core.Caching.Interfaces;
 using Surging.Core.Caching.RedisCache;
 using Surging.Core.CPlatform.Cache;
+using Surging.Core.ProxyGenerator.Interceptors.Implementation.Metadatas;
 using System;
 using System.Collections.Generic;
 using System.Linq;

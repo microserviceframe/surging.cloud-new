@@ -67,5 +67,7 @@ namespace Surging.Core.CPlatform.Configurations
         public int HealthCheckTimeout { get; set; } = 1000;
 
         public string HostName { get; set; } = "";
+
+        public bool IsGateway { get; set; } = false;
     }
 }

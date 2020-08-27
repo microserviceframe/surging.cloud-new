@@ -193,25 +193,24 @@ namespace Surging.Core.Zookeeper
 
         }
 
-        public override async Task RemveAddressAsync(IEnumerable<AddressModel> Address)
+        public override async Task RemveAddressAsync(IEnumerable<AddressModel> address)
         {
-            var routes = await GetRoutesAsync(true);
+            var routes = (await GetRoutesAsync(true)).Where(route => route.Address.Any(p => address.Any(q => q.ToString() == p.ToString())));
             foreach (var route in routes)
             {
-                route.Address = route.Address.Except(Address).ToList();
+                await RemveAddressAsync(address, route);
             }
-            await base.SetRoutesAsync(routes);
         }
 
-        public override async Task RemveAddressAsync(IEnumerable<AddressModel> Address, string serviceId)
+        public override async Task RemveAddressAsync(IEnumerable<AddressModel> address, string serviceId)
         {
             var routes = await GetRoutesAsync(true);
             var oldRoute = routes.FirstOrDefault(p => p.ServiceDescriptor.Id == serviceId);
             if (oldRoute != null)
             {
-                var newRoute = (ServiceRoute)_stringSerializer.Deserialize(_stringSerializer.Serialize(oldRoute), typeof(ServiceRoute));
-                newRoute.Address = newRoute.Address.Except(Address).ToList();
-                _logger.LogInformation($"地址为{Address.Select(p => p.ToString()).JoinAsString(",")}的服务当前不健康,将会从服务{serviceId}列表中移除");
+                var newRoute = oldRoute.Copy(); //(ServiceRoute)_stringSerializer.Deserialize(_stringSerializer.Serialize(oldRoute), typeof(ServiceRoute));
+                newRoute.Address = newRoute.Address.Except(address).ToList();
+                _logger.LogWarning($"地址为{address.Select(p => p.ToString()).JoinAsString(",")}将会从服务{serviceId}列表中移除");
                 var routeDescriptor = new ServiceRouteDescriptor()
                 {
                     AddressDescriptors = newRoute.Address?.Select(address => new ServiceAddressDescriptor
@@ -222,11 +221,26 @@ namespace Surging.Core.Zookeeper
                 };
 
                 await SetRouteAsync(routeDescriptor);
-                OnChanged(new ServiceRouteChangedEventArgs(newRoute, oldRoute));
             }
 
         }
 
+        protected override async Task RemveAddressAsync(IEnumerable<AddressModel> address, ServiceRoute route) 
+        {
+            var newRoute = route.Copy(); //(ServiceRoute)_stringSerializer.Deserialize(_stringSerializer.Serialize(oldRoute), typeof(ServiceRoute));
+            newRoute.Address = newRoute.Address.Except(address).ToList();
+            _logger.LogWarning($"地址为{address.Select(p => p.ToString()).JoinAsString(",")}将会从服务{route.ServiceDescriptor.Id}列表中移除");
+            var routeDescriptor = new ServiceRouteDescriptor()
+            {
+                AddressDescriptors = newRoute.Address?.Select(address => new ServiceAddressDescriptor
+                {
+                    Value = _stringSerializer.Serialize(address)
+                }) ?? Enumerable.Empty<ServiceAddressDescriptor>(),
+                ServiceDescriptor = newRoute.ServiceDescriptor
+            };
+
+            await SetRouteAsync(routeDescriptor);
+        }
         public override async Task<ServiceRoute> GetRouteByPathAsync(string path)
         {
             var route = await GetRouteByPathFormCacheAsync(path);
@@ -288,14 +302,14 @@ namespace Surging.Core.Zookeeper
             {
                 foreach (var route in routes)
                 {
-                    var serviceRoute = serviceRoutes.Where(p => p.ServiceDescriptor.Id == route.ServiceDescriptor.Id).FirstOrDefault();
+                    var serviceRoute = serviceRoutes.FirstOrDefault(p => p.ServiceDescriptor.Id == route.ServiceDescriptor.Id);
                     if (serviceRoute != null)
                     {
                         var addresses = serviceRoute.Address.Concat(route.Address).Distinct();
                         var newAddresses = new List<AddressModel>();
                         foreach (var address in addresses)
                         {
-                            if (!newAddresses.Any(p => p.ToString() == address.ToString()))
+                            if (!newAddresses.Any(p => p.Equals(address)))
                             {
                                 newAddresses.Add(address);
                             }
@@ -313,7 +327,6 @@ namespace Surging.Core.Zookeeper
             var path = _configInfo.RoutePath;
             if (!path.EndsWith("/"))
                 path += "/";
-            routes = routes.ToArray();
             var zooKeepers = await _zookeeperClientProvider.GetZooKeeperClients();
             foreach (var zooKeeper in zooKeepers)
             {
@@ -321,24 +334,24 @@ namespace Surging.Core.Zookeeper
                 {
                     var oldRouteIds = _routes.Select(i => i.ServiceDescriptor.Id).ToArray();
                     var newRouteIds = routes.Select(i => i.ServiceDescriptor.Id).ToArray();
-                    var deletedRouteIds = oldRouteIds.Except(newRouteIds).ToArray();
-                    foreach (var deletedRouteId in deletedRouteIds)
+                    var removeRouteIds = oldRouteIds.Except(newRouteIds).ToArray();
+                    foreach (var removeRouteId in removeRouteIds)
                     {
-                        var addresses = _routes.Where(p => p.ServiceDescriptor.Id == deletedRouteId).Select(p => p.Address).FirstOrDefault();
-                        if (addresses != null && addresses.Any(p=> p.ToString() == hostAddr.ToString())) 
+                        var removeRoute = _routes.FirstOrDefault(p => p.ServiceDescriptor.Id == removeRouteId);
+                        if (removeRoute != null && removeRoute.Address!= null && removeRoute.Address.Any(p=> p.Equals(hostAddr))) 
                         {
-                            try 
+                            try
                             {
-                                var nodePath = $"{path}{deletedRouteId}";
-                                if (await zooKeeper.ExistsAsync(nodePath))
-                                {
-                                    await zooKeeper.DeleteAsync(nodePath);
-                                }
-                            } catch (NoNodeException ex) 
+                                removeRoute.Address = removeRoute.Address.Where(p => !p.Equals(hostAddr)).ToList();
+                                var nodePath = $"{path}{removeRouteId}";
+                                await SetRouteAsync(removeRoute);
+                            }
+                            catch (NoNodeException ex)
                             {
                                 _logger.LogWarning(ex.Message);
                             }
-                            
+                          
+
                         }
                         
                     }

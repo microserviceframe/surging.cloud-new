@@ -14,10 +14,10 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
 {
     public class DefaultHealthCheckService : IHealthCheckService
     {
-        private readonly int _timeout = 60000;
+        private readonly int _timeout = 3000;
         private readonly Timer _timer;
-        private readonly ConcurrentDictionary<ValueTuple<string, int>, MonitorEntry> _dictionary =
-    new ConcurrentDictionary<ValueTuple<string, int>, MonitorEntry>();
+        private readonly ConcurrentDictionary<Tuple<string, int>, MonitorEntry> _dictionary =
+    new ConcurrentDictionary<Tuple<string, int>, MonitorEntry>();
 
         #region Implementation of IHealthCheckService
         public DefaultHealthCheckService()
@@ -30,18 +30,23 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
             }, null, timeSpan, timeSpan);
         }
 
-        public async ValueTask<bool> IsHealth(AddressModel address)
+        public async Task<bool> IsHealth(AddressModel address)
         {
             var ipAddress = address as IpAddressModel;
             MonitorEntry entry;
-            var isHealth = !_dictionary.TryGetValue(new ValueTuple<string, int>(ipAddress.Ip, ipAddress.Port), out entry) ? await Check(address, _timeout) : entry.Health;
+            var isHealth = !_dictionary.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out entry) ? await Check(address, _timeout) : entry.Health;
             return isHealth;
         }
 
-        public void Monitor(AddressModel address)
+        public async Task Monitor(AddressModel address)
         {
             var ipAddress = address as IpAddressModel;
-            _dictionary.GetOrAdd(new ValueTuple<string, int>(ipAddress.Ip, ipAddress.Port), k => new MonitorEntry(address));
+            if (!_dictionary.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry monitorEntry))
+            {
+                monitorEntry = new MonitorEntry(ipAddress);
+                await Check(monitorEntry.Address, _timeout);
+                _dictionary.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), monitorEntry);
+            }
         }
 
         #region Implementation of IDisposable
@@ -58,16 +63,16 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
 
         private async Task<bool> Check(AddressModel address, int timeout)
         {
-            var ipEndpoint = address.CreateEndPoint() as IPEndPoint;
-            return SocketCheck.TestConnection(ipEndpoint.Address, ipEndpoint.Port, timeout);
+            var ipAddress = address as IpAddressModel;
+            return SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout);
         }
 
         private async Task Check(IEnumerable<MonitorEntry> entrys, int timeout)
         {
             foreach (var entry in entrys)
             {
-                var ipEndpoint = entry.EndPoint as IPEndPoint;
-                if (SocketCheck.TestConnection(ipEndpoint.Address, ipEndpoint.Port, timeout))
+                var ipAddress = entry.Address as IpAddressModel;
+                if (SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout))
                 {
                     entry.UnhealthyTimes = 0;
                     entry.Health = true;
@@ -86,16 +91,16 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
 
         protected class MonitorEntry
         {
-            public MonitorEntry(AddressModel addressModel, bool health = true)
+            public MonitorEntry(AddressModel address, bool health = true)
             {
-                EndPoint = addressModel.CreateEndPoint();
+                Address = address;
                 Health = health;
 
             }
 
             public int UnhealthyTimes { get; set; }
 
-            public EndPoint EndPoint { get; set; }
+            public AddressModel Address { get; set; }
             public bool Health { get; set; }
         }
 

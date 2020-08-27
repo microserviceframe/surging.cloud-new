@@ -280,28 +280,32 @@ namespace Surging.Core.Consul
                 return;
 
             var newCache = await GetCache(newData);
-            //得到旧的缓存。
-            var oldCache = _serviceCaches.FirstOrDefault(i => i.CacheDescriptor.Id == newCache.CacheDescriptor.Id);
-
-            lock (_serviceCaches)
+            if (_serviceCaches != null && _serviceCaches.Any()) 
             {
-                //删除旧缓存，并添加上新的缓存。
-                _serviceCaches =
-                    _serviceCaches
-                        .Where(i => i.CacheDescriptor.Id != newCache.CacheDescriptor.Id)
-                        .Concat(new[] { newCache }).ToArray();
+                //得到旧的缓存。
+                var oldCache = _serviceCaches.FirstOrDefault(i => i.CacheDescriptor.Id == newCache.CacheDescriptor.Id);
+
+                lock (_serviceCaches)
+                {
+                    //删除旧缓存，并添加上新的缓存。
+                    _serviceCaches =
+                        _serviceCaches
+                            .Where(i => i.CacheDescriptor.Id != newCache.CacheDescriptor.Id)
+                            .Concat(new[] { newCache }).ToArray();
+                }
+
+                if (newCache == null)
+                    //触发删除事件。
+                    OnRemoved(new ServiceCacheEventArgs(oldCache));
+
+                else if (oldCache == null)
+                    OnCreated(new ServiceCacheEventArgs(newCache));
+
+                else
+                    //触发缓存变更事件。
+                    OnChanged(new ServiceCacheChangedEventArgs(newCache, oldCache));
             }
-
-            if (newCache == null)
-                //触发删除事件。
-                OnRemoved(new ServiceCacheEventArgs(oldCache));
-
-            else if (oldCache == null)
-                OnCreated(new ServiceCacheEventArgs(newCache));
-
-            else 
-            //触发缓存变更事件。
-            OnChanged(new ServiceCacheChangedEventArgs(newCache, oldCache));
+                
         }
 
         private async Task ChildrenChange(string[] oldChildrens, string[] newChildrens)

@@ -13,6 +13,6 @@ namespace Surging.Core.Consul.Internal
 
         Task<IEnumerable<ConsulClient>> GetClients();
 
-        Task Check();
+        //Task Check();
     }
 }
