@@ -14,7 +14,7 @@ namespace Surging.Core.CPlatform.Runtime.Session
         {
             get
             {
-                var userId = RpcContext.GetContext().GetAttachment("userId");
+                var userId = RpcContext.GetContext().GetAttachment(ClaimTypes.UserId);
                 if (userId != null) 
                 {
                     return Convert.ToInt64(userId);
@@ -27,7 +27,7 @@ namespace Surging.Core.CPlatform.Runtime.Session
         {
             get
             {
-                var userName = RpcContext.GetContext().GetAttachment("userName");
+                var userName = RpcContext.GetContext().GetAttachment(ClaimTypes.UserName);
                 if (userName != null) 
                 {
                     return userName.ToString();

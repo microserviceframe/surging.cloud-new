@@ -98,13 +98,17 @@ namespace Surging.Modules.Common.Domain
             await Task.CompletedTask;
         }
 
-        public Task<UserModel> Authentication(AuthenticationRequestData requestData)
+        public Task<IDictionary<string,object>> Authentication(AuthenticationRequestData requestData)
         {
             if (requestData.UserName == "admin" && requestData.Password == "admin")
             {
-                return Task.FromResult(new UserModel());
+                IDictionary<string, object> payload = new Dictionary<string, object>();
+                payload.Add(ClaimTypes.UserId, 1);
+                payload.Add(ClaimTypes.UserName, "admin");
+
+                return Task.FromResult(payload);
             }
-            return Task.FromResult<UserModel>(null);
+            return Task.FromResult<IDictionary<string, object>>(null);
         }
 
         public Task<IdentityUser> Save(IdentityUser requestData)

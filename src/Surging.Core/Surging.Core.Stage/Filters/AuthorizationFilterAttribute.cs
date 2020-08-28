@@ -14,7 +14,7 @@ using System.Collections.Generic;
 using Surging.Core.CPlatform.Routing;
 using System.Linq;
 using System.Security.Claims;
-
+using SurgingClaimTypes = Surging.Core.CPlatform.ClaimTypes;
 namespace Surging.Core.Stage.Filters
 {
     public class AuthorizationFilterAttribute : IAuthorizationFilter
@@ -52,29 +52,32 @@ namespace Surging.Core.Stage.Filters
 
                         if (token.Any() && token.Count >= 1)
                         {
-                            var isSuccess = await _authorizationServerProvider.ValidateClientAuthentication(token);
-                            if (!isSuccess && filterContext.Route.ServiceDescriptor.EnableAuthorization())
+                            var validateResult = _authorizationServerProvider.ValidateClientAuthentication(token);
+                            if (filterContext.Route.ServiceDescriptor.EnableAuthorization() && validateResult != ValidateResult.Success) 
                             {
-                                filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = "Token凭证不合法或登录超时" };
+                                if (validateResult == ValidateResult.SignatureError) 
+                                {
+                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = "token凭证不合法,请重新登录" };
+                                    return;
+                                }
+                                if (validateResult == ValidateResult.TokenExpired)
+                                {
+                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.TokenExpired, Message = "登录超时,请重新登录" };
+                                    return;
+                                }
                             }
 
-                            dynamic payload = _authorizationServerProvider.GetPayload(token);
-                            //RpcContext.GetContext().SetAttachment(Surging.Core.CPlatform.AppConfig.PayloadKey, payload);
-
-                            var userId = payload.userId ?? payload.UserId;
-                            var userName = payload.userName ?? payload.UserName;
+                            var payload = _authorizationServerProvider.GetPayload(token);
+    
                             var claimsIdentity = new ClaimsIdentity();
-                            if (userId != null) 
+                            
+                            foreach (var item in payload) 
                             {
-                                claimsIdentity.AddClaim(new Claim("userId",userId.ToString()));
-                            }
-                            if (userName != null) 
-                            {
-                                claimsIdentity.AddClaim(new Claim("userName", userName.ToString()));
+                                claimsIdentity.AddClaim(new Claim(item.Key, item.Value.ToString()));
                             }
                             filterContext.Context.User = new ClaimsPrincipal(claimsIdentity);
 
-                             if (!gatewayAppConfig.AuthorizationRoutePath.IsNullOrEmpty() && filterContext.Route.ServiceDescriptor.EnableAuthorization())
+                            if (!gatewayAppConfig.AuthorizationRoutePath.IsNullOrEmpty() && filterContext.Route.ServiceDescriptor.EnableAuthorization())
                             {
                                 var rpcParams = new Dictionary<string, object>() {
                                         {  "serviceId", filterContext.Route.ServiceDescriptor.Id }
@@ -90,6 +93,7 @@ namespace Surging.Core.Stage.Filters
                                 {
                                     var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty() ? filterContext.Route.ServiceDescriptor.RoutePath : filterContext.Route.ServiceDescriptor.GroupName();
                                     filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.RequestError, Message = $"没有请求{actionName}的权限" };
+                                    return;
                                 }
                             }
                         }
@@ -98,6 +102,11 @@ namespace Surging.Core.Stage.Filters
                             if (filterContext.Route.ServiceDescriptor.EnableAuthorization())
                             {
                                 filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = $"请先登录系统" };
+                                return;
+                            }
+                            else 
+                            {
+                                filterContext.Context.User = null;
                             }
                         }
 
@@ -113,7 +122,7 @@ namespace Surging.Core.Stage.Filters
                 }
             }
 
-            if (String.Compare(filterContext.Path.ToLower(), gatewayAppConfig.TokenEndpointPath, true) == 0)
+            if (string.Compare(filterContext.Path.ToLower(), gatewayAppConfig.TokenEndpointPath, true) == 0)
             {
                 filterContext.Context.Items.Add("path", gatewayAppConfig.AuthenticationRoutePath);
             }           

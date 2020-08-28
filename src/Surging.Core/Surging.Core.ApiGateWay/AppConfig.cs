@@ -210,5 +210,38 @@ namespace Surging.Core.ApiGateWay
                 _terminals = value;
             }
         }
+
+        private static string _tokenSecret;
+
+        public static string TokenSecret
+        {
+            get
+            {
+                if (Configuration == null)
+                    return string.Empty;
+                return Configuration["TokenSecret"] ?? _tokenSecret;
+
+
+            }
+            set
+            {
+                _tokenSecret = value;
+            }
+        }
+        private static int _defaultExpired = 72;
+        public static int DefaultExpired {
+            get
+            {
+                if (Configuration == null)
+                    return _defaultExpired;
+                return Configuration["DefaultExpired"]?.To<int>() ?? _defaultExpired;
+
+
+            }
+            set
+            {
+                _defaultExpired = value;
+            }
+        }
     }
 }

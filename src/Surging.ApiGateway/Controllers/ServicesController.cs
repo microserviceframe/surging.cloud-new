@@ -71,7 +71,7 @@ namespace Surging.ApiGateway.Controllers
                 {
                     if (path == GateWayAppConfig.AuthorizationRoutePath)
                     {
-                        var token = await _authorizationServerProvider.GenerateTokenCredential(model);
+                        var token = await _authorizationServerProvider.IssueToken(model);
                         if (token != null)
                         {
                             result = ServiceResult<object>.Create(true, token);
@@ -143,7 +143,7 @@ namespace Surging.ApiGateway.Controllers
             var author = HttpContext.Request.Headers["Authorization"];
             if (author.Count > 0)
             {
-                isSuccess =await _authorizationServerProvider.ValidateClientAuthentication(author);
+                isSuccess = _authorizationServerProvider.ValidateClientAuthentication(author) == ValidateResult.Success;
                 if (!isSuccess)
                 {
                     result = new ServiceResult<object> { IsSucceed = false, StatusCode = Surging.Core.CPlatform.Exceptions.StatusCode.UnAuthentication, Message = "Invalid authentication credentials" };

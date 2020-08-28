@@ -1,5 +1,6 @@
 ﻿
 using Surging.Core.Common;
+using Surging.Core.CPlatform;
 using Surging.Core.CPlatform.EventBus.Events;
 using Surging.Core.CPlatform.EventBus.Implementation;
 using Surging.Core.CPlatform.Ioc;
@@ -103,13 +104,17 @@ namespace Surging.Modules.Common.Domain
             await Task.CompletedTask;
         }
 
-        public Task<UserModel> Authentication(AuthenticationRequestData requestData)
+        public Task<IDictionary<string,object>> Authentication(AuthenticationRequestData requestData)
         {
             if (requestData.UserName == "admin" && requestData.Password == "admin")
             {
-                return Task.FromResult(new UserModel() { UserId = 22, Name = "admin" });
+                IDictionary<string, object> payload = new Dictionary<string,object>();
+                payload.Add(ClaimTypes.UserId, 1);
+                payload.Add(ClaimTypes.UserName, "admin");
+
+                return Task.FromResult(payload);
             }
-            return Task.FromResult<UserModel>(null);
+            return Task.FromResult<IDictionary<string, object>>(null);
         }
 
         public Task<IdentityUser> Save(IdentityUser requestData)

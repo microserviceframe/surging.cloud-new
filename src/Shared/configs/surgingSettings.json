@@ -60,7 +60,9 @@
       "TokenEndpointPath": "api/oauth2/token",
       "CacheMode": "ddlCache.Redis", //MemoryCache or  gateway.Redis save token
       "IsUsingTerminal": false,
-      "Terminals": "dashboard,web,iosapp,androidapp"
+      "Terminals": "dashboard,web,iosapp,androidapp",
+      "TokenSecret": "${TokenSecret}|PkRXhXcpfeSGhofydo9bm5XCx5UqCEhk",
+      "DefaultExpired": "${DefaultExpired}|24"
     },
     "AccessPolicy": {
       "Origins": [ "*" ],

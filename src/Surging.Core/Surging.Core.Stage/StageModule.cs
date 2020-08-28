@@ -68,6 +68,8 @@ namespace Surging.Core.Stage
                 ApiGateWay.AppConfig.TokenEndpointPath = apiConfig.TokenEndpointPath;
                 ApiGateWay.AppConfig.IsUsingTerminal = apiConfig.IsUsingTerminal;
                 ApiGateWay.AppConfig.Terminals = apiConfig.Terminals;
+                ApiGateWay.AppConfig.TokenSecret = apiConfig.TokenSecret;
+                ApiGateWay.AppConfig.DefaultExpired = apiConfig.DefaultExpired;
             }
             context.Services.AddMvc().AddJsonOptions(options => {
                 options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";

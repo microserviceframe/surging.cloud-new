@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using Surging.Core.CPlatform;
 using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Messages;
 using Surging.Core.CPlatform.Routing;
@@ -145,12 +146,27 @@ namespace Surging.Core.KestrelHttpServer
             var httpMessageAttachments = RpcContext.GetContext().GetContextParameters();
             if (context.User.Claims != null && context.User.Claims.Any())
             {
-                foreach (var claims in context.User.Claims) 
+                foreach (var claims in context.User.Claims)
                 {
-                    httpMessageAttachments.Add(claims.Type, claims.Value);
+                    httpMessageAttachments[claims.Type] = claims.Value;
                 }
             }
+            else 
+            {
+                RemoveClaims(httpMessageAttachments,ClaimTypes.UserId);
+                RemoveClaims(httpMessageAttachments, ClaimTypes.UserName);
+                RemoveClaims(httpMessageAttachments, ClaimTypes.Phone);
+                RemoveClaims(httpMessageAttachments, ClaimTypes.Email);
+            }
             return httpMessageAttachments;
+        }
+
+        private void RemoveClaims(IDictionary<string, object> httpMessageAttachments,string claimType)
+        {
+            if (httpMessageAttachments.ContainsKey(claimType)) 
+            {
+                httpMessageAttachments.Remove(claimType);
+            }
         }
 
         public async Task<bool> OnActionExecuting(ActionExecutingContext filterContext, IMessageSender sender, string messageId, IEnumerable<IActionFilter> filters)

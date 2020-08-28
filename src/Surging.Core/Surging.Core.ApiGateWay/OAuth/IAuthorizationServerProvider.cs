@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,14 +8,12 @@ namespace Surging.Core.ApiGateWay.OAuth
 {
     public interface IAuthorizationServerProvider
     {
-        Task<string> GenerateTokenCredential(Dictionary<string, object> parameters);
+        Task<string> IssueToken(Dictionary<string, object> parameters);
 
-        Task<bool> ValidateClientAuthentication(string token);
+        string RefreshToken(string token);
 
-        Task<bool> RefreshToken(string token);
+        IDictionary<string, object> GetPayload(string token);
 
-        string GetPayloadString(string token);
-
-        object GetPayload(string token);
+        ValidateResult ValidateClientAuthentication(string token);
     }
 }

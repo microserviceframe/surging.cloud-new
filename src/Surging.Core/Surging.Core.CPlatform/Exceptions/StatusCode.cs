@@ -50,6 +50,8 @@
         /// </summary>
         UnAuthentication = 401,
 
+        TokenExpired = 406,
+
         /// <summary>
         /// 未授权
         /// </summary>

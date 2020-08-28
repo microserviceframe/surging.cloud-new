@@ -57,7 +57,7 @@ namespace Surging.Core.Stage.Filters
                     //filterContext.Message.Parameters.Add("terminal", terminal);
                     RpcContext.GetContext().SetAttachment("x-terminal", terminal.ToString());
                 }
-                var token = await _authorizationServerProvider.GenerateTokenCredential(new Dictionary<string, object>(filterContext.Message.Parameters));
+                var token = await _authorizationServerProvider.IssueToken(new Dictionary<string, object>(filterContext.Message.Parameters));
                 if (token != null)
                 {
                     filterContext.Result = HttpResultMessage<object>.Create(true, token);

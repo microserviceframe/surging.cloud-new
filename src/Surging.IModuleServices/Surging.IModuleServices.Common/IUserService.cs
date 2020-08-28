@@ -30,7 +30,7 @@ namespace Surging.IModuleServices.Common
         /// <param name="requestData">请求参数</param>
         /// <returns>用户模型</returns>
         [Service(EnableAuthorization = false)]
-        Task<UserModel> Authentication(AuthenticationRequestData requestData);
+        Task<IDictionary<string, object>> Authentication(AuthenticationRequestData requestData);
 
         /// <summary>
         /// 获取用户姓名

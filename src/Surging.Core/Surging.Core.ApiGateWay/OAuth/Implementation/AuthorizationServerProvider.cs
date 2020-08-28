@@ -12,6 +12,13 @@ using Surging.Core.Caching;
 using System.Text.RegularExpressions;
 using Surging.Core.CPlatform.Cache;
 using Surging.Core.CPlatform.Exceptions;
+using JWT.Builder;
+using JWT.Algorithms;
+using System.Security.Claims;
+using ClaimTypes = Surging.Core.CPlatform.ClaimTypes;
+using JWT;
+using Surging.Core.CPlatform.Utilities;
+using JWT.Exceptions;
 
 namespace Surging.Core.ApiGateWay.OAuth
 {
@@ -34,98 +41,100 @@ namespace Surging.Core.ApiGateWay.OAuth
             _cacheProvider = CacheContainer.GetService<ICacheProvider>(AppConfig.CacheMode);
         }
 
-        public async Task<string> GenerateTokenCredential(Dictionary<string, object> parameters)
+        public async Task<string> IssueToken(Dictionary<string, object> parameters)
         {
             string result = null;
-            var payload = await _serviceProxyProvider.Invoke<object>(parameters,AppConfig.AuthenticationRoutePath, AppConfig.AuthenticationServiceKey);
+            var payload = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(parameters,AppConfig.AuthenticationRoutePath, AppConfig.AuthenticationServiceKey);
             if (payload !=null && !payload.Equals("null") )
             {
-                var jwtHeader = JsonConvert.SerializeObject(new JWTSecureDataHeader() { TimeStamp = DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss") });
-                var base64Payload = ConverBase64String(JsonConvert.SerializeObject(payload));
-                var encodedString = $"{ConverBase64String(jwtHeader)}.{base64Payload}";
-                var route = await _serviceRouteProvider.GetRouteByPathOrRegexPath(AppConfig.AuthenticationRoutePath);
-                if (route == null) 
+                if (!payload.ContainsKey(ClaimTypes.UserId) || !payload.ContainsKey(ClaimTypes.UserName)) 
                 {
-                    throw new CPlatformException("Routing path not found", StatusCode.Http404EndpointStatusCode);
+                    throw new AuthException($"认证接口实现不正确,接口返回值必须包含{ClaimTypes.UserId}和{ClaimTypes.UserName}");
                 }
-                var signature = HMACSHA256(encodedString, route.ServiceDescriptor.Token);
-                result= $"{encodedString}.{signature}";
-                _cacheProvider.Add(base64Payload, result,AppConfig.AccessTokenExpireTimeSpan);
+                var jwtBuilder = GetJwtBuilder(AppConfig.TokenSecret);
+                var exp = AppConfig.DefaultExpired;
+                if (payload.ContainsKey(ClaimTypes.Expired)) 
+                {
+                    exp = payload[ClaimTypes.Expired].To<int>();
+                    payload.Remove(ClaimTypes.Expired);
+                }
+                jwtBuilder.AddClaim(ClaimTypes.Expired, DateTimeOffset.UtcNow.AddHours(exp).ToUnixTimeSeconds());
+                foreach (var para in payload) 
+                {
+                    jwtBuilder.AddClaim(para.Key, para.Value);
+                }
+                result = jwtBuilder.Encode();
             }
             return result;
         }
 
-        public string GetPayloadString(string token)
+        public IDictionary<string, object> GetPayload(string token)
         {
-            string  result = string.Empty;
-            var jwtToken = token.Split('.');
-            if (jwtToken.Length == 3)
-            {
-
-                result =  Encoding.UTF8.GetString(Convert.FromBase64String(jwtToken[1]));
-            }
-            return result;
+            var jwtBuilder = GetJwtBuilder(AppConfig.TokenSecret);
+            return jwtBuilder
+                .MustVerifySignature()
+                .Decode<IDictionary<string, object>>(token);
+           
         }
 
-        public async Task<bool> ValidateClientAuthentication(string token)
+        public string RefreshToken(string token)
         {
-            bool isSuccess = false;
-            var jwtToken = token.Split('.');
-            if (jwtToken.Length == 3)
+            var payload = GetPayloadDoNotVerifySignature(token);
+            var exp = AppConfig.DefaultExpired;
+            if (payload.ContainsKey(ClaimTypes.Expired)) 
             {
-                isSuccess = await _cacheProvider.GetAsync<string>(jwtToken[1]) == token;
+                exp = payload[ClaimTypes.Expired].To<int>();
             }
-            return isSuccess;
+            var jwtBuilder = GetJwtBuilder(AppConfig.TokenSecret);
+            jwtBuilder.AddClaim(ClaimTypes.Expired, DateTimeOffset.UtcNow.AddHours(exp).ToUnixTimeSeconds());
+            foreach (var para in payload)
+            {
+                jwtBuilder.AddClaim(para.Key, para.Value);
+            }
+            return jwtBuilder.Encode();
+
         }
 
-        public async Task<bool> RefreshToken(string token)
+        public ValidateResult ValidateClientAuthentication(string token)
         {
-            bool isSuccess = false;
-            var jwtToken = token.Split('.');
-            if (jwtToken.Length == 3)
+            try
             {
-                var  value = await _cacheProvider.GetAsync<string>(jwtToken[1]);
-                if (!string.IsNullOrEmpty(value))
-                {
-                    _cacheProvider.Add(jwtToken[1], value, AppConfig.AccessTokenExpireTimeSpan);
-                    isSuccess = true;
-                }
+                var jwtBuilder = GetJwtBuilder(AppConfig.TokenSecret);
+                jwtBuilder.MustVerifySignature()
+                .Decode<IDictionary<string, object>>(token);
+                return ValidateResult.Success;
             }
-            return isSuccess;
+            catch (TokenExpiredException)
+            {
+                return ValidateResult.TokenExpired;
+            }
+            catch (SignatureVerificationException) 
+            {
+                return ValidateResult.SignatureError;
+            }
+            
+
         }
 
-        private string ConverBase64String(string str)
+        private JwtBuilder GetJwtBuilder(string secret, IJwtAlgorithm algorithm = null) 
         {
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(str));
+            if (algorithm == null) 
+            {
+                algorithm = new HMACSHA256Algorithm();
+            }
+            return new JwtBuilder()
+                .WithAlgorithm(algorithm) 
+                .WithSecret(secret);
         }
 
-        private string HMACSHA256(string message, string secret)
+        private IDictionary<string, object> GetPayloadDoNotVerifySignature(string token)
         {
-            secret = secret ?? ""; 
-            byte[] keyByte = Encoding.UTF8.GetBytes(secret);
-            byte[] messageBytes = Encoding.UTF8.GetBytes(message);
-            using (var hmacsha256 = new HMACSHA256(keyByte))
-            {
-                byte[] hashmessage = hmacsha256.ComputeHash(messageBytes);
-                return Convert.ToBase64String(hashmessage);
-            }
+            var jwtBuilder = GetJwtBuilder(AppConfig.TokenSecret);
+            return jwtBuilder
+                .DoNotVerifySignature()
+                .Decode<IDictionary<string, object>>(token);
+
         }
 
-        public object GetPayload(string token)
-        {
-            var payload = string.Empty;
-            var jwtToken = token.Split('.');
-            if (jwtToken.Length == 3)
-            {
-
-                payload = Encoding.UTF8.GetString(Convert.FromBase64String(jwtToken[1]));
-            }
-            var payloadObject = JsonConvert.DeserializeObject(payload);
-            if (payloadObject is string) 
-            {
-                return JsonConvert.DeserializeObject(payloadObject.ToString());
-            }
-            return payloadObject;
-        }
     }
 }
