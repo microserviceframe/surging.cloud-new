@@ -16,28 +16,14 @@ namespace Surging.Core.CPlatform.Routing
         /// <returns></returns>
         Task<ServiceRoute> Locate(string serviceId);
 
-        //ValueTask<ServiceRoute> GetLocalRouteByPath(string path);
-
-        //ValueTask<ServiceRoute> GetLocalRouteByRegexPath(string path);
-
-        //Task<ServiceRoute> GetLocalRouteByPathOrRegexPath(string path);
-        /// <summary>
-        /// 根据服务路由路径获取路由信息
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        //ValueTask<ServiceRoute> GetRouteByPath(string path);
-
-        //ValueTask<ServiceRoute> GetRouteByRegexPath(string path);
-
-        Task<ServiceRoute> GetRouteByPathOrRegexPath(string path);
+        Task<ServiceRoute> GetRouteByPathOrRegexPath(string path,string httpMethod);
 
         /// <summary>
         /// 根据服务路由路径找到相关服务信息
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        Task<ServiceRoute> SearchRoute(string path);
+        Task<ServiceRoute> SearchRoute(string path, string httpMethod);
 
         /// <summary>
         /// 注册路由

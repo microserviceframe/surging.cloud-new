@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,8 +11,9 @@ namespace Surging.Core.ProxyGenerator
     /// </summary>
    public interface  IServiceProxyProvider
     {
-        Task<T> Invoke<T>(IDictionary<string, object> parameters, string routePath);
+        
+        Task<T> Invoke<T>(IDictionary<string, object> parameters, string routePath, HttpMethod httpMethod);
 
-        Task<T> Invoke<T>(IDictionary<string, object> parameters, string routePath,string serviceKey);
+        Task<T> Invoke<T>(IDictionary<string, object> parameters, string routePath, HttpMethod httpMethod, string serviceKey);
     }
 }

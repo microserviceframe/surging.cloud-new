@@ -24,7 +24,7 @@ namespace Surging.Core.Stage.Configurations
 
         public string Terminals { get; set; } = string.Empty;
 
-        public string TokenSecret { get; set; } = string.Empty;
+        public string JwtSecret { get; set; } = string.Empty;
 
         public int DefaultExpired { get; set; } = 24 * 3;
     }

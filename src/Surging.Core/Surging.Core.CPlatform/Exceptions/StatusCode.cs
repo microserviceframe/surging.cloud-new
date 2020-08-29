@@ -24,14 +24,19 @@
         ValidateError = 504,
 
         /// <summary>
+        /// 用户友好类异常
+        /// </summary>
+        UserFriendly = 506,
+
+        /// <summary>
+        /// 路由配置错误
+        /// </summary>
+        RouteError = 507,
+        /// <summary>
         /// 数据访问错误
         /// </summary>
         DataAccessError = 705,
 
-        /// <summary>
-        /// 用户友好类异常
-        /// </summary>
-        UserFriendly = 506,
 
         RegisterConnection = 707,
 
@@ -51,6 +56,9 @@
         UnAuthentication = 401,
 
         TokenExpired = 406,
+
+        IssueTokenError = 407,
+
 
         /// <summary>
         /// 未授权

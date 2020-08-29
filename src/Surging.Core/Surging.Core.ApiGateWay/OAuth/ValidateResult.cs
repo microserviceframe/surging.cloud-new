@@ -6,6 +6,8 @@
 
         TokenExpired,
 
-        SignatureError
+        SignatureError,
+
+        TokenFormatError
     }
 }

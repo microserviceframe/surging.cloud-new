@@ -56,10 +56,10 @@ namespace Surging.Core.KestrelHttpServer
            
             if (serviceRoute == null)
             {
-                var route = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path);
+                var route = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path, context.Request.Method);
                 if (route == null)
                 {
-                    throw new CPlatformException("Routing path not found", StatusCode.Http404EndpointStatusCode);
+                    throw new CPlatformException($"未能找到路径为{path}-{context.Request.Method}的路由信息", StatusCode.Http404EndpointStatusCode);
                 }
                 serviceRoute = route;
             }
@@ -87,6 +87,7 @@ namespace Surging.Core.KestrelHttpServer
             {
                 Parameters = parameters,
                 RoutePath = serviceRoute.ServiceDescriptor.RoutePath,
+                HttpMethod = context.Request.Method,
                 ServiceKey = serviceKey?.ToString()
             };
 
@@ -201,7 +202,7 @@ namespace Surging.Core.KestrelHttpServer
             foreach (var filter in filters)
             {
                 var path = HttpUtility.UrlDecode(GetRoutePath(context.Request.Path.ToString()));
-                var serviceRoute = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path);
+                var serviceRoute = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path,context.Request.Method);
                 //if (serviceRoute == null) 
                 //{
                 //    throw new CPlatformException("Routing path not found", StatusCode.Http404EndpointStatusCode);

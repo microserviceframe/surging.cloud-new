@@ -12,6 +12,7 @@ using Surging.Core.CPlatform.Routing.Template;
 using Surging.Core.CPlatform.Serialization;
 using Surging.Core.CPlatform.Transport;
 using Surging.Core.CPlatform.Transport.Codec;
+using Surging.Core.ProxyGenerator.Interceptors.Implementation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -167,10 +168,10 @@ namespace Surging.Core.Protocol.Http
                 Task.Run(async () =>
                 {
                     var parameters = GetParameters(HttpUtility.UrlDecode(msg.Uri), out string path);
-                    var serviceRoute = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path);
+                    var serviceRoute = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path,msg.Method.Name.ToUpper());
                     if (serviceRoute == null)
                     {
-                        throw new CPlatformException("Routing path not found", StatusCode.Http404EndpointStatusCode);
+                        throw new CPlatformException($"未能找到路径为{path}-{msg.Method.Name.ToUpper()}的路由信息", StatusCode.Http404EndpointStatusCode);
                     }
                     parameters.Remove("servicekey", out object serviceKey);
                     if (data.Length > 0)
@@ -189,6 +190,7 @@ namespace Surging.Core.Protocol.Http
                         {
                             Parameters = parameters,
                             RoutePath = serviceRoute.ServiceDescriptor.RoutePath,
+                            HttpMethod = msg.Method.Name.ToUpper(),
                             ServiceKey = serviceKey?.ToString()
                         }));
                     }
@@ -198,6 +200,7 @@ namespace Surging.Core.Protocol.Http
                         {
                             Parameters = parameters,
                             RoutePath = serviceRoute.ServiceDescriptor.RoutePath,
+                            HttpMethod = msg.Method.Name.ToUpper(),
                             ServiceKey = serviceKey?.ToString()
                         }));
                     }

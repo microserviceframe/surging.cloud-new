@@ -15,6 +15,8 @@ using Surging.Core.CPlatform.Routing;
 using System.Linq;
 using System.Security.Claims;
 using SurgingClaimTypes = Surging.Core.CPlatform.ClaimTypes;
+using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
+
 namespace Surging.Core.Stage.Filters
 {
     public class AuthorizationFilterAttribute : IAuthorizationFilter
@@ -55,6 +57,12 @@ namespace Surging.Core.Stage.Filters
                             var validateResult = _authorizationServerProvider.ValidateClientAuthentication(token);
                             if (filterContext.Route.ServiceDescriptor.EnableAuthorization() && validateResult != ValidateResult.Success) 
                             {
+                                if (validateResult == ValidateResult.TokenFormatError)
+                                {
+                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = "token格式不正确" };
+                                    return;
+                                }
+
                                 if (validateResult == ValidateResult.SignatureError) 
                                 {
                                     filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = "token凭证不合法,请重新登录" };
@@ -82,13 +90,13 @@ namespace Surging.Core.Stage.Filters
                                 var rpcParams = new Dictionary<string, object>() {
                                         {  "serviceId", filterContext.Route.ServiceDescriptor.Id }
                                     };
-                                var authorizationRoutePath = await _serviceRouteProvider.GetRouteByPathOrRegexPath(gatewayAppConfig.AuthorizationRoutePath);
+                                var authorizationRoutePath = await _serviceRouteProvider.GetRouteByPathOrRegexPath(gatewayAppConfig.AuthorizationRoutePath,filterContext.Context.Request.Method);
                                 if (authorizationRoutePath == null)
                                 {
                                     filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.RequestError, Message = "没有找到实现接口鉴权的WebApi的路由信息" };
                                     return;
                                 }
-                                var isPermission = await _serviceProxyProvider.Invoke<bool>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, gatewayAppConfig.AuthorizationServiceKey);
+                                var isPermission = await _serviceProxyProvider.Invoke<bool>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
                                 if (!isPermission)
                                 {
                                     var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty() ? filterContext.Route.ServiceDescriptor.RoutePath : filterContext.Route.ServiceDescriptor.GroupName();

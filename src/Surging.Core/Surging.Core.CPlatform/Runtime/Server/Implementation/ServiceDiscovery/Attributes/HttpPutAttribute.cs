@@ -1,21 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes
+﻿namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes
 {
-   public class HttpPutAttribute : HttpMethodAttribute
+    public class HttpPutAttribute : HttpMethodAttribute
     {
-        private static readonly IEnumerable<string> _supportedMethods = new[] { "PUT" };
+        private static readonly string _supportedMethod = HttpMethod.PUT.ToString();
 
         public HttpPutAttribute()
-            : base(_supportedMethods)
+            : base(_supportedMethod)
         {
         }
 
-        public HttpPutAttribute(bool isRegisterMetadata)
-            : base(_supportedMethods, isRegisterMetadata)
-        {
-        }
+        
     }
 }

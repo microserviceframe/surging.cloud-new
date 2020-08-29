@@ -11,6 +11,7 @@ using Surging.Core.CPlatform.EventBus.Implementation;
 using Surging.Core.CPlatform.EventBus.Events;
 using Surging.Core.CPlatform.Module;
 using System.Threading.Tasks;
+using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 
 namespace Surging.Core.DNS.Runtime
 {
@@ -92,7 +93,7 @@ namespace Surging.Core.DNS.Runtime
                     var routePath = domainName.Substring(prefixLen + 1, pathLen).Replace(".", "/").ToString();
                     if (routePath.IndexOf("/") < 0 && routePath[0] != '/')
                         routePath = $"/{routePath}";
-                    var address = await GetService<IEchoService>().Locate(prefixName, routePath);
+                    var address = await GetService<IEchoService>().Locate(prefixName, routePath, HttpMethod.GET);
                     if (!string.IsNullOrEmpty(address.WanIp))
                         result = IPAddress.Parse(address.WanIp);
                 }

@@ -5,6 +5,7 @@ using Surging.Core.CPlatform.Routing;
 using Surging.Core.CPlatform.Runtime.Client;
 using Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation.Selectors;
 using Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
+using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 using System.Threading.Tasks;
 
 namespace Surging.Core.CPlatform.Module
@@ -26,9 +27,9 @@ namespace Surging.Core.CPlatform.Module
             _serviceHeartbeatManager = serviceHeartbeatManager;
         }
 
-        public async Task<IpAddressModel> Locate(string key,string routePath)
+        public async Task<IpAddressModel> Locate(string key,string routePath, HttpMethod httpMethod)
         {
-            var route= await _serviceRouteProvider.SearchRoute(routePath);
+            var route= await _serviceRouteProvider.SearchRoute(routePath, httpMethod.ToString());
             AddressModel result = new IpAddressModel();
             if (route != null)
             {

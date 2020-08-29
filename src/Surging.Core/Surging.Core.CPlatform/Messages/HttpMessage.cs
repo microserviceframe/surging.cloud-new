@@ -8,7 +8,7 @@ namespace Surging.Core.CPlatform.Messages
     { 
         public string RoutePath { get; set; }
 
-        
+        public string HttpMethod { get; set; }
 
         public string ServiceKey { get; set; } 
 

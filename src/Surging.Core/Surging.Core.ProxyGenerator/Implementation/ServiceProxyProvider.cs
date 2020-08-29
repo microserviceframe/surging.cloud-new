@@ -2,6 +2,7 @@
 using Surging.Core.CPlatform.DependencyResolution;
 using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Routing;
+using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -18,9 +19,9 @@ namespace Surging.Core.ProxyGenerator.Implementation
             _serviceProvider = serviceProvider;
         }
 
-        public  async Task<T> Invoke<T>(IDictionary<string, object> parameters, string routePath)
+        public async Task<T> Invoke<T>(IDictionary<string, object> parameters, string routePath, HttpMethod httpMethod)
         {
-            var serviceRoute = await LocationServiceRoute(routePath);
+            var serviceRoute = await LocationServiceRoute(routePath, httpMethod.ToString());
             T result = default(T);
             if (parameters.ContainsKey("serviceKey"))
             {
@@ -49,9 +50,9 @@ namespace Surging.Core.ProxyGenerator.Implementation
 
 
 
-        public async Task<T> Invoke<T>(IDictionary<string, object> parameters, string routePath, string serviceKey)
+        public async Task<T> Invoke<T>(IDictionary<string, object> parameters, string routePath, HttpMethod httpMethod, string serviceKey)
         {
-            var serviceRoute = await LocationServiceRoute(routePath);
+            var serviceRoute = await LocationServiceRoute(routePath, httpMethod.ToString());
             T result = default(T);
             if (!string.IsNullOrEmpty(serviceKey))
             {
@@ -76,9 +77,11 @@ namespace Surging.Core.ProxyGenerator.Implementation
             return result;
         }
 
-        private async Task<ServiceRoute> LocationServiceRoute(string routePath)
+        
+
+        private async Task<ServiceRoute> LocationServiceRoute(string routePath,string httpMethod)
         {
-            var serviceRoute = await _serviceRouteProvider.GetRouteByPathOrRegexPath(routePath.ToLower());
+            var serviceRoute = await _serviceRouteProvider.GetRouteByPathOrRegexPath(routePath.ToLower(), httpMethod);
           
             if (serviceRoute == null)
             {

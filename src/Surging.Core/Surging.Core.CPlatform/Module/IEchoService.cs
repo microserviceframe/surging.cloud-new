@@ -11,6 +11,7 @@ namespace Surging.Core.CPlatform.Module
     public interface IEchoService: IServiceKey
     {
         [Command(ShuntStrategy = AddressSelectorMode.HashAlgorithm)]
-        Task<IpAddressModel> Locate(string key,string routePath);
+        [HttpGet]
+        Task<IpAddressModel> Locate(string key,string routePath, HttpMethod httpMethod);
     }
 }

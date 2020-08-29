@@ -132,7 +132,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             return SetRouteAsync(descriptor);
         }
 
-        public abstract Task<ServiceRoute> GetRouteByPathAsync(string path);
+        public abstract Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod);
 
 
         public abstract Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId);

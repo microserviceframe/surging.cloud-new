@@ -149,7 +149,7 @@ namespace Surging.Services.Client
             string path = "api/user/getuser";
             string serviceKey = "User";
 
-            var userProxy = serviceProxyProvider.Invoke<object>(model, path, serviceKey);
+            var userProxy = serviceProxyProvider.Invoke<object>(model, path,Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes.HttpMethod.POST serviceKey);
             var s = userProxy.Result;
             Console.WriteLine("Press any key to exit...");
             Console.ReadLine();

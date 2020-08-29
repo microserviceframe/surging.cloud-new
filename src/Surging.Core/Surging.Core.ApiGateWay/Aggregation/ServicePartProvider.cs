@@ -7,6 +7,8 @@ using System.Linq;
 using System.Collections.Concurrent;
 using Newtonsoft.Json.Linq;
 using Surging.Core.ApiGateWay.Configurations;
+using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
+using Surging.Core.CPlatform.Utilities;
 
 namespace Surging.Core.ApiGateWay.Aggregation
 {
@@ -55,8 +57,9 @@ namespace Surging.Core.ApiGateWay.Aggregation
                 {
                     var routeParam = part["Params"].ToObject<Dictionary<string, object>>();
                     var path = part.Value<string>("RoutePath");
+                    var method = part.Value<string>("HttpMethod");
                     var serviceKey = part.Value<string>("ServiceKey");
-                    var result = await _serviceProxyProvider.Invoke<object>(routeParam, path, serviceKey);
+                    var result = await _serviceProxyProvider.Invoke<object>(routeParam, path, method.To<HttpMethod>(), serviceKey);
                     jObject.Add(part.Value<string>("Key"), JToken.FromObject(result));
                 }
             }
@@ -65,7 +68,7 @@ namespace Surging.Core.ApiGateWay.Aggregation
                 var service = AppConfig.ServicePart.Services.Where(p => p.UrlMapping.Equals(routhPath, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 foreach (var part in service.serviceAggregation)
                 {
-                    var result = await _serviceProxyProvider.Invoke<object>(param, part.RoutePath, part.ServiceKey);
+                    var result = await _serviceProxyProvider.Invoke<object>(param, part.RoutePath, part.HttpMethod,  part.ServiceKey);
                     jObject.Add(part.Key, JToken.FromObject(result));
                 };
             }

@@ -22,6 +22,7 @@ using Surging.Core.CPlatform.Diagnostics;
 using Surging.Core.CPlatform.Transport.Implementation;
 using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Serialization;
+using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 
 namespace Surging.Core.KestrelHttpServer
 {
@@ -114,7 +115,7 @@ namespace Surging.Core.KestrelHttpServer
         {
             HttpResultMessage<object> resultMessage = new HttpResultMessage<object>();
             try {
-                var resultData = await _serviceProxyProvider.Invoke<object>(httpMessage.Parameters, httpMessage.RoutePath, httpMessage.ServiceKey);
+                var resultData = await _serviceProxyProvider.Invoke<object>(httpMessage.Parameters, httpMessage.RoutePath, httpMessage.HttpMethod.To<HttpMethod>(), httpMessage.ServiceKey);
                 resultMessage.Data = HandleResultData(resultData);
                 resultMessage.IsSucceed = true;
                 resultMessage.StatusCode = resultMessage.IsSucceed ? StatusCode.Success : StatusCode.RequestError;

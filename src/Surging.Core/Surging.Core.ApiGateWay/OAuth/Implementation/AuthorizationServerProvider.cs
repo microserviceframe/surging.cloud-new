@@ -19,6 +19,7 @@ using ClaimTypes = Surging.Core.CPlatform.ClaimTypes;
 using JWT;
 using Surging.Core.CPlatform.Utilities;
 using JWT.Exceptions;
+using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 
 namespace Surging.Core.ApiGateWay.OAuth
 {
@@ -44,14 +45,14 @@ namespace Surging.Core.ApiGateWay.OAuth
         public async Task<string> IssueToken(Dictionary<string, object> parameters)
         {
             string result = null;
-            var payload = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(parameters,AppConfig.AuthenticationRoutePath, AppConfig.AuthenticationServiceKey);
+            var payload = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(parameters,AppConfig.AuthenticationRoutePath, HttpMethod.POST, AppConfig.AuthenticationServiceKey);
             if (payload !=null && !payload.Equals("null") )
             {
                 if (!payload.ContainsKey(ClaimTypes.UserId) || !payload.ContainsKey(ClaimTypes.UserName)) 
                 {
                     throw new AuthException($"认证接口实现不正确,接口返回值必须包含{ClaimTypes.UserId}和{ClaimTypes.UserName}");
                 }
-                var jwtBuilder = GetJwtBuilder(AppConfig.TokenSecret);
+                var jwtBuilder = GetJwtBuilder(AppConfig.JwtSecret);
                 var exp = AppConfig.DefaultExpired;
                 if (payload.ContainsKey(ClaimTypes.Expired)) 
                 {
@@ -70,7 +71,7 @@ namespace Surging.Core.ApiGateWay.OAuth
 
         public IDictionary<string, object> GetPayload(string token)
         {
-            var jwtBuilder = GetJwtBuilder(AppConfig.TokenSecret);
+            var jwtBuilder = GetJwtBuilder(AppConfig.JwtSecret);
             return jwtBuilder
                 .MustVerifySignature()
                 .Decode<IDictionary<string, object>>(token);
@@ -85,7 +86,7 @@ namespace Surging.Core.ApiGateWay.OAuth
             {
                 exp = payload[ClaimTypes.Expired].To<int>();
             }
-            var jwtBuilder = GetJwtBuilder(AppConfig.TokenSecret);
+            var jwtBuilder = GetJwtBuilder(AppConfig.JwtSecret);
             jwtBuilder.AddClaim(ClaimTypes.Expired, DateTimeOffset.UtcNow.AddHours(exp).ToUnixTimeSeconds());
             foreach (var para in payload)
             {
@@ -99,7 +100,7 @@ namespace Surging.Core.ApiGateWay.OAuth
         {
             try
             {
-                var jwtBuilder = GetJwtBuilder(AppConfig.TokenSecret);
+                var jwtBuilder = GetJwtBuilder(AppConfig.JwtSecret);
                 jwtBuilder.MustVerifySignature()
                 .Decode<IDictionary<string, object>>(token);
                 return ValidateResult.Success;
@@ -108,16 +109,25 @@ namespace Surging.Core.ApiGateWay.OAuth
             {
                 return ValidateResult.TokenExpired;
             }
-            catch (SignatureVerificationException) 
+            catch (SignatureVerificationException)
             {
                 return ValidateResult.SignatureError;
             }
-            
+            catch (Exception) 
+            {
+                return ValidateResult.TokenFormatError;
+            }
+
+
 
         }
 
         private JwtBuilder GetJwtBuilder(string secret, IJwtAlgorithm algorithm = null) 
         {
+            if (secret.IsNullOrEmpty()) 
+            {
+                throw new AuthException("未设置TokenSecret,请先设置TokenSecret", StatusCode.IssueTokenError);
+            }
             if (algorithm == null) 
             {
                 algorithm = new HMACSHA256Algorithm();
@@ -129,7 +139,7 @@ namespace Surging.Core.ApiGateWay.OAuth
 
         private IDictionary<string, object> GetPayloadDoNotVerifySignature(string token)
         {
-            var jwtBuilder = GetJwtBuilder(AppConfig.TokenSecret);
+            var jwtBuilder = GetJwtBuilder(AppConfig.JwtSecret);
             return jwtBuilder
                 .DoNotVerifySignature()
                 .Decode<IDictionary<string, object>>(token);

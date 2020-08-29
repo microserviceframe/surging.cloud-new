@@ -5,6 +5,7 @@ using Surging.Core.Consul.Internal;
 using Surging.Core.Consul.Utilitys;
 using Surging.Core.Consul.WatcherProvider;
 using Surging.Core.Consul.WatcherProvider.Implementation;
+using Surging.Core.CPlatform;
 using Surging.Core.CPlatform.Address;
 using Surging.Core.CPlatform.Routing;
 using Surging.Core.CPlatform.Routing.Implementation;
@@ -127,28 +128,28 @@ namespace Surging.Core.Consul
             }
         }
 
-        public override async Task<ServiceRoute> GetRouteByPathAsync(string path)
+        public override async Task<ServiceRoute> GetRouteByPathAsync(string path,string httpMthod)
         {
-            var route = await GetRouteByPathFormCacheAsync(path);
-            if (route == null && !_mapRoutePathOptions.Any(p => p.TargetRoutePath == path))
+            var route = GetRouteByPathFormRoutes(path, httpMthod);
+            if (route == null && !_mapRoutePathOptions.Any(p => p.TargetRoutePath == path && p.HttpMethod == httpMthod))
             {
                 await EnterRoutes(true);
-                return await GetRouteByPathFormCacheAsync(path);
+                return GetRouteByPathFormRoutes(path, httpMthod);
             }
             return route;
         }
 
-        private async Task<ServiceRoute> GetRouteByPathFormCacheAsync(string path)
+        private ServiceRoute GetRouteByPathFormRoutes(string path, string httpMthod)
         {
-            if (_routes != null && _routes.Any(p => p.ServiceDescriptor.RoutePath == path))
+            if (_routes != null && _routes.Any(p => p.ServiceDescriptor.RoutePath == path && p.ServiceDescriptor.HttpMethod().Contains(httpMthod)))
             {
-                return _routes.First(p => p.ServiceDescriptor.RoutePath == path);
+                return _routes.First(p => p.ServiceDescriptor.RoutePath == path && p.ServiceDescriptor.HttpMethod().Contains(httpMthod));
             }
-            return await GetRouteByRegexPathAsync(path);
+            return GetRouteByRegexPathAsync(path, httpMthod);
 
         }
 
-        private async Task<ServiceRoute> GetRouteByRegexPathAsync(string path)
+        private ServiceRoute GetRouteByRegexPathAsync(string path, string httpMthod)
         {
             var pattern = "/{.*?}";
             if (_routes != null)
@@ -157,7 +158,7 @@ namespace Surging.Core.Consul
                 {
                     var routePath = Regex.Replace(i.ServiceDescriptor.RoutePath, pattern, "");
                     var newPath = path.Replace(routePath, "");
-                    return (newPath.StartsWith("/") || newPath.Length == 0) && i.ServiceDescriptor.RoutePath.Split("/").Length == path.Split("/").Length;
+                    return (newPath.StartsWith("/") || newPath.Length == 0) && i.ServiceDescriptor.HttpMethod().Contains(httpMthod) && i.ServiceDescriptor.RoutePath.Split("/").Length == path.Split("/").Length;
 
                 });
 
@@ -165,7 +166,7 @@ namespace Surging.Core.Consul
                 if (route == null)
                 {
                     if (_logger.IsEnabled(LogLevel.Warning))
-                        _logger.LogWarning($"根据服务路由路径：{path}，找不到相关服务信息。");
+                        _logger.LogWarning($"根据服务路由：{path}-{httpMthod}，找不到相关服务信息。");
                 }
                 return route;
             }

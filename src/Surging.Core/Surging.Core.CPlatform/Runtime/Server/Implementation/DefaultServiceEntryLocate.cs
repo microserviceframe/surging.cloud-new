@@ -1,4 +1,5 @@
-﻿using Surging.Core.CPlatform.Messages;
+﻿using Surging.Core.CPlatform.Exceptions;
+using Surging.Core.CPlatform.Messages;
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -38,7 +39,12 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation
             if (httpMessage.RoutePath.AsSpan().IndexOf("/") == -1)
                 routePath = $"/{routePath}";
             var serviceEntries = _serviceEntryManager.GetEntries(); //_serviceEntryManager.GetAllEntries();
-            return serviceEntries.SingleOrDefault(i => i.RoutePath == routePath && !i.Descriptor.GetMetadata<bool>("IsOverload"));
+            var conditionserviceEntries = serviceEntries.Where(i => i.RoutePath == routePath && i.Methods.Contains(httpMessage.HttpMethod) && !i.Descriptor.GetMetadata<bool>("IsOverload"));
+            if (conditionserviceEntries.Count() > 1) 
+            {
+                throw new CPlatformException($"存在{conditionserviceEntries.Count()}个{httpMessage.RoutePath}-{httpMessage.HttpMethod}的路由配置",StatusCode.RouteError);
+            }
+            return conditionserviceEntries.First();
         }
 
         #endregion Implementation of IServiceEntryLocate

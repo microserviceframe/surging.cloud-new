@@ -68,7 +68,7 @@ namespace Surging.Core.Stage
                 ApiGateWay.AppConfig.TokenEndpointPath = apiConfig.TokenEndpointPath;
                 ApiGateWay.AppConfig.IsUsingTerminal = apiConfig.IsUsingTerminal;
                 ApiGateWay.AppConfig.Terminals = apiConfig.Terminals;
-                ApiGateWay.AppConfig.TokenSecret = apiConfig.TokenSecret;
+                ApiGateWay.AppConfig.JwtSecret = apiConfig.JwtSecret;
                 ApiGateWay.AppConfig.DefaultExpired = apiConfig.DefaultExpired;
             }
             context.Services.AddMvc().AddJsonOptions(options => {

@@ -30,8 +30,8 @@ namespace Surging.Core.Protocol.Http
         private readonly IAuthorizationFilter _authorizationFilter;
         private readonly CPlatformContainer _serviceProvider;
         private readonly ITypeConvertibleService _typeConvertibleService;
-        private readonly ConcurrentDictionary<string,ValueTuple< FastInvokeHandler,object, MethodInfo>> _concurrent =
- new ConcurrentDictionary<string, ValueTuple<FastInvokeHandler, object, MethodInfo>>();
+        private readonly ConcurrentDictionary<Tuple<string,string>,ValueTuple<FastInvokeHandler,object, MethodInfo>> _concurrent = new ConcurrentDictionary<Tuple<string, string>, ValueTuple<FastInvokeHandler, object, MethodInfo>>();
+
         #endregion Field
 
         #region Constructor
@@ -85,7 +85,7 @@ namespace Surging.Core.Protocol.Http
             if (entry == null)
             {
                 if (_logger.IsEnabled(LogLevel.Error))
-                    _logger.LogError($"根据服务routePath：{httpMessage.RoutePath}，找不到服务条目。");
+                    _logger.LogError($"根据服务routePath：{httpMessage.RoutePath} - {httpMessage.HttpMethod}，找不到服务条目。");
                 return;
             }
             if (_logger.IsEnabled(LogLevel.Debug))
@@ -111,14 +111,14 @@ namespace Surging.Core.Protocol.Http
         private async Task<HttpResultMessage<object>> RemoteExecuteAsync(ServiceEntry entry, HttpMessage httpMessage)
         {
             HttpResultMessage<object> resultMessage = new HttpResultMessage<object>();
-                var provider = _concurrent.GetValueOrDefault(httpMessage.RoutePath);
+                var provider = _concurrent.GetValueOrDefault(new Tuple<string, string>(httpMessage.RoutePath,httpMessage.HttpMethod));
                 var list = new List<object>();
                 if (provider.Item1 == null)
                 {
                     provider.Item2 = ServiceLocator.GetService<IServiceProxyFactory>().CreateProxy(httpMessage.ServiceKey, entry.Type);
                     provider.Item3 = provider.Item2.GetType().GetTypeInfo().DeclaredMethods.Where(p => p.Name == entry.MethodName).FirstOrDefault(); ;
                     provider.Item1 = FastInvoke.GetMethodInvoker(provider.Item3);
-                    _concurrent.GetOrAdd(httpMessage.RoutePath, ValueTuple.Create<FastInvokeHandler, object, MethodInfo>(provider.Item1, provider.Item2, provider.Item3));
+                    _concurrent.GetOrAdd(new Tuple<string, string>(httpMessage.RoutePath, httpMessage.HttpMethod), ValueTuple.Create<FastInvokeHandler, object, MethodInfo>(provider.Item1, provider.Item2, provider.Item3));
                 }
                 foreach (var parameterInfo in provider.Item3.GetParameters())
                 {

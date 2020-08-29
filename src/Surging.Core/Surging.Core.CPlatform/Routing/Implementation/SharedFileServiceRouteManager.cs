@@ -89,35 +89,37 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             return Task.FromResult(0);
         }
 
-        public override async Task<ServiceRoute> GetRouteByPathAsync(string path)
+        public override async Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod)
         {
-            var route = await GetRouteByPathFormCacheAsync(path);
-            if (route == null && !_mapRoutePathOptions.Any(p => p.TargetRoutePath == path))
+
+            var route = GetRouteByPathFormRoutes(path,httpMethod);
+            if (route == null && !_mapRoutePathOptions.Any(p => p.TargetRoutePath == path && p.HttpMethod == httpMethod))
             {
                 await EntryRoutes(_filePath);
-                return await GetRouteByPathFormCacheAsync(path);
+
+                return GetRouteByPathFormRoutes(path,httpMethod);
             }
             return route;         
         }
 
-        private async Task<ServiceRoute> GetRouteByPathFormCacheAsync(string path)
+        private ServiceRoute GetRouteByPathFormRoutes(string path, string httpMethod)
         {
-            if (_routes != null && _routes.Any(p => p.ServiceDescriptor.RoutePath == path))
+            if (_routes != null && _routes.Any(p => p.ServiceDescriptor.RoutePath == path && p.ServiceDescriptor.HttpMethod().Contains(httpMethod)))
             {
-                return _routes.First(p => p.ServiceDescriptor.RoutePath == path);
+                return _routes.First(p => p.ServiceDescriptor.RoutePath == path && p.ServiceDescriptor.HttpMethod().Contains(httpMethod));
             }
-            return await GetRouteByRegexPathAsync(path);
+            return GetRouteByRegexPath(path, httpMethod);
 
         }
 
-        private async Task<ServiceRoute> GetRouteByRegexPathAsync(string path)
+        private ServiceRoute GetRouteByRegexPath(string path, string httpMethod)
         {
             var pattern = "/{.*?}";
             var route = _routes.FirstOrDefault(i =>
             {
                 var routePath = Regex.Replace(i.ServiceDescriptor.RoutePath, pattern, "");
                 var newPath = path.Replace(routePath, "");
-                return (newPath.StartsWith("/") || newPath.Length == 0) && i.ServiceDescriptor.RoutePath.Split("/").Length == path.Split("/").Length && !i.ServiceDescriptor.GetMetadata<bool>("IsOverload")
+                return (newPath.StartsWith("/") || newPath.Length == 0) && i.ServiceDescriptor.HttpMethod().Contains(httpMethod) && i.ServiceDescriptor.RoutePath.Split("/").Length == path.Split("/").Length && !i.ServiceDescriptor.GetMetadata<bool>("IsOverload")
                 ;
             });
 
@@ -125,7 +127,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             if (route == null)
             {
                 if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.LogWarning($"根据服务路由路径：{path}，找不到相关服务信息。");
+                    _logger.LogWarning($"根据服务路由：{path}-{httpMethod}，找不到相关服务信息。");
             }
             return route;
         }

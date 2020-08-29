@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes
 {
    public class HttpGetAttribute : HttpMethodAttribute
     {
-        private static readonly IEnumerable<string> _supportedMethods = new[] { "GET" };
+        private static readonly string _supportedMethod = HttpMethod.GET.ToString();
 
         public HttpGetAttribute()
-            : base(_supportedMethods)
+            : base(_supportedMethod)
         {
         }
 
-        public HttpGetAttribute(bool isRegisterMetadata)
-            : base(_supportedMethods,  isRegisterMetadata)
-        {
-        }
+        
     }
 }

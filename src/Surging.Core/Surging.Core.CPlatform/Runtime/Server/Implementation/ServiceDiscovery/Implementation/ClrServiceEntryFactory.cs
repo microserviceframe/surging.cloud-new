@@ -81,19 +81,25 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.
                 RoutePath = RoutePatternParser.Parse(routeTemplate, serviceName, method.Name, routeIsReWriteByServiceRoute)
             };
             var httpMethodAttributes = attributes.Where(p => p is HttpMethodAttribute).Select(p => p as HttpMethodAttribute).ToList();
-            var httpMethods = new List<string>();
-            StringBuilder httpMethod = new StringBuilder();
-            foreach (var attribute in httpMethodAttributes)
+            var httpMethods = new List<string>();            
+            foreach (var httpAttribute in httpMethodAttributes)
             {
-                httpMethods.AddRange(attribute.HttpMethods);
-                if (attribute.IsRegisterMetadata)
-                    httpMethod.AppendJoin(',', attribute.HttpMethods).Append(",");
+                httpMethods.AddRange(httpAttribute.HttpMethods);
+                
             }
-            if (httpMethod.Length > 0)
+            if (!httpMethods.Any())
             {
-                httpMethod.Length = httpMethod.Length - 1;
-                serviceDescriptor.HttpMethod(httpMethod.ToString());
+                var paramTypes = GetParamTypes(method);
+                if (paramTypes.All(p => p.Value.IsValueType || p.Value == typeof(string) || p.Value.IsEnum))
+                {
+                    httpMethods.Add(HttpMethod.GET.ToString());
+                }
+                else 
+                {
+                    httpMethods.Add(HttpMethod.POST.ToString());
+                }
             }
+            serviceDescriptor.HttpMethod(httpMethods);
             var authorization = attributes.Where(p => p is AuthorizationFilterAttribute).FirstOrDefault();
             if (authorization != null)
                 serviceDescriptor.EnableAuthorization(true);

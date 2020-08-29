@@ -19,7 +19,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
 
         private readonly List<ServiceRoute> _localRoutes = new List<ServiceRoute>();
 
-        private readonly ConcurrentDictionary<string, ServiceRoute> _serviceRoute = new ConcurrentDictionary<string, ServiceRoute>();
+        private readonly ConcurrentDictionary<Tuple<string, string>, ServiceRoute> _serviceRoute = new ConcurrentDictionary<Tuple<string, string>, ServiceRoute>();
 
         private readonly IServiceEntryManager _serviceEntryManager;
         private readonly ILogger<DefaultServiceRouteProvider> _logger;
@@ -59,124 +59,39 @@ namespace Surging.Core.CPlatform.Routing.Implementation
                             }
                         }
                     }
-                        
+
                 }
-                if (route != null) 
+                if (route != null)
                 {
                     _concurrent.GetOrAdd(serviceId, route);
                 }
-                    
+
             }
             return route;
         }
 
-        public async Task<ServiceRoute> GetLocalRouteByPath(string path)
+
+        public async Task<ServiceRoute> GetRouteByPath(string path, string httpMethod)
         {
-            var addess = NetUtils.GetHostAddress();
-
-            if (_localRoutes.Any())
-            {
-                _localRoutes.AddRange(_serviceEntryManager.GetEntries().Select(i =>
-                {
-                    i.Descriptor.Token = _serviceTokenGenerator.GetToken();
-                    return new ServiceRoute
-                    {
-                        Address = new[] { addess },
-                        ServiceDescriptor = i.Descriptor
-                    };
-                }).ToList());
-            }
-
-            path = path.ToLower();
-            _serviceRoute.TryGetValue(path, out ServiceRoute route);
+            _serviceRoute.TryGetValue(new Tuple<string, string>(path, httpMethod), out ServiceRoute route);
             if (route == null)
             {
-                return await GetRouteByRegexPathAsync(_localRoutes, path);
-            }
-            else
-            {
-                return route;
-            }
-
-        }
-
-        public async Task<ServiceRoute> GetLocalRouteByRegexPath(string path)
-        {
-            var addess = NetUtils.GetHostAddress();
-
-            if (_localRoutes.Count == 0)
-            {
-                _localRoutes.AddRange(_serviceEntryManager.GetEntries().Select(i =>
-                {
-                    i.Descriptor.Token = _serviceTokenGenerator.GetToken();
-                    return new ServiceRoute
-                    {
-                        Address = new[] { addess },
-                        ServiceDescriptor = i.Descriptor
-                    };
-                }).ToList());
-            }
-
-            path = path.ToLower();
-            _serviceRoute.TryGetValue(path, out ServiceRoute route);
-            if (route == null)
-            {
-                return await GetRouteByRegexPathAsync(_localRoutes, path);
-            }
-            else
-            {
-                return route;
-            }
-        }
-
-        public async Task<ServiceRoute>  GetRouteByPath(string path)
-        {
-            _serviceRoute.TryGetValue(path.ToLower(), out ServiceRoute route);
-            if (route == null)
-            {
-                return await GetRouteByPathAsync(path);
+                return await GetRouteByPathAsync(path, httpMethod);
             }
             return route;
         }
-
-        public async Task<ServiceRoute> GetRouteByRegexPath(string path)
+   
+        public async Task<ServiceRoute> GetRouteByPathOrRegexPath(string path, string httpMethod)
         {
-            path = path.ToLower();
-            _serviceRoute.TryGetValue(path, out ServiceRoute route);
-            if (route == null)
-            {
-                route = await _serviceRouteManager.GetRouteByPathAsync(path);
-                if (route == null)
-                {
-                    if (_logger.IsEnabled(LogLevel.Warning))
-                    {
-                        _logger.LogWarning($"根据服务路由路径：{path}，找不到相关服务信息。");
-                        if (route == null)
-                        {
-                            throw new CPlatformException($"根据服务路由路径：{path}，找不到相关服务信息。");
-                        }
-                    }
+            var route = await GetRouteByPath(path, httpMethod);
 
-                }
-                return route;
-            }
-            else
-            {
-                return route;
-            }
-        }
-
-        public async Task<ServiceRoute> GetRouteByPathOrRegexPath(string path) 
-        {
-            var route = await GetRouteByPath(path);
-          
             return route;
         }
 
 
-        public async Task<ServiceRoute> SearchRoute(string path)
+        public async Task<ServiceRoute> SearchRoute(string path,string httpMethod)
         {
-            return await SearchRouteAsync(path);
+            return await SearchRouteAsync(path,httpMethod);
         }
 
         public async Task RegisterRoutes(decimal processorTime)
@@ -207,50 +122,60 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             var key = GetCacheKey(e.Route.ServiceDescriptor);
             ServiceRoute value;
             _concurrent.TryRemove(key, out value);
-            _serviceRoute.TryRemove(e.Route.ServiceDescriptor.RoutePath, out value);
+            var httpMethods = e.Route.ServiceDescriptor.HttpMethod();
+            foreach (var httpMethod in httpMethods) 
+            {
+                _serviceRoute.TryRemove(new Tuple<string, string>(e.Route.ServiceDescriptor.RoutePath, httpMethod), out value);
+            }
+            
         }
 
         private void ServiceRouteManager_Add(object sender, ServiceRouteEventArgs e)
         {
             var key = GetCacheKey(e.Route.ServiceDescriptor);
             _concurrent.GetOrAdd(key, e.Route);
-            _serviceRoute.GetOrAdd(e.Route.ServiceDescriptor.RoutePath, e.Route);
-        }
-
-        private async Task<ServiceRoute> SearchRouteAsync(string path)
-        {
-            var route = await _serviceRouteManager.GetRouteByPathAsync(path);
-            if (route == null)
+            var httpMethods = e.Route.ServiceDescriptor.HttpMethod();
+            foreach (var httpMethod in httpMethods)
             {
-                if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.LogWarning($"根据服务路由路径：{path}，找不到相关服务信息。");
-                return null;
-            }
-            else
-            {
-                _serviceRoute.GetOrAdd(path, route);
-            }
-            return route;
-        }
-
-        private async Task<ServiceRoute> GetRouteByPathAsync(string path)
-        {
-            var route = await _serviceRouteManager.GetRouteByPathAsync(path);
-            if (route == null)
-            {
-                if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.LogWarning($"根据服务路由路径：{path}，找不到相关服务信息。");
-                return null;
+                _serviceRoute.GetOrAdd(new Tuple<string, string>(e.Route.ServiceDescriptor.RoutePath,httpMethod), e.Route);
             }
             
+        }
+
+        private async Task<ServiceRoute> SearchRouteAsync(string path, string httpMethod)
+        {
+            var route = await _serviceRouteManager.GetRouteByPathAsync(path, httpMethod);
+            if (route == null)
+            {
+                if (_logger.IsEnabled(LogLevel.Warning))
+                    _logger.LogWarning($"根据服务路由路径：{path}- {httpMethod}，找不到相关服务信息。");
+                return null;
+            }
             else
             {
-                _serviceRoute.GetOrAdd(path, route);
-            }      
+                _serviceRoute.GetOrAdd(new Tuple<string, string>(path,httpMethod), route);
+            }
             return route;
         }
 
-        private async Task<ServiceRoute> GetRouteByRegexPathAsync(IEnumerable<ServiceRoute> routes, string path)
+        private async Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod)
+        {
+            var route = await _serviceRouteManager.GetRouteByPathAsync(path, httpMethod);
+            if (route == null)
+            {
+                if (_logger.IsEnabled(LogLevel.Warning))
+                    _logger.LogWarning($"根据服务路由路径：{path}-{httpMethod}，找不到相关服务信息。");
+                return null;
+            }
+
+            else
+            {
+                _serviceRoute.GetOrAdd(new Tuple<string, string>(path,httpMethod), route);
+            }
+            return route;
+        }
+
+        private ServiceRoute GetRouteByRegexPath(IEnumerable<ServiceRoute> routes, string path,string httpMethod)
         {
             var pattern = "/{.*?}";
 
@@ -258,7 +183,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             {
                 var routePath = Regex.Replace(i.ServiceDescriptor.RoutePath, pattern, "");
                 var newPath = path.Replace(routePath, "");
-                return ((newPath.StartsWith("/") || newPath.Length == 0) && i.ServiceDescriptor.RoutePath.Split("/").Length == path.Split("/").Length && !i.ServiceDescriptor.GetMetadata<bool>("IsOverload"))
+                return ((newPath.StartsWith("/") || newPath.Length == 0) && i.ServiceDescriptor.HttpMethod().Contains(httpMethod) && i.ServiceDescriptor.RoutePath.Split("/").Length == path.Split("/").Length && !i.ServiceDescriptor.GetMetadata<bool>("IsOverload"))
                 ;
             });
 
@@ -266,16 +191,16 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             if (route == null)
             {
                 if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.LogWarning($"根据服务路由路径：{path}，找不到相关服务信息。");
+                    _logger.LogWarning($"根据服务路由路径：{path} - {httpMethod}，找不到相关服务信息。");
             }
-            else 
+            else
             {
                 if (Regex.IsMatch(route.ServiceDescriptor.RoutePath, pattern))
                 {
-                    _serviceRoute.GetOrAdd(path, route);
+                    _serviceRoute.GetOrAdd(new Tuple<string, string>(path,httpMethod), route);
                 }
             }
-            
+
             return route;
         }
 

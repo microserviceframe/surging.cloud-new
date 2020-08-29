@@ -5,5 +5,7 @@
         public string SourceRoutePath { get; set; }
 
         public string TargetRoutePath { get; set; }
+
+        public string HttpMethod { get; set; }
     }
 }

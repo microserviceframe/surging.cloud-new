@@ -213,12 +213,12 @@ namespace Surging.Core.ApiGateWay
 
         private static string _tokenSecret;
 
-        public static string TokenSecret
+        public static string JwtSecret
         {
             get
             {
                 if (Configuration == null)
-                    return string.Empty;
+                    return _tokenSecret;
                 return Configuration["TokenSecret"] ?? _tokenSecret;
 
 

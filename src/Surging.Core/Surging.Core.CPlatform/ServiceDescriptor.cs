@@ -81,15 +81,16 @@ namespace Surging.Core.CPlatform
             return descriptor.GetMetadata("EnableAuthorization", false);
         }
 
-        public static ServiceDescriptor HttpMethod(this ServiceDescriptor descriptor, string httpMethod)
+        public static ServiceDescriptor HttpMethod(this ServiceDescriptor descriptor, IEnumerable<string> httpMethod)
         {
-            descriptor.Metadatas["HttpMethod"] = httpMethod;
+            descriptor.Metadatas["HttpMethod"] = string.Join(",", httpMethod);
             return descriptor;
         }
          
-        public static string HttpMethod(this ServiceDescriptor descriptor)
+        public static IEnumerable<string> HttpMethod(this ServiceDescriptor descriptor)
         {
-            return descriptor.GetMetadata("httpMethod", "");
+            var httpMethod = descriptor.GetMetadata("HttpMethod", string.Empty);
+            return httpMethod.Split(",");
         }
 
         /// <summary>

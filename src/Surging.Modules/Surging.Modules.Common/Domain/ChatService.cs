@@ -29,7 +29,7 @@ namespace Surging.Modules.Common.Domain
                 model.Add("name", _to);
                 model.Add("data", e.Data);
                 var result = ServiceLocator.GetService<IServiceProxyProvider>()
-                     .Invoke<object>(model, "api/chat/SendMessage").Result;
+                     .Invoke<object>(model, "api/chat/SendMessage", Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes.HttpMethod.POST).Result;
 
             }
         }

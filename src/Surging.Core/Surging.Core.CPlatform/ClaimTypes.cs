@@ -10,6 +10,8 @@
 
         public const string Phone = "http://sugingcloud.com/identity/claims/phone";
 
+        public const string Terminal = "http://sugingcloud.com/identity/claims/terminal";
+
         public const string Expired = "exp";
     }
 }

@@ -18,6 +18,7 @@ using Surging.Core.CPlatform.Utilities;
 using Newtonsoft.Json.Linq;
 using Surging.Core.CPlatform.Transport.Implementation;
 using Surging.Core.CPlatform.Routing.Template;
+using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 
 namespace Surging.ApiGateway.Controllers
 {
@@ -27,8 +28,8 @@ namespace Surging.ApiGateway.Controllers
         private readonly IServiceRouteProvider _serviceRouteProvider;
         private readonly IAuthorizationServerProvider _authorizationServerProvider;
 
-     
-        public ServicesController(IServiceProxyProvider serviceProxyProvider, 
+
+        public ServicesController(IServiceProxyProvider serviceProxyProvider,
             IServiceRouteProvider serviceRouteProvider,
             IAuthorizationServerProvider authorizationServerProvider)
         {
@@ -37,7 +38,7 @@ namespace Surging.ApiGateway.Controllers
             _authorizationServerProvider = authorizationServerProvider;
         }
 
-        public async Task<ServiceResult<object>> Path([FromServices]IServicePartProvider servicePartProvider, string path, [FromBody]Dictionary<string, object> model)
+        public async Task<ServiceResult<object>> Path([FromServices] IServicePartProvider servicePartProvider, string path, [FromBody] Dictionary<string, object> model)
         {
             string serviceKey = this.Request.Query["servicekey"];
             path = path.IndexOf("/") < 0 ? $"/{path}" : path;
@@ -52,9 +53,9 @@ namespace Surging.ApiGateway.Controllers
             ServiceResult<object> result = ServiceResult<object>.Create(false, null);
             path = String.Compare(path.ToLower(), GateWayAppConfig.TokenEndpointPath, true) == 0 ?
               GateWayAppConfig.AuthorizationRoutePath : path.ToLower();
-            var route = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path);
+            var route = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path, Request.Method);
             var httpMethods = route.ServiceDescriptor.HttpMethod();
-            if (!string.IsNullOrEmpty(httpMethods) &&
+            if (httpMethods != null &&
                 !httpMethods.Contains(Request.Method))
                 return new ServiceResult<object> { IsSucceed = false, StatusCode = Surging.Core.CPlatform.Exceptions.StatusCode.Http405EndpointStatusCode, Message = "405 HTTP Method Not Supported" };
             if (!GetAllowRequest(route)) return new ServiceResult<object> { IsSucceed = false, StatusCode = Surging.Core.CPlatform.Exceptions.StatusCode.RequestError, Message = "Request error" };
@@ -96,12 +97,12 @@ namespace Surging.ApiGateway.Controllers
                         if (!string.IsNullOrEmpty(serviceKey))
                         {
 
-                            result = ServiceResult<object>.Create(true, await _serviceProxyProvider.Invoke<object>(model, route.ServiceDescriptor.RoutePath, serviceKey));
+                            result = ServiceResult<object>.Create(true, await _serviceProxyProvider.Invoke<object>(model, route.ServiceDescriptor.RoutePath, Request.Method.To<HttpMethod>(), serviceKey));
                             result.StatusCode = Surging.Core.CPlatform.Exceptions.StatusCode.Success;
                         }
                         else
                         {
-                            result = ServiceResult<object>.Create(true, await _serviceProxyProvider.Invoke<object>(model, route.ServiceDescriptor.RoutePath));
+                            result = ServiceResult<object>.Create(true, await _serviceProxyProvider.Invoke<object>(model, route.ServiceDescriptor.RoutePath, Request.Method.To<HttpMethod>()));
                             result.StatusCode = Surging.Core.CPlatform.Exceptions.StatusCode.Success;
                         }
                     }
@@ -111,7 +112,7 @@ namespace Surging.ApiGateway.Controllers
         }
 
         private bool GetAllowRequest(ServiceRoute route)
-        {  
+        {
             return !route.ServiceDescriptor.DisableNetwork();
         }
 
@@ -122,14 +123,14 @@ namespace Surging.ApiGateway.Controllers
             var result = (isSuccess, serviceResult);
             if (route.ServiceDescriptor.EnableAuthorization())
             {
-                if(route.ServiceDescriptor.AuthType()== AuthorizationType.JWT.ToString())
+                if (route.ServiceDescriptor.AuthType() == AuthorizationType.JWT.ToString())
                 {
-                    result =await ValidateJwtAuthentication(route,model);
+                    result = await ValidateJwtAuthentication(route, model);
                 }
                 else
                 {
                     isSuccess = ValidateAppSecretAuthentication(route, model, ref serviceResult);
-                    result= (isSuccess,serviceResult);
+                    result = (isSuccess, serviceResult);
                 }
 
             }
@@ -139,7 +140,7 @@ namespace Surging.ApiGateway.Controllers
         public async Task<(bool, ServiceResult<object>)> ValidateJwtAuthentication(ServiceRoute route, Dictionary<string, object> model)
         {
             var result = ServiceResult<object>.Create(false, null);
-            bool isSuccess = true; 
+            bool isSuccess = true;
             var author = HttpContext.Request.Headers["Authorization"];
             if (author.Count > 0)
             {
@@ -152,7 +153,7 @@ namespace Surging.ApiGateway.Controllers
                 {
                     var payload = _authorizationServerProvider.GetPayload(author);
                     RpcContext.GetContext().SetAttachment("payload", payload);
-                    if (model.Count>0)
+                    if (model.Count > 0)
                     {
                         var keyValue = model.FirstOrDefault();
                         if (!(keyValue.Value is IConvertible) || !typeof(IConvertible).GetTypeInfo().IsAssignableFrom(keyValue.Value.GetType()))
@@ -170,7 +171,7 @@ namespace Surging.ApiGateway.Controllers
                 result = new ServiceResult<object> { IsSucceed = false, StatusCode = Surging.Core.CPlatform.Exceptions.StatusCode.RequestError, Message = "Request error" };
                 isSuccess = false;
             }
-            return  (isSuccess,result);
+            return (isSuccess, result);
         }
 
 
