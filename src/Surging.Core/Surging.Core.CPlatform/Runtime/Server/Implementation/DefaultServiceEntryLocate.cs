@@ -44,7 +44,7 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation
             {
                 throw new CPlatformException($"存在{conditionserviceEntries.Count()}个{httpMessage.RoutePath}-{httpMessage.HttpMethod}的路由配置",StatusCode.RouteError);
             }
-            return conditionserviceEntries.First();
+            return conditionserviceEntries.FirstOrDefault();
         }
 
         #endregion Implementation of IServiceEntryLocate
