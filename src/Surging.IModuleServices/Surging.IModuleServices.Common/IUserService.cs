@@ -56,7 +56,7 @@ namespace Surging.IModuleServices.Common
         /// <param name="requestData">请求参数</param>
         /// <returns></returns>
         [Authorization(AuthType = AuthorizationType.JWT)]
-        [HttpPost(true),HttpPut(true)]
+        [HttpPost,HttpPut]
         Task<IdentityUser> Save(IdentityUser requestData);
 
         /// <summary>
@@ -180,7 +180,7 @@ new Surging.IModuleServices.Common.Models.UserModel
         /// <returns></returns>
         Task<Dictionary<string, object>> GetAllThings();
 
-        [HttpDelete(true)]
+        [HttpDelete]
         Task<DeleteByIdOutput> Delete(DeleteByIdInput input);
     }
 }
