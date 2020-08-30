@@ -16,6 +16,7 @@ using System.Linq;
 using System.Security.Claims;
 using SurgingClaimTypes = Surging.Core.CPlatform.ClaimTypes;
 using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
+using Surging.Core.CPlatform.Runtime;
 
 namespace Surging.Core.Stage.Filters
 {

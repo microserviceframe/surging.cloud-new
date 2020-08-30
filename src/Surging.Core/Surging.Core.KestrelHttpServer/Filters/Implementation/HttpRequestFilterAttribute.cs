@@ -12,6 +12,7 @@ using Surging.Core.CPlatform.Utilities;
 using Autofac;
 using Surging.Core.CPlatform.Exceptions;
 using System.Web;
+using Surging.Core.CPlatform.Configurations;
 
 namespace Surging.Core.KestrelHttpServer.Filters.Implementation
 {
@@ -54,15 +55,11 @@ namespace Surging.Core.KestrelHttpServer.Filters.Implementation
             else
             {
                 var path = HttpUtility.UrlDecode(GetRoutePath(filterContext.Context.Request.Path.ToString()));
+                path = AppConfig.MapRoutePathOptions.GetRoutePath(path, filterContext.Message.HttpMethod);
                 var serviceRoute = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path, filterContext.Message.HttpMethod);
                 if (serviceRoute == null)
                 {
-                    serviceRoute = await _serviceRouteProvider.GetRouteByPathOrRegexPath(filterContext.Message.RoutePath, filterContext.Message.HttpMethod);
-
-                    if (serviceRoute == null) 
-                    {
-                        throw new CPlatformException($"未能找到路径为{path}-{filterContext.Message.HttpMethod}的路由信息", StatusCode.Http404EndpointStatusCode);
-                    }
+                    throw new CPlatformException($"未能找到路径为{path}-{filterContext.Message.HttpMethod}的路由信息", StatusCode.Http404EndpointStatusCode);
                 }
 
                 var httpMethods = serviceRoute.ServiceDescriptor.HttpMethod();

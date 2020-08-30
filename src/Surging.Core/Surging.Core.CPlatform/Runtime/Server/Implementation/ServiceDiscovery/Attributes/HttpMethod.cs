@@ -1,4 +1,4 @@
-﻿namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes
+﻿namespace Surging.Core.CPlatform.Runtime
 {
     public enum HttpMethod
     {

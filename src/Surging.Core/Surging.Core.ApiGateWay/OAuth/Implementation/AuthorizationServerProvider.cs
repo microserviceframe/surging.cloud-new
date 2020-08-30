@@ -20,6 +20,7 @@ using JWT;
 using Surging.Core.CPlatform.Utilities;
 using JWT.Exceptions;
 using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
+using Surging.Core.CPlatform.Runtime;
 
 namespace Surging.Core.ApiGateWay.OAuth
 {
@@ -31,7 +32,6 @@ namespace Surging.Core.ApiGateWay.OAuth
         private readonly IServiceProxyProvider _serviceProxyProvider;
         private readonly IServiceRouteProvider _serviceRouteProvider;
         private readonly CPlatformContainer _serviceProvider;
-        private readonly ICacheProvider _cacheProvider;
         public AuthorizationServerProvider(IServiceProxyProvider serviceProxyProvider
            ,IServiceRouteProvider serviceRouteProvider
             , CPlatformContainer serviceProvider)
@@ -39,7 +39,6 @@ namespace Surging.Core.ApiGateWay.OAuth
             _serviceProvider = serviceProvider;
             _serviceProxyProvider = serviceProxyProvider;
             _serviceRouteProvider = serviceRouteProvider;
-            _cacheProvider = CacheContainer.GetService<ICacheProvider>(AppConfig.CacheMode);
         }
 
         public async Task<string> IssueToken(Dictionary<string, object> parameters)

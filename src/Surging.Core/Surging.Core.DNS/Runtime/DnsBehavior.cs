@@ -12,6 +12,7 @@ using Surging.Core.CPlatform.EventBus.Events;
 using Surging.Core.CPlatform.Module;
 using System.Threading.Tasks;
 using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
+using Surging.Core.CPlatform.Runtime;
 
 namespace Surging.Core.DNS.Runtime
 {

@@ -22,7 +22,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using static org.apache.zookeeper.KeeperException;
-
+using CplatformAppConfig = Surging.Core.CPlatform.AppConfig;
 namespace Surging.Core.Zookeeper
 {
     public class ZooKeeperServiceRouteManager : ServiceRouteManagerBase, IDisposable
@@ -245,11 +245,6 @@ namespace Surging.Core.Zookeeper
         public override async Task<ServiceRoute> GetRouteByPathAsync(string path,string httpMethod)
         {
             var route = GetRouteByPathFormRoutes(path, httpMethod);
-            if (route == null && !_mapRoutePathOptions.Any(p => p.TargetRoutePath == path && p.HttpMethod == httpMethod))
-            {
-                await EnterRoutes(true);
-                return GetRouteByPathFormRoutes(path, httpMethod);
-            }
             return route;
         }
 

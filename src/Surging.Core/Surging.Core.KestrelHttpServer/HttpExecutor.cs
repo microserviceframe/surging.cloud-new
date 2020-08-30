@@ -23,6 +23,7 @@ using Surging.Core.CPlatform.Transport.Implementation;
 using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Serialization;
 using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
+using Surging.Core.CPlatform.Runtime;
 
 namespace Surging.Core.KestrelHttpServer
 {

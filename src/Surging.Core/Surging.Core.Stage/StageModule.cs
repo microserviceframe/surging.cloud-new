@@ -59,10 +59,8 @@ namespace Surging.Core.Stage
             var apiConfig = AppConfig.Options.ApiGetWay;
             if (apiConfig != null)
             {
-                ApiGateWay.AppConfig.CacheMode = apiConfig.CacheMode;
                 ApiGateWay.AppConfig.AuthenticationServiceKey = apiConfig.AuthenticationServiceKey;
                 ApiGateWay.AppConfig.AuthorizationServiceKey = apiConfig.AuthorizationServiceKey;
-                ApiGateWay.AppConfig.AccessTokenExpireTimeSpan =TimeSpan.FromMinutes(apiConfig.AccessTokenExpireTimeSpan);
                 ApiGateWay.AppConfig.AuthorizationRoutePath = apiConfig.AuthorizationRoutePath;
                 ApiGateWay.AppConfig.AuthenticationRoutePath = apiConfig.AuthenticationRoutePath;
                 ApiGateWay.AppConfig.TokenEndpointPath = apiConfig.TokenEndpointPath;

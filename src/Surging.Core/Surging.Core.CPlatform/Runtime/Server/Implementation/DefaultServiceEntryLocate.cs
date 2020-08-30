@@ -39,12 +39,13 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation
             if (httpMessage.RoutePath.AsSpan().IndexOf("/") == -1)
                 routePath = $"/{routePath}";
             var serviceEntries = _serviceEntryManager.GetEntries(); //_serviceEntryManager.GetAllEntries();
-            var conditionserviceEntries = serviceEntries.Where(i => i.RoutePath == routePath && i.Methods.Contains(httpMessage.HttpMethod) && !i.Descriptor.GetMetadata<bool>("IsOverload"));
-            if (conditionserviceEntries.Count() > 1) 
+            var requestServiceEntries = serviceEntries.Where(i => i.RoutePath == routePath && i.Methods.Contains(httpMessage.HttpMethod) && !i.Descriptor.GetMetadata<bool>("IsOverload"));
+         
+            if (requestServiceEntries.Count() > 1) 
             {
-                throw new CPlatformException($"存在{conditionserviceEntries.Count()}个{httpMessage.RoutePath}-{httpMessage.HttpMethod}的路由配置",StatusCode.RouteError);
+                throw new CPlatformException($"存在{requestServiceEntries.Count()}个{httpMessage.RoutePath}-{httpMessage.HttpMethod}的路由配置,请检查路由配置信息",StatusCode.RouteError);
             }
-            return conditionserviceEntries.FirstOrDefault();
+            return requestServiceEntries.FirstOrDefault();
         }
 
         #endregion Implementation of IServiceEntryLocate

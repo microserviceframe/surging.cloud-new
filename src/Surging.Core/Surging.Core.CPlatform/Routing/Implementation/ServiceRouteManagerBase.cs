@@ -52,12 +52,10 @@ namespace Surging.Core.CPlatform.Routing.Implementation
         private EventHandler<ServiceRouteEventArgs> _created;
         private EventHandler<ServiceRouteEventArgs> _removed;
         private EventHandler<ServiceRouteChangedEventArgs> _changed;
-        protected readonly IEnumerable<MapRoutePathOption> _mapRoutePathOptions;
 
         protected ServiceRouteManagerBase(ISerializer<string> serializer)
         {
             _serializer = serializer;
-            _mapRoutePathOptions = GetMapRoutePaths();
         }
 
         #region Implementation of IServiceRouteManager
@@ -160,18 +158,6 @@ namespace Surging.Core.CPlatform.Routing.Implementation
         protected abstract Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes);
 
         protected abstract Task SetRouteAsync(ServiceRouteDescriptor route);
-
-        protected virtual IEnumerable<MapRoutePathOption> GetMapRoutePaths() 
-        {
-            var mapRoutePathOptions = new List<MapRoutePathOption>();
-            var mapRoutePathSection = AppConfig.GetSection("Swagger:Options:MapRoutePaths");
-            if (mapRoutePathSection.Exists())
-            {
-                mapRoutePathOptions = mapRoutePathSection.Get<List<MapRoutePathOption>>();
-            }
-            return mapRoutePathOptions;
-        }
-
 
         protected void OnCreated(params ServiceRouteEventArgs[] args)
         {

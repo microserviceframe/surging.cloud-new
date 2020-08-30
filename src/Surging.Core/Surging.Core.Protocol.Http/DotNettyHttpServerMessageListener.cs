@@ -5,6 +5,7 @@ using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Microsoft.Extensions.Logging;
 using Surging.Core.CPlatform;
+using Surging.Core.CPlatform.Configurations;
 using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Messages;
 using Surging.Core.CPlatform.Routing;
@@ -168,6 +169,7 @@ namespace Surging.Core.Protocol.Http
                 Task.Run(async () =>
                 {
                     var parameters = GetParameters(HttpUtility.UrlDecode(msg.Uri), out string path);
+                    path = AppConfig.MapRoutePathOptions.GetRoutePath(path, msg.Method.Name);
                     var serviceRoute = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path,msg.Method.Name.ToUpper());
                     if (serviceRoute == null)
                     {

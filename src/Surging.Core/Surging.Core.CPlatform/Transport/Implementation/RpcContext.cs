@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -60,6 +61,11 @@ namespace Surging.Core.CPlatform.Transport.Implementation
         private RpcContext()
         {
             contextParameters = new ConcurrentDictionary<string, object>();
+        }
+
+        public void RemoveAttachment(string key)
+        {
+            contextParameters.TryRemove(key, out object value);
         }
     }
 

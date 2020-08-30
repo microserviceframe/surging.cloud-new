@@ -22,7 +22,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
-
+using CplatformAppConfig = Surging.Core.CPlatform.AppConfig;
 namespace Surging.Core.Consul
 {
     /// <summary>
@@ -131,11 +131,6 @@ namespace Surging.Core.Consul
         public override async Task<ServiceRoute> GetRouteByPathAsync(string path,string httpMthod)
         {
             var route = GetRouteByPathFormRoutes(path, httpMthod);
-            if (route == null && !_mapRoutePathOptions.Any(p => p.TargetRoutePath == path && p.HttpMethod == httpMthod))
-            {
-                await EnterRoutes(true);
-                return GetRouteByPathFormRoutes(path, httpMthod);
-            }
             return route;
         }
 

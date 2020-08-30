@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Surging.Core.CPlatform.Utilities;
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 
 namespace Surging.Core.CPlatform.Configurations.Remote
 {

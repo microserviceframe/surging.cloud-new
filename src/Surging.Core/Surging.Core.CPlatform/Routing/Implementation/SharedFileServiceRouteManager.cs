@@ -92,13 +92,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
         public override async Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod)
         {
 
-            var route = GetRouteByPathFormRoutes(path,httpMethod);
-            if (route == null && !_mapRoutePathOptions.Any(p => p.TargetRoutePath == path && p.HttpMethod == httpMethod))
-            {
-                await EntryRoutes(_filePath);
-
-                return GetRouteByPathFormRoutes(path,httpMethod);
-            }
+            var route = GetRouteByPathFormRoutes(path,httpMethod);           
             return route;         
         }
 

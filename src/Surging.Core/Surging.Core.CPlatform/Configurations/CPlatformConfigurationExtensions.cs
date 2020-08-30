@@ -54,10 +54,17 @@ namespace Surging.Core.CPlatform.Configurations
                 if (!string.IsNullOrEmpty(basePath))
                     builder.SetBasePath(basePath);
                 AppConfig.Configuration = builder.Build();
-                AppConfig.ServerOptions = AppConfig.Configuration.Get<SurgingServerOptions>();
-                var section = AppConfig.Configuration.GetSection("Surging");
-                if (section.Exists())
-                    AppConfig.ServerOptions = AppConfig.Configuration.GetSection("Surging").Get<SurgingServerOptions>();
+               
+                var surgingSection = AppConfig.Configuration.GetSection("Surging");
+                if (surgingSection.Exists())
+                {
+                    AppConfig.ServerOptions = surgingSection.Get<SurgingServerOptions>();
+                }
+                var actionMapSecetion = AppConfig.Configuration.GetSection("Swagger:Options:MapRoutePaths");
+                if (actionMapSecetion.Exists()) 
+                {
+                    AppConfig.MapRoutePathOptions = actionMapSecetion.Get<IEnumerable<MapRoutePathOption>>();
+                }
             }
             return builder;
         }

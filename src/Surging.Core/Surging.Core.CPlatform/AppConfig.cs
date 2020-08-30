@@ -12,11 +12,12 @@ using System.Text;
 
 namespace Surging.Core.CPlatform
 {
-   public class AppConfig
+    public class AppConfig
     {
         #region 字段
-        private static AddressSelectorMode _loadBalanceMode=AddressSelectorMode.Polling;
-        private static SurgingServerOptions _serverOptions=new SurgingServerOptions();
+        private static AddressSelectorMode _loadBalanceMode = AddressSelectorMode.Polling;
+        private static SurgingServerOptions _serverOptions = new SurgingServerOptions();
+        private static IEnumerable<MapRoutePathOption> _mapRoutePathOptions = new List<MapRoutePathOption>();
         #endregion
 
         public static IConfigurationRoot Configuration { get; internal set; }
@@ -29,8 +30,8 @@ namespace Surging.Core.CPlatform
             get
             {
                 AddressSelectorMode mode = _loadBalanceMode; ;
-                if(Configuration !=null 
-                    && Configuration["AccessTokenExpireTimeSpan"]!=null
+                if (Configuration != null
+                    && Configuration["AccessTokenExpireTimeSpan"] != null
                     && !Enum.TryParse(Configuration["AccessTokenExpireTimeSpan"], out mode))
                 {
                     mode = _loadBalanceMode;
@@ -58,6 +59,19 @@ namespace Surging.Core.CPlatform
             {
                 _serverOptions = value;
             }
+        }
+
+        public static IEnumerable<MapRoutePathOption> MapRoutePathOptions
+        {
+            get
+            {
+                return _mapRoutePathOptions;
+            }
+            internal set 
+            {
+                _mapRoutePathOptions = value;
+            }
+        
         }
 
         public static string PayloadKey { get; } = "payload";

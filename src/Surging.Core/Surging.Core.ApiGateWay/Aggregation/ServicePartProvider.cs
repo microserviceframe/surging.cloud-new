@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using Surging.Core.ApiGateWay.Configurations;
 using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 using Surging.Core.CPlatform.Utilities;
+using Surging.Core.CPlatform.Runtime;
 
 namespace Surging.Core.ApiGateWay.Aggregation
 {

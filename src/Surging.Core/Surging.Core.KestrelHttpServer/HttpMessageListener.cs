@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Surging.Core.CPlatform;
+using Surging.Core.CPlatform.Configurations;
 using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Messages;
 using Surging.Core.CPlatform.Routing;
@@ -53,7 +53,7 @@ namespace Surging.Core.KestrelHttpServer
 
             var path = (context.Items["path"]
                 ?? HttpUtility.UrlDecode(GetRoutePath(context.Request.Path.ToString()))) as string;
-           
+            path = AppConfig.MapRoutePathOptions.GetRoutePath(path, context.Request.Method);
             if (serviceRoute == null)
             {
                 var route = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path, context.Request.Method);
@@ -83,6 +83,7 @@ namespace Surging.Core.KestrelHttpServer
                     parameters.Add(param.Key, param.Value);
                 }
             }
+
             var httpMessage = new HttpMessage
             {
                 Parameters = parameters,
@@ -144,22 +145,15 @@ namespace Surging.Core.KestrelHttpServer
 
         private IDictionary<string, object> GetHttpMessageAttachments(HttpContext context)
         {
-            var httpMessageAttachments = RpcContext.GetContext().GetContextParameters();
+            
             if (context.User.Claims != null && context.User.Claims.Any())
             {
                 foreach (var claims in context.User.Claims)
                 {
-                    httpMessageAttachments[claims.Type] = claims.Value;
+                    RpcContext.GetContext().SetAttachment(claims.Type, claims.Value);
                 }
             }
-            else 
-            {
-                RemoveClaims(httpMessageAttachments,ClaimTypes.UserId);
-                RemoveClaims(httpMessageAttachments, ClaimTypes.UserName);
-                RemoveClaims(httpMessageAttachments, ClaimTypes.Phone);
-                RemoveClaims(httpMessageAttachments, ClaimTypes.Email);
-            }
-            return httpMessageAttachments;
+            return RpcContext.GetContext().GetContextParameters();
         }
 
         private void RemoveClaims(IDictionary<string, object> httpMessageAttachments,string claimType)
@@ -202,11 +196,12 @@ namespace Surging.Core.KestrelHttpServer
             foreach (var filter in filters)
             {
                 var path = HttpUtility.UrlDecode(GetRoutePath(context.Request.Path.ToString()));
+                path = AppConfig.MapRoutePathOptions.GetRoutePath(path,context.Request.Method);
                 var serviceRoute = await _serviceRouteProvider.GetRouteByPathOrRegexPath(path,context.Request.Method);
-                //if (serviceRoute == null) 
-                //{
-                //    throw new CPlatformException("Routing path not found", StatusCode.Http404EndpointStatusCode);
-                //}
+                if (serviceRoute == null)
+                {
+                    throw new CPlatformException($"未能找到:{path}-{context.Request.Method}的路由信息", StatusCode.Http404EndpointStatusCode);
+                }
                 context.Items.Add("route", serviceRoute);
                 var filterContext = new AuthorizationFilterContext
                 {

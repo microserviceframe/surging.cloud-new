@@ -2,6 +2,7 @@
 using Surging.Core.CPlatform.DependencyResolution;
 using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Routing;
+using Surging.Core.CPlatform.Runtime;
 using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 using System.Collections.Generic;
 using System.Threading.Tasks;

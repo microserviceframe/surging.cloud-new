@@ -34,7 +34,7 @@ namespace Surging.Core.ApiGateWay
             services.RegisterType<ServicePartProvider>().As<IServicePartProvider>().SingleInstance();
             if (config != null)
             {
-                AppConfig.AccessTokenExpireTimeSpan = config.AccessTokenExpireTimeSpan;
+                AppConfig.DefaultExpired = config.DefaultExpired;
                 AppConfig.AuthorizationRoutePath = config.AuthorizationRoutePath;
                 AppConfig.AuthorizationServiceKey = config.AuthorizationServiceKey;
             }

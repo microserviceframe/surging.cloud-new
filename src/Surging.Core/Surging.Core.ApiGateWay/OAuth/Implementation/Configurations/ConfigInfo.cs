@@ -6,16 +6,16 @@ namespace Surging.Core.ApiGateWay.OAuth
 {
     public class ConfigInfo
     {
-        public ConfigInfo(string authorizationRoutePath):this(authorizationRoutePath,null, TimeSpan.FromMinutes(30))
+        public ConfigInfo(string authorizationRoutePath):this(authorizationRoutePath,null, 24)
         {
 
         }
         
-        public ConfigInfo(string authorizationRoutePath,string authorizationServiceKey, TimeSpan accessTokenExpireTimeSpan)
+        public ConfigInfo(string authorizationRoutePath,string authorizationServiceKey, int defaultExpired)
         {
             AuthorizationServiceKey = authorizationServiceKey;
             AuthorizationRoutePath = authorizationRoutePath;
-            AccessTokenExpireTimeSpan = accessTokenExpireTimeSpan;
+            DefaultExpired = defaultExpired;
         }
         public string AuthorizationServiceKey { get; set; }
         /// <summary>
@@ -25,6 +25,6 @@ namespace Surging.Core.ApiGateWay.OAuth
         /// <summary>
         /// token 有效期
         /// </summary>
-        public TimeSpan AccessTokenExpireTimeSpan { get; set; } = TimeSpan.FromMinutes(30);
+        public int DefaultExpired { get; set; } = 24;
     };
 }

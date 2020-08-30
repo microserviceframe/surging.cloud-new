@@ -78,27 +78,6 @@ namespace Surging.Core.ApiGateWay
             }
         }
 
-
-        private static TimeSpan _accessTokenExpireTimeSpan = TimeSpan.FromMinutes(30);
-        public static TimeSpan AccessTokenExpireTimeSpan
-        {
-            get
-            {
-                if (Configuration == null)
-                    return _accessTokenExpireTimeSpan;
-                int tokenExpireTime;
-                if (Configuration["AccessTokenExpireTimeSpan"] != null && int.TryParse(Configuration["AccessTokenExpireTimeSpan"], out tokenExpireTime))
-                {
-                    _accessTokenExpireTimeSpan = TimeSpan.FromMinutes(tokenExpireTime);
-                }
-                return _accessTokenExpireTimeSpan;
-            }
-            set
-            {
-                _accessTokenExpireTimeSpan = value;
-            }
-        }
-
         private static string _tokenEndpointPath = "oauth2/token";
 
         public static string  TokenEndpointPath
@@ -152,23 +131,6 @@ namespace Surging.Core.ApiGateWay
             }
         }
 
-        private static string _cacheMode = "MemoryCache";
-
-        public static string CacheMode
-        {
-            get
-            {
-                if (Configuration == null)
-                    return _cacheMode;
-
-                return Configuration["CacheMode"] ?? _cacheMode;
-            }
-            set
-            {
-                _cacheMode = value;
-            }
-
-        }
 
         private static bool _isUsingTerminal = false;
 
