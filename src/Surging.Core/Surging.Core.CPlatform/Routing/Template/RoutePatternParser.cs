@@ -42,7 +42,7 @@ namespace Surging.Core.CPlatform.Routing.Template
             }
             result.Length = result.Length - 1;
             if (!isAppendMethod && !routeIsReWriteByServiceRoute) result.AppendFormat("/{0}", method.ToLower());
-            return result.ToString(); //result.ToString().ToLower();
+            return result.ToString().TrimEnd('/'); //result.ToString().ToLower();
         }
 
         public static string Parse(string routeTemplet, string service)

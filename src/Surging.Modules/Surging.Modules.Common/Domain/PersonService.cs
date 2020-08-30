@@ -174,6 +174,11 @@ namespace Surging.Modules.Common.Domain
             throw new NotImplementedException();
         }
 
+        public Task<string> Create(UserModel input)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion Implementation of IUserService
     }
 }

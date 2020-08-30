@@ -178,6 +178,11 @@ namespace Surging.Modules.Common.Domain
         {
             return new DeleteByIdOutput  { Id = Guid.NewGuid().ToString(), Message = "删除成功" };
         }
+
+        public async Task<string> Create(UserModel input)
+        {
+            return "创建用户成功";
+        }
         #endregion Implementation of IUserService
     }
 }

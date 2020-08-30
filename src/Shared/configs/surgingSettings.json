@@ -61,7 +61,7 @@
       "CacheMode": "ddlCache.Redis", //MemoryCache or  gateway.Redis save token
       "IsUsingTerminal": false,
       "Terminals": "dashboard,web,iosapp,androidapp",
-      "TokenSecret": "${TokenSecret}|PkRXhXcpfeSGhofydo9bm5XCx5UqCEhk",
+      "JwtSecret": "${JwtSecret}|PkRXhXcpfeSGhofydo9bm5XCx5UqCEhk",
       "DefaultExpired": "${DefaultExpired}|24"
     },
     "AccessPolicy": {

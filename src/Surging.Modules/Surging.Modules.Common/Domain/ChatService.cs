@@ -1,6 +1,6 @@
 ﻿using Surging.Core.CPlatform.Utilities;
 using Surging.Core.Protocol.WS;
-using Surging.Core.Protocol.WS.Runtime;
+using Surging.Core.CPlatform.Runtime;
 using Surging.Core.ProxyGenerator;
 using Surging.IModuleServices.Common;
 using System;
@@ -29,7 +29,7 @@ namespace Surging.Modules.Common.Domain
                 model.Add("name", _to);
                 model.Add("data", e.Data);
                 var result = ServiceLocator.GetService<IServiceProxyProvider>()
-                     .Invoke<object>(model, "api/chat/SendMessage", Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes.HttpMethod.POST).Result;
+                     .Invoke<object>(model, "api/chat/SendMessage", HttpMethod.POST).Result;
 
             }
         }

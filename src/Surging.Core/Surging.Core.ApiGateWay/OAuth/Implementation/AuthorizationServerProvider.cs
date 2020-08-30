@@ -49,7 +49,7 @@ namespace Surging.Core.ApiGateWay.OAuth
             {
                 if (!payload.ContainsKey(ClaimTypes.UserId) || !payload.ContainsKey(ClaimTypes.UserName)) 
                 {
-                    throw new AuthException($"认证接口实现不正确,接口返回值必须包含{ClaimTypes.UserId}和{ClaimTypes.UserName}");
+                    throw new AuthException($"认证接口实现不正确,接口返回值必须包含{ClaimTypes.UserId}和{ClaimTypes.UserName}的声明");
                 }
                 var jwtBuilder = GetJwtBuilder(AppConfig.JwtSecret);
                 var exp = AppConfig.DefaultExpired;
@@ -125,7 +125,7 @@ namespace Surging.Core.ApiGateWay.OAuth
         {
             if (secret.IsNullOrEmpty()) 
             {
-                throw new AuthException("未设置TokenSecret,请先设置TokenSecret", StatusCode.IssueTokenError);
+                throw new AuthException("未设置JwtSecret,请先设置JwtSecret", StatusCode.IssueTokenError);
             }
             if (algorithm == null) 
             {

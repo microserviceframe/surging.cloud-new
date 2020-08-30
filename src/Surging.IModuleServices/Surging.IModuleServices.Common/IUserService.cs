@@ -182,5 +182,9 @@ new Surging.IModuleServices.Common.Models.UserModel
 
         [HttpDelete]
         Task<DeleteByIdOutput> Delete(DeleteByIdInput input);
+
+        [HttpPost]
+        [ServiceRoute("")]
+        Task<string> Create(UserModel input);
     }
 }
