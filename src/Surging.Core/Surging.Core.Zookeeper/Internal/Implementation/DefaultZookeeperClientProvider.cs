@@ -42,42 +42,25 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
         public async Task<IZookeeperClient> GetZooKeeperClient()
         {
             var address = new List<AddressModel>();
-            foreach (var addressModel in _config.Addresses)
-            {
-                //await _healthCheckService.Monitor(addressModel);
-                //var isHealth = await _healthCheckService.IsHealth(addressModel);
-                //if (!isHealth)
-                //{
-                //    _logger.LogWarning($"服务注册中心地址{addressModel.ToString()}不健康。");
-                //    continue;
-                //}
-                address.Add(addressModel);
-            }
-            if (!address.Any())
-            {
-                if (_logger.IsEnabled(Level.Warning))
-                    _logger.LogWarning($"找不到可用的注册中心地址。");
-                throw new CPlatformException("找不到可用的Zookeeper注册中心地址");
-            }
 
             var addr = await _zookeeperAddressSelector.SelectAsync(new AddressSelectContext
             {
                 Descriptor = new ServiceDescriptor { Id = nameof(DefaultZookeeperClientProvider) },
-                Address = address
+                Address = _config.Addresses
             });
-            if (addr != null)
-            {
-                var ipAddress = addr as IpAddressModel;
-                return CreateZooKeeper(ipAddress);
-            }
-            throw new CPlatformException("找不到可用的Zookeeper注册中心地址");
+            var ipAddress = addr as IpAddressModel;
+            return CreateZooKeeper(ipAddress);
         }
 
         protected IZookeeperClient CreateZooKeeper(IpAddressModel ipAddress)
         {
             if (!_zookeeperClients.TryGetValue(ipAddress, out IZookeeperClient zookeeperClient))
             {
-                var options = new ZookeeperClientOptions(ipAddress.ToString()) { ConnectionTimeout = _config.SessionTimeout, SessionTimeout = _config.SessionTimeout };
+                var options = new ZookeeperClientOptions(ipAddress.ToString()) { 
+                    ConnectionTimeout = _config.ConnectionTimeout,
+                    SessionTimeout = _config.SessionTimeout,
+                    OperatingTimeout = _config.OperatingTimeout
+                };
                 zookeeperClient = new ZookeeperClient(options);
 
                 _zookeeperClients.AddOrUpdate(ipAddress, zookeeperClient, (k,v)=> zookeeperClient);

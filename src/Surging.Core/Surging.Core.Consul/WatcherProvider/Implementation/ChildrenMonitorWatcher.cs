@@ -35,14 +35,18 @@ namespace Surging.Core.Consul.WatcherProvider
         protected override async Task ProcessImpl()
         {
             RegisterWatch(this);
-            var client =await _clientCall();
-            var result = await client.GetChildrenAsync(_path);
-            if (result != null)
+            var client = await _clientCall();
+            if (client != null) 
             {
-                var convertResult = _func.Invoke(result).Select(key => $"{_path}{key}").ToArray();
-                _action(_currentData, convertResult);
-                this.SetCurrentData(convertResult);
+                var result = await client.GetChildrenAsync(_path);
+                if (result != null)
+                {
+                    var convertResult = _func.Invoke(result).Select(key => $"{_path}{key}").ToArray();
+                    _action(_currentData, convertResult);
+                    this.SetCurrentData(convertResult);
+                }
             }
+
         }
 
         private void RegisterWatch(Watcher watcher = null)

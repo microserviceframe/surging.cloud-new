@@ -196,7 +196,7 @@ namespace Surging.Core.Zookeeper
 
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> address)
         {
-            var routes = (await GetRoutesAsync(true)).Where(route => route.Address.Any(p => address.Any(q => q.ToString() == p.ToString())));
+            var routes = (await GetRoutesAsync()).Where(route => route.Address.Any(p => address.Any(q => q.ToString() == p.ToString())));
             foreach (var route in routes)
             {
                 await RemveAddressAsync(address, route);
@@ -205,7 +205,7 @@ namespace Surging.Core.Zookeeper
 
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> address, string serviceId)
         {
-            var routes = await GetRoutesAsync(true);
+            var routes = await GetRoutesAsync();
             var oldRoute = routes.FirstOrDefault(p => p.ServiceDescriptor.Id == serviceId);
             if (oldRoute != null)
             {
@@ -245,6 +245,11 @@ namespace Surging.Core.Zookeeper
         public override async Task<ServiceRoute> GetRouteByPathAsync(string path,string httpMethod)
         {
             var route = GetRouteByPathFormRoutes(path, httpMethod);
+            if (route == null) 
+            {
+                await EnterRoutes(true);
+                route = GetRouteByPathFormRoutes(path, httpMethod);
+            }
             return route;
         }
 
@@ -428,7 +433,7 @@ namespace Surging.Core.Zookeeper
 
         private async Task EnterRoutes(bool needUpdateFromServiceCenter = false)
         {
-            if (_routes != null && _routes.Length > 0 && !(await IsNeedUpdateRoutes(_routes.Length)) && !needUpdateFromServiceCenter)
+            if (_routes != null && _routes.Length > 0 && !needUpdateFromServiceCenter)
                 return;
             var zooKeeperClient = await _zookeeperClientProvider.GetZooKeeperClient();
             var watcher = new ChildrenMonitorWatcher(_configInfo.RoutePath,
@@ -545,22 +550,6 @@ namespace Surging.Core.Zookeeper
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.LogInformation("路由数据更新成功。");
         }
-
-        private async Task<bool> IsNeedUpdateRoutes(int routeCount)
-        {
-            var commmadManager = ServiceLocator.GetService<IServiceCommandManager>();
-            var commands = await commmadManager.GetServiceCommandsAsync();
-            if (commands != null && commands.Any() && commands.Count() <= routeCount)
-            {
-                if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Warning))
-                    _logger.LogWarning($"从数据中心获取到{routeCount}条路由信息,{commands.Count()}条服务命令信息,无需更新路由信息");
-                return false;
-            }
-            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Warning))
-                _logger.LogWarning($"从数据中心获取到{routeCount}条路由信息,{commands.Count()}条服务命令信息,需要更新路由信息");
-            return true;
-        }
-
 
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()

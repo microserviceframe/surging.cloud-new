@@ -2,12 +2,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Surging.Core.Caching.Interfaces;
-using Surging.Core.CPlatform;
 using Surging.Core.CPlatform.Cache;
 using Surging.Core.CPlatform.Utilities;
 
@@ -19,8 +16,8 @@ namespace Surging.Core.Caching.HealthChecks.Implementation
     public class DefaultHealthCheckService : IHealthCheckService, IDisposable
     {
         private readonly Timer _timer;
-        private readonly ConcurrentDictionary<ValueTuple<string, int>, MonitorEntry> _dictionary =
-    new ConcurrentDictionary<ValueTuple<string, int>, MonitorEntry>();
+        private readonly ConcurrentDictionary<Tuple<string, int>, MonitorEntry> _dictionary =
+    new ConcurrentDictionary<Tuple<string, int>, MonitorEntry>();
         private readonly IServiceCacheManager _serviceCacheManager;
         private readonly ILogger<DefaultHealthCheckService> _logger;
 
@@ -46,7 +43,7 @@ namespace Surging.Core.Caching.HealthChecks.Implementation
             {
                 var keys = e.Cache.CacheEndpoint.Select(cacheEndpoint =>
                 {
-                    return new ValueTuple<string, int>(cacheEndpoint.Host, cacheEndpoint.Port);
+                    return new Tuple<string, int>(cacheEndpoint.Host, cacheEndpoint.Port);
                 });
                 await Check(_dictionary.Where(i => keys.Contains(i.Key)).Select(i => i.Value));
             };
@@ -55,30 +52,30 @@ namespace Surging.Core.Caching.HealthChecks.Implementation
             {
                 var keys = e.Cache.CacheEndpoint.Select(cacheEndpoint =>
                 {
-                    return new ValueTuple<string, int>(cacheEndpoint.Host, cacheEndpoint.Port);
+                    return new Tuple<string, int>(cacheEndpoint.Host, cacheEndpoint.Port);
                 });
                 await Check(_dictionary.Where(i => keys.Contains(i.Key)).Select(i => i.Value));
             };
         }
 
-        public ValueTask<bool> IsHealth(CacheEndpoint address, string cacheId)
+        public async Task<bool> IsHealth(CacheEndpoint address, string cacheId)
         {
             MonitorEntry entry;
-            return !_dictionary.TryGetValue(new ValueTuple<string, int>(address.Host, address.Port), out entry) ? new ValueTask<bool>(Check(address, cacheId)) : new ValueTask<bool>(entry.Health);
+            return !_dictionary.TryGetValue(new Tuple<string, int>(address.Host, address.Port), out entry) ?  await Check(address, cacheId) : entry.Health;
         }
 
         public Task MarkFailure(CacheEndpoint address, string cacheId)
         {
             return Task.Run(() =>
             {
-                var entry = _dictionary.GetOrAdd(new ValueTuple<string, int>(address.Host, address.Port), k => new MonitorEntry(address, cacheId, false));
+                var entry = _dictionary.GetOrAdd(new Tuple<string, int>(address.Host, address.Port), k => new MonitorEntry(address, cacheId, false));
                 entry.Health = false;
             });
         }
 
         public void Monitor(CacheEndpoint address, string cacheId)
         {
-            _dictionary.GetOrAdd(new ValueTuple<string, int>(address.Host, address.Port), k => new MonitorEntry(address, cacheId));
+            _dictionary.GetOrAdd(new Tuple<string, int>(address.Host, address.Port), k => new MonitorEntry(address, cacheId));
         }
 
         public void Dispose()
@@ -124,7 +121,7 @@ namespace Surging.Core.Caching.HealthChecks.Implementation
             foreach (var cacheEndpoint in cacheEndpoints)
             {
                 MonitorEntry value;
-                _dictionary.TryRemove(new ValueTuple<string, int>(cacheEndpoint.Host, cacheEndpoint.Port), out value);
+                _dictionary.TryRemove(new Tuple<string, int>(cacheEndpoint.Host, cacheEndpoint.Port), out value);
             }
         }
 
@@ -137,7 +134,7 @@ namespace Surging.Core.Caching.HealthChecks.Implementation
                 _serviceCacheManager.RemveAddressAsync(addresses).Wait();
                 addresses.ForEach(p => {
 
-                    _dictionary.TryRemove(new ValueTuple<string, int>(p.Host, p.Port), out MonitorEntry value);
+                    _dictionary.TryRemove(new Tuple<string, int>(p.Host, p.Port), out MonitorEntry value);
                 });
 
             }
@@ -146,7 +143,7 @@ namespace Surging.Core.Caching.HealthChecks.Implementation
         {
             var addresses = monitorEntry.EndPoint;
             await _serviceCacheManager.RemveAddressAsync(new List<CacheEndpoint>() { addresses } );
-            _dictionary.TryRemove(new ValueTuple<string, int>(addresses.Host, addresses.Port), out MonitorEntry value);
+            _dictionary.TryRemove(new Tuple<string, int>(addresses.Host, addresses.Port), out MonitorEntry value);
         }
 
         #region Help Class

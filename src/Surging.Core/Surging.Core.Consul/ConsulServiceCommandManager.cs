@@ -203,22 +203,26 @@ namespace Surging.Core.Consul
         {
             ServiceCommandDescriptor result = null;
             var client = await GetConsulClient();
-            var watcher = new NodeMonitorWatcher(GetConsulClient, _manager, path,
-              (oldData, newData) => NodeChange(oldData, newData), tmpPath =>
-              {
-                  var index = tmpPath.LastIndexOf("/");
-                  return _serviceHeartbeatManager.ExistsWhitelist(tmpPath.Substring(index + 1));
-              });
-            var queryResult = await client.KV.Keys(path);
-            if (queryResult.Response != null)
+            if (client != null) 
             {
-                var data = (await client.GetDataAsync(path));
-                if (data != null)
+                var watcher = new NodeMonitorWatcher(GetConsulClient, _manager, path,
+                 (oldData, newData) => NodeChange(oldData, newData), tmpPath =>
+                 {
+                     var index = tmpPath.LastIndexOf("/");
+                     return _serviceHeartbeatManager.ExistsWhitelist(tmpPath.Substring(index + 1));
+                 });
+                var queryResult = await client.KV.Keys(path);
+                if (queryResult.Response != null)
                 {
-                    watcher.SetCurrentData(data);
-                    result = GetServiceCommand(data);
+                    var data = (await client.GetDataAsync(path));
+                    if (data != null)
+                    {
+                        watcher.SetCurrentData(data);
+                        result = GetServiceCommand(data);
+                    }
                 }
             }
+           
             return result;
         }
 
@@ -254,27 +258,31 @@ namespace Surging.Core.Consul
                 return;
             Action<string[]> action = null;
             var client = await GetConsulClient();
-            if (_configInfo.EnableChildrenMonitor)
+            if (client != null) 
             {
-                var watcher = new ChildrenMonitorWatcher(GetConsulClient, _manager, _configInfo.CommandPath,
-                async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens),
-                       (result) => ConvertPaths(result));
-                action = currentData => watcher.SetCurrentData(currentData);
+                if (_configInfo.EnableChildrenMonitor)
+                {
+                    var watcher = new ChildrenMonitorWatcher(GetConsulClient, _manager, _configInfo.CommandPath,
+                    async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens),
+                           (result) => ConvertPaths(result));
+                    action = currentData => watcher.SetCurrentData(currentData);
+                }
+                if (client.KV.Keys(_configInfo.CommandPath).Result.Response?.Count() > 0)
+                {
+                    var result = await client.GetChildrenAsync(_configInfo.CommandPath);
+                    var keys = await client.KV.Keys(_configInfo.CommandPath);
+                    var childrens = result;
+                    action?.Invoke(ConvertPaths(childrens).Select(key => $"{_configInfo.CommandPath}{key}").ToArray());
+                    _serviceCommands = await GetServiceCommands(keys.Response);
+                }
+                else
+                {
+                    if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Warning))
+                        _logger.LogWarning($"无法获取服务命令信息，因为节点：{_configInfo.CommandPath}，不存在。");
+                    _serviceCommands = new ServiceCommandDescriptor[0];
+                }
             }
-            if (client.KV.Keys(_configInfo.CommandPath).Result.Response?.Count() > 0)
-            {
-                var result = await client.GetChildrenAsync(_configInfo.CommandPath);
-                var keys = await client.KV.Keys(_configInfo.CommandPath);
-                var childrens = result;
-                action?.Invoke(ConvertPaths(childrens).Select(key => $"{_configInfo.CommandPath}{key}").ToArray());
-                _serviceCommands = await GetServiceCommands(keys.Response);
-            }
-            else
-            {
-                if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Warning))
-                    _logger.LogWarning($"无法获取服务命令信息，因为节点：{_configInfo.CommandPath}，不存在。");
-                _serviceCommands = new ServiceCommandDescriptor[0];
-            }
+            
         }
 
         /// <summary>

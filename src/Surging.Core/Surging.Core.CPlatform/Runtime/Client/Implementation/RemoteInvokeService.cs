@@ -70,7 +70,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.Implementation
                 if (address != null)
                 {
                     _logger.LogError($"使用地址：'{address.ToString()}'调用服务{context.InvokeMessage.ServiceId}超时,原因:{ex.Message}");
-                    // await _healthCheckService.MarkTimeout(address, invokeMessage.ServiceId);
                 }
                 throw;
             }

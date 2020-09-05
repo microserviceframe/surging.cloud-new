@@ -18,7 +18,7 @@ namespace Surging.Core.CPlatform.Routing.Template
                 var param = GetParameters(parameter).FirstOrDefault();
                 if (param == null)
                 {
-                    result.Append(parameter.ToLower());
+                    result.Append(parameter);
                 }
                 else if (service.EndsWith(param, StringComparison.OrdinalIgnoreCase))
                 {
@@ -58,12 +58,12 @@ namespace Surging.Core.CPlatform.Routing.Template
                 }
                 else if (service.EndsWith(param))
                 {
-                    result.Append(service.Substring(1, service.Length - param.Length - 1));
+                    result.Append(service.Substring(1, service.Length - param.Length - 1).ToLower());
                 }
                 result.Append("/");
             }
 
-            return result.ToString().TrimEnd('/').ToLower();
+            return result.ToString().TrimEnd('/');
         }
 
         private static List<string> GetParameters(string text)

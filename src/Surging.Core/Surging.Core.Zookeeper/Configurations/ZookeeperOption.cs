@@ -11,6 +11,8 @@ namespace Surging.Core.Zookeeper.Configurations
 
         public string ConnectionTimeout { get; set; }
 
+        public string OperatingTimeout { get; set; }
+
         public string ConnectionString { get; set; }
 
         public string RoutePath { get; set; }
@@ -28,5 +30,6 @@ namespace Surging.Core.Zookeeper.Configurations
         public string ReloadOnChange { get; set; }
 
         public string EnableChildrenMonitor { get; set; }
+        
     }
 }

@@ -395,7 +395,7 @@ namespace Surging.Core.SwaggerGen
                 In = "query",
                 Required = true,
             };
-            if (Regex.IsMatch(serviceEntry.RoutePath, reg) && GetParameters(serviceEntry.RoutePath).Contains(parameterInfo.Name))
+            if (Regex.IsMatch(serviceEntry.RoutePath, reg) && GetParameters(serviceEntry.RoutePath.ToLower()).Contains(parameterInfo.Name.ToLower()))
             {
                 nonBodyParam.In = "path";
             }
@@ -527,7 +527,7 @@ namespace Surging.Core.SwaggerGen
             {
                 Name = name,
                 In = location,
-                Required = (location == "path") ? true : isRequired,
+                Required = (location == "path") ? false : isRequired,
             };
 
             if (apiParameterDescription.Type == null)

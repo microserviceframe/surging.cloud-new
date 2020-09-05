@@ -26,7 +26,6 @@ namespace Surging.Core.Consul.Internal.Cluster.Implementation.Selectors.Implemen
             if (context.Address == null)
                 throw new ArgumentNullException(nameof(context.Address));
 
-            //  var address = context.Address.ToArray();
             if (!context.Address.Any())
                 throw new ArgumentException("没有任何地址信息。", nameof(context.Address)); 
 

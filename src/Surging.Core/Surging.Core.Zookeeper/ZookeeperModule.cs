@@ -205,12 +205,15 @@ namespace Surging.Core.Zookeeper
             {
                 var sessionTimeout = config.SessionTimeout.TotalSeconds;
                 var connectionTimeout = config.ConnectionTimeout.TotalSeconds;
+                var operatingTimeout = config.OperatingTimeout.TotalSeconds;
                 Double.TryParse(option.SessionTimeout, out sessionTimeout);
                 Double.TryParse(option.ConnectionTimeout, out connectionTimeout);
+                Double.TryParse(option.OperatingTimeout, out operatingTimeout);
                 config = new ConfigInfo(
                     option.ConnectionString,
                     TimeSpan.FromSeconds(sessionTimeout),
                     TimeSpan.FromSeconds(connectionTimeout),
+                    TimeSpan.FromSeconds(operatingTimeout),
                     option.RoutePath ?? config.RoutePath,
                     option.SubscriberPath ?? config.SubscriberPath,
                     option.CommandPath ?? config.CommandPath,
@@ -219,7 +222,7 @@ namespace Surging.Core.Zookeeper
                     option.ChRoot ?? config.ChRoot,
                     option.ReloadOnChange != null ? bool.Parse(option.ReloadOnChange) :
                     config.ReloadOnChange,
-                   option.EnableChildrenMonitor != null ? bool.Parse(option.EnableChildrenMonitor) :
+                    option.EnableChildrenMonitor != null ? bool.Parse(option.EnableChildrenMonitor) :
                     config.EnableChildrenMonitor
                    );
             }

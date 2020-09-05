@@ -11,9 +11,9 @@ namespace Surging.Core.CPlatform.Routing.Template
         {
             var pattern = "/{.*?}";
             var result = new Dictionary<string, object>();
-           if ( Regex.IsMatch(routePath, pattern))
+            if ( Regex.IsMatch(routePath, pattern,RegexOptions.IgnoreCase))
             {
-                 var routeTemplate= Regex.Replace(routePath, pattern, "");
+                var routeTemplate= Regex.Replace(routePath, pattern, "", RegexOptions.IgnoreCase);
                 var routeSegments = routeTemplate.Split('/');
                 var pathSegments = path.Split('/');
                 var segments = routePath.Split("/");

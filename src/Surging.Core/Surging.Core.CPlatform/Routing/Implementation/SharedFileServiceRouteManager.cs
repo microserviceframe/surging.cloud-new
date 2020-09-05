@@ -92,7 +92,12 @@ namespace Surging.Core.CPlatform.Routing.Implementation
         public override async Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod)
         {
 
-            var route = GetRouteByPathFormRoutes(path,httpMethod);           
+            var route = GetRouteByPathFormRoutes(path,httpMethod);
+            if (route == null)
+            {
+                await EntryRoutes(_filePath);
+                route = GetRouteByPathFormRoutes(path, httpMethod);
+            }
             return route;         
         }
 
@@ -164,7 +169,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
 
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> address)
         {
-            var routes = (await GetRoutesAsync(true)).Where(route => route.Address.Any(p => address.Any(q => q.ToString() == p.ToString())));
+            var routes = (await GetRoutesAsync()).Where(route => route.Address.Any(p => address.Any(q => q.ToString() == p.ToString())));
             foreach (var route in routes)
             {
                 route.Address = route.Address.Except(address).ToList();
@@ -174,7 +179,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
 
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> Address, string serviceId)
         {
-            var routes = await GetRoutesAsync(true);
+            var routes = await GetRoutesAsync();
             var route = routes.FirstOrDefault(p => p.ServiceDescriptor.Id == serviceId);
             if (route != null) 
             {

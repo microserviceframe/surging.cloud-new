@@ -133,33 +133,41 @@ namespace Surging.Core.Consul
             if (_subscribers != null)
                 return;
             var client = await _consulClientFactory.GetClient();
-            if (client.KV.Keys(_configInfo.SubscriberPath).Result.Response?.Count() > 0)
+            if (client != null) 
             {
-                var result = await client.GetChildrenAsync(_configInfo.SubscriberPath);
-                var keys = await client.KV.Keys(_configInfo.SubscriberPath);
-                _subscribers = await GetSubscribers(keys.Response);
+                if (client.KV.Keys(_configInfo.SubscriberPath).Result.Response?.Count() > 0)
+                {
+                    var result = await client.GetChildrenAsync(_configInfo.SubscriberPath);
+                    var keys = await client.KV.Keys(_configInfo.SubscriberPath);
+                    _subscribers = await GetSubscribers(keys.Response);
+                }
+                else
+                {
+                    if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Warning))
+                        _logger.LogWarning($"无法获取订阅者信息，因为节点：{_configInfo.SubscriberPath}，不存在。");
+                    _subscribers = new ServiceSubscriber[0];
+                }
             }
-            else
-            {
-                if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Warning))
-                    _logger.LogWarning($"无法获取订阅者信息，因为节点：{_configInfo.SubscriberPath}，不存在。");
-                _subscribers = new ServiceSubscriber[0];
-            }
+           
         }
 
         private async Task<ServiceSubscriber> GetSubscriber(string path)
         {
             ServiceSubscriber result = null;
             var client = await _consulClientFactory.GetClient();
-            var queryResult = await client.KV.Keys(path);
-            if (queryResult.Response != null)
+            if (client != null)
             {
-                var data = (await client.GetDataAsync(path));
-                if (data != null)
+                var queryResult = await client.KV.Keys(path);
+                if (queryResult.Response != null)
                 {
-                    result = await GetSubscriber(data);
+                    var data = (await client.GetDataAsync(path));
+                    if (data != null)
+                    {
+                        result = await GetSubscriber(data);
+                    }
                 }
             }
+            
             return result;
         }
 

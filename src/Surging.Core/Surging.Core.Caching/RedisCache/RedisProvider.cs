@@ -498,9 +498,15 @@ namespace Surging.Core.Caching.RedisCache
 
         public async Task<bool> ConnectionAsync(CacheEndpoint endpoint)
         {
-            var connection = await _cacheClient
-                 .Value.ConnectionAsync(endpoint, ConnectTimeout);
-            return connection;
+            try 
+            {
+                var timeSpan = await _cacheClient.Value.GetClient(endpoint, ConnectTimeout).PingAsync();
+                return true;
+            } catch 
+            {
+                return false;
+            }
+           
         }
 
         #endregion

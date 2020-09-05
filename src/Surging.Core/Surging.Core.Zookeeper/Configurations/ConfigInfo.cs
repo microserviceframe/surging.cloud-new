@@ -27,6 +27,7 @@ namespace Surging.Core.Zookeeper.Configurations
             bool reloadOnChange = false, bool enableChildrenMonitor = false) : this(connectionString,
                 TimeSpan.FromSeconds(20),
                 TimeSpan.FromSeconds(10),
+                TimeSpan.FromSeconds(30),
                 routePath,
                 subscriberPath,
                 commandPath,
@@ -48,7 +49,8 @@ namespace Surging.Core.Zookeeper.Configurations
         /// <param name="cachePath">缓存中心配置路径</param>
         /// <param name="mqttRoutePath">mqtt路由配置路径</param>
         /// <param name="chRoot">根节点。</param>
-        public ConfigInfo(string connectionString, TimeSpan sessionTimeout, TimeSpan connectionTimeout, string routePath = "/services/serviceRoutes",
+        public ConfigInfo(string connectionString, TimeSpan sessionTimeout, TimeSpan connectionTimeout, TimeSpan operatingTimeout,
+            string routePath = "/services/serviceRoutes",
             string subscriberPath = "/services/serviceSubscribers",
             string commandPath = "/services/serviceCommands",
             string cachePath = "/services/serviceCaches",
@@ -65,6 +67,7 @@ namespace Surging.Core.Zookeeper.Configurations
             RoutePath = routePath;
             SessionTimeout = sessionTimeout;
             ConnectionTimeout = connectionTimeout;
+            OperatingTimeout = operatingTimeout;
             MqttRoutePath = mqttRoutePath;
             EnableChildrenMonitor = enableChildrenMonitor;
             if (!string.IsNullOrEmpty(connectionString))
@@ -120,6 +123,8 @@ namespace Surging.Core.Zookeeper.Configurations
         /// </summary>
         public TimeSpan ConnectionTimeout { get; set; }
 
+        public TimeSpan OperatingTimeout { get; set; }
+
         /// <summary>
         /// 根节点。
         /// </summary>
@@ -138,6 +143,7 @@ namespace Surging.Core.Zookeeper.Configurations
         /// Mqtt路由配置路径。
         /// </summary>
         public string MqttRoutePath { get; set; }
+       
 
         public AddressModel ConvertAddressModel(string connection)
         {

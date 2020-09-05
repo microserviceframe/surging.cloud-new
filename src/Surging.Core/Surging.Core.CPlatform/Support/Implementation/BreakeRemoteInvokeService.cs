@@ -132,6 +132,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
                 {
                     _serviceInvokeListenInfo.AddOrUpdate(serviceId, new ServiceInvokeListenInfo(), (k, v) =>
                     {
+                        v.SinceFaultRemoteServiceRequests = 0;
                         --v.ConcurrentRequests;
                         return v;
                     });

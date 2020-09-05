@@ -44,16 +44,16 @@ namespace Surging.Core.Consul.Internal.Implementation
             var address = new List<AddressModel>();
             foreach (var addressModel in _config.Addresses)
             {
-                //await _healthCheckService.Monitor(addressModel);
-                //var isHealth = await _healthCheckService.IsHealth(addressModel);
-                //if (!isHealth)
-                //{
-                //    _logger.LogWarning($"服务注册中心地址{addressModel.ToString()}不健康。");
-                //    continue;
-                //}
+                await _healthCheckService.Monitor(addressModel);
+                var isHealth = await _healthCheckService.IsHealth(addressModel);
+                if (!isHealth)
+                {
+                    _logger.LogWarning($"服务注册中心地址{addressModel.ToString()}不健康。");
+                    continue;
+                }
                 address.Add(addressModel);
             }
-            if (address.Count == 0)
+            if (!address.Any())
             {
                 if (_logger.IsEnabled(Level.Warning))
                     _logger.LogWarning($"找不到可用的注册中心地址。");
@@ -83,19 +83,19 @@ namespace Surging.Core.Consul.Internal.Implementation
             foreach (var address in _config.Addresses)
             {
                 var ipAddress = address as IpAddressModel;
-                //if (await _healthCheckService.IsHealth(address))
-                //{
-                //    result.Add(_consulClients.GetOrAdd(ipAddress, new ConsulClient(config =>
-                //    {
-                //        config.Address = new Uri($"http://{ipAddress.Ip}:{ipAddress.Port}");
-                //    }, null, h => { h.UseProxy = false; h.Proxy = null; })));
+                if (await _healthCheckService.IsHealth(address))
+                {
+                    result.Add(_consulClients.GetOrAdd(ipAddress, new ConsulClient(config =>
+                    {
+                        config.Address = new Uri($"http://{ipAddress.Ip}:{ipAddress.Port}");
+                    }, null, h => { h.UseProxy = false; h.Proxy = null; })));
 
-                //}
+                }
                 result.Add(_consulClients.GetOrAdd(ipAddress, new ConsulClient(config =>
                 {
                     config.Address = new Uri($"http://{ipAddress.Ip}:{ipAddress.Port}");
                 }, null, h => { h.UseProxy = false; h.Proxy = null; })));
-            }
+            }           
             return result;
         }
 

@@ -18,7 +18,7 @@ namespace Surging.Core.Caching.HealthChecks
         /// </summary>
         /// <param name="address">地址模型。</param>
         /// <returns>健康返回true，否则返回false。</returns>
-        ValueTask<bool> IsHealth(CacheEndpoint address, string cacheId);
+        Task<bool> IsHealth(CacheEndpoint address, string cacheId);
 
         /// <summary>
         /// 标记一个地址为失败的。

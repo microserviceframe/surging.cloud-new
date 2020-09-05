@@ -42,24 +42,11 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             _concurrent.TryGetValue(serviceId, out ServiceRoute route);
             if (route == null)
             {
-                var routes = await _serviceRouteManager.GetRoutesAsync();
-                route = routes.FirstOrDefault(i => i.ServiceDescriptor.Id == serviceId);
+                route = await _serviceRouteManager.GetRouteByServiceIdAsync(serviceId);
                 if (route == null)
                 {
-                    routes = await _serviceRouteManager.GetRoutesAsync(true);
-                    route = routes.FirstOrDefault(i => i.ServiceDescriptor.Id == serviceId);
-                    if (route == null)
-                    {
-                        if (_logger.IsEnabled(LogLevel.Warning))
-                        {
-                            _logger.LogWarning($"根据服务Id：{serviceId}，找不到相关服务信息。");
-                            if (route == null)
-                            {
-                                throw new CPlatformException($"根据服务Id：{serviceId}，找不到相关服务信息。");
-                            }
-                        }
-                    }
-
+                    if (_logger.IsEnabled(LogLevel.Warning))
+                        _logger.LogWarning($"根据服务id：{serviceId}，找不到相关服务信息。");
                 }
                 if (route != null)
                 {

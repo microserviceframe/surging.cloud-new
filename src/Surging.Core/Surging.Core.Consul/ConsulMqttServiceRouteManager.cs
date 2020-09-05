@@ -235,22 +235,26 @@ namespace Surging.Core.Consul
         {
             MqttServiceRoute result = null;
             var client = await GetConsulClient();
-            var watcher = new NodeMonitorWatcher(GetConsulClient, _manager, path,
-                async (oldData, newData) => await NodeChange(oldData, newData),tmpPath=> {
+            if (client != null) 
+            {
+                var watcher = new NodeMonitorWatcher(GetConsulClient, _manager, path,
+                async (oldData, newData) => await NodeChange(oldData, newData), tmpPath => {
                     var index = tmpPath.LastIndexOf("/");
                     return _serviceHeartbeatManager.ExistsWhitelist(tmpPath.Substring(index + 1));
-                }); 
-         
-            var queryResult = await client.KV.Keys(path);
-            if (queryResult.Response != null)
-            {
-                var data = (await client.GetDataAsync(path));
-                if (data != null)
+                });
+
+                var queryResult = await client.KV.Keys(path);
+                if (queryResult.Response != null)
                 {
-                    watcher.SetCurrentData(data);
-                    result = await GetRoute(data);
+                    var data = (await client.GetDataAsync(path));
+                    if (data != null)
+                    {
+                        watcher.SetCurrentData(data);
+                        result = await GetRoute(data);
+                    }
                 }
             }
+           
             return result;
         }
 
@@ -259,28 +263,32 @@ namespace Surging.Core.Consul
             if (_routes != null && _routes.Length > 0 && !(await IsNeedUpdateRoutes(_routes.Length)))
                 return;
             Action<string[]> action = null;
-            var client =await GetConsulClient();
-            if (_configInfo.EnableChildrenMonitor)
+            var client = await GetConsulClient();
+            if (client != null)
             {
-                var watcher = new ChildrenMonitorWatcher(GetConsulClient, _manager, _configInfo.MqttRoutePath,
-             async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens),
-               (result) => ConvertPaths(result).Result);
-                action = currentData => watcher.SetCurrentData(currentData);
+                if (_configInfo.EnableChildrenMonitor)
+                {
+                    var watcher = new ChildrenMonitorWatcher(GetConsulClient, _manager, _configInfo.MqttRoutePath,
+                    async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens),
+                   (result) => ConvertPaths(result).Result);
+                    action = currentData => watcher.SetCurrentData(currentData);
+                }
+                if (client.KV.Keys(_configInfo.MqttRoutePath).Result.Response?.Count() > 0)
+                {
+                    var result = await client.GetChildrenAsync(_configInfo.MqttRoutePath);
+                    var keys = await client.KV.Keys(_configInfo.MqttRoutePath);
+                    var childrens = result;
+                    action?.Invoke(ConvertPaths(childrens).Result.Select(key => $"{_configInfo.MqttRoutePath}{key}").ToArray());
+                    _routes = await GetRoutes(keys.Response);
+                }
+                else
+                {
+                    if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Warning))
+                        _logger.LogWarning($"无法获取路由信息，因为节点：{_configInfo.MqttRoutePath}，不存在。");
+                    _routes = new MqttServiceRoute[0];
+                }
             }
-            if (client.KV.Keys(_configInfo.MqttRoutePath).Result.Response?.Count() > 0)
-            {
-                var result = await client.GetChildrenAsync(_configInfo.MqttRoutePath);
-                var keys = await client.KV.Keys(_configInfo.MqttRoutePath);
-                var childrens = result;
-                action?.Invoke(ConvertPaths(childrens).Result.Select(key => $"{_configInfo.MqttRoutePath}{key}").ToArray());
-                _routes = await GetRoutes(keys.Response);
-            }
-            else
-            {
-                if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Warning))
-                    _logger.LogWarning($"无法获取路由信息，因为节点：{_configInfo.MqttRoutePath}，不存在。");
-                _routes = new MqttServiceRoute[0];
-            }
+            
         }
 
         private async Task<bool> IsNeedUpdateRoutes(int routeCount)

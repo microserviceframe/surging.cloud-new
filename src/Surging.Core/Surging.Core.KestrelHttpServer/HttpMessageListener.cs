@@ -75,7 +75,7 @@ namespace Surging.Core.KestrelHttpServer
                 }
             }
 
-            if (String.Compare(serviceRoute.ServiceDescriptor.RoutePath, path, true) != 0)
+            if (!serviceRoute.ServiceDescriptor.RoutePath.Equals(path, StringComparison.OrdinalIgnoreCase))
             {
                 var @params = RouteTemplateSegmenter.Segment(serviceRoute.ServiceDescriptor.RoutePath, path);
                 foreach (var param in @params)

@@ -133,19 +133,21 @@ namespace Surging.Core.Consul
         {
             ServiceCache result = null;
             var client = await GetConsulClient();
-            var watcher = new NodeMonitorWatcher(GetConsulClient, _manager, path,
-                 async (oldData, newData) => await NodeChange(oldData, newData),null);
-            var queryResult = await client.KV.Keys(path);
-            if (queryResult.Response != null)
+            if (client != null) 
             {
-                var data = (await client.GetDataAsync(path));
-                if (data != null)
+                var watcher = new NodeMonitorWatcher(GetConsulClient, _manager, path,
+                async (oldData, newData) => await NodeChange(oldData, newData), null);
+                var queryResult = await client.KV.Keys(path);
+                if (queryResult.Response != null)
                 {
-                    watcher.SetCurrentData(data);
-                    result = await GetCache(data);
+                    var data = (await client.GetDataAsync(path));
+                    if (data != null)
+                    {
+                        watcher.SetCurrentData(data);
+                        result = await GetCache(data);
+                    }
                 }
             }
-
             return result;
         }
 
@@ -178,28 +180,33 @@ namespace Surging.Core.Consul
             if (_serviceCaches != null && _serviceCaches.Length > 0)
                 return;
             Action<string[]> action = null;
-            var client =await GetConsulClient();
-            if (_configInfo.EnableChildrenMonitor) {
-                var watcher = new ChildrenMonitorWatcher(GetConsulClient, _manager, _configInfo.CachePath,
-                async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens),
-                  (result) => ConvertPaths(result).Result);
-                action = currentData => watcher.SetCurrentData(currentData);
-            }
-            var cacheMateDataKeys = await client.KV.Keys(_configInfo.CachePath);
-            if (cacheMateDataKeys.Response != null && cacheMateDataKeys.Response.Any())
+            var client = await GetConsulClient();
+            if (client != null) 
             {
-                var result = await client.GetChildrenAsync(_configInfo.CachePath);
-                var keys = await client.KV.Keys(_configInfo.CachePath);
-                var childrens = result;
-                action?.Invoke(ConvertPaths(childrens).Result.Select(key => $"{_configInfo.CachePath}{key}").ToArray());
-                _serviceCaches = await GetCaches(keys.Response);
+                if (_configInfo.EnableChildrenMonitor)
+                {
+                    var watcher = new ChildrenMonitorWatcher(GetConsulClient, _manager, _configInfo.CachePath,
+                    async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens),
+                      (result) => ConvertPaths(result).Result);
+                    action = currentData => watcher.SetCurrentData(currentData);
+                }
+                var cacheMateDataKeys = await client.KV.Keys(_configInfo.CachePath);
+                if (cacheMateDataKeys.Response != null && cacheMateDataKeys.Response.Any())
+                {
+                    var result = await client.GetChildrenAsync(_configInfo.CachePath);
+                    var keys = await client.KV.Keys(_configInfo.CachePath);
+                    var childrens = result;
+                    action?.Invoke(ConvertPaths(childrens).Result.Select(key => $"{_configInfo.CachePath}{key}").ToArray());
+                    _serviceCaches = await GetCaches(keys.Response);
+                }
+                else
+                {
+                    if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Warning))
+                        _logger.LogWarning($"无法获取缓存信息，因为节点：{_configInfo.CachePath}，不存在。");
+                    _serviceCaches = new ServiceCache[0];
+                }
             }
-            else
-            {
-                if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Warning))
-                    _logger.LogWarning($"无法获取缓存信息，因为节点：{_configInfo.CachePath}，不存在。");
-                _serviceCaches = new ServiceCache[0];
-            }
+            
         }
 
         private static bool DataEquals(IReadOnlyList<byte> data1, IReadOnlyList<byte> data2)

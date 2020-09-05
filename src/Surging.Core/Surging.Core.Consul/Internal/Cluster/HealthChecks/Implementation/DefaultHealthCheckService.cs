@@ -17,7 +17,7 @@ namespace Surging.Core.Consul.Internal.Cluster.HealthChecks.Implementation
         private readonly int _timeout = 3000;
         private readonly Timer _timer;
         private readonly ConcurrentDictionary<Tuple<string, int>, MonitorEntry> _dictionary =
-    new ConcurrentDictionary<Tuple<string, int>, MonitorEntry>();
+        new ConcurrentDictionary<Tuple<string, int>, MonitorEntry>();
 
         #region Implementation of IHealthCheckService
         public DefaultHealthCheckService()
