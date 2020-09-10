@@ -220,7 +220,14 @@ namespace Surging.Core.Zookeeper
                     }) ?? Enumerable.Empty<ServiceAddressDescriptor>(),
                     ServiceDescriptor = newRoute.ServiceDescriptor
                 };
-
+                lock (_routes)
+                {
+                    //删除旧路由，并添加上新的路由。
+                    _routes =
+                        _routes
+                            .Where(i => i.ServiceDescriptor.Id != newRoute.ServiceDescriptor.Id)
+                            .Concat(new[] { newRoute }).ToArray();
+                }
                 await SetRouteAsync(routeDescriptor);
             }
 
@@ -239,7 +246,14 @@ namespace Surging.Core.Zookeeper
                 }) ?? Enumerable.Empty<ServiceAddressDescriptor>(),
                 ServiceDescriptor = newRoute.ServiceDescriptor
             };
-
+            lock (_routes)
+            {
+                //删除旧路由，并添加上新的路由。
+                _routes =
+                    _routes
+                        .Where(i => i.ServiceDescriptor.Id != newRoute.ServiceDescriptor.Id)
+                        .Concat(new[] { newRoute }).ToArray();
+            }
             await SetRouteAsync(routeDescriptor);
         }
         public override async Task<ServiceRoute> GetRouteByPathAsync(string path,string httpMethod)
