@@ -304,7 +304,10 @@ namespace Surging.Core.Consul
                         if (removeRoute != null && removeRoute.Address != null && removeRoute.Address.Any(p => p.Equals(hostAddr)))
                         {
                             var nodePath = $"{_configInfo.RoutePath}{removeRouteId}";
-                            await SetRouteAsync(removeRoute);
+                            //await SetRouteAsync(removeRoute);
+                            var locker = await client.AcquireLock($"lock_{_configInfo.RoutePath}{removeRoute.ServiceDescriptor.Id}");
+                            await client.KV.Delete($"{nodePath}");
+                            await locker.Release();
                         }
 
                     }
