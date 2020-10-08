@@ -57,6 +57,15 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.Implementation.Selectors.Imple
             return address[index];
         }
 
+        protected override async Task<string> SelectConnAsync(AddressSelectContext context) 
+        {
+            var conns = context.Connections.ToArray();
+            var length = conns.Length;
+
+            var index = _generate(0, length);
+            return conns[index];
+        }
+
         #endregion Overrides of AddressSelectorBase
     }
 }

@@ -359,39 +359,54 @@ namespace Surging.Core.Caching.RedisCache
         /// </remarks>
         public void Remove(string key)
         {
-            var node = GetRedisNode(key);
-            var redisEndpoint = new RedisEndpoint()
-            {
-                DbIndex = int.Parse(node.Db),
-                Host = node.Host,
-                Password = node.Password,
-                Port = int.Parse(node.Port),
-                MinSize = int.Parse(node.MinSize),
-                MaxSize = int.Parse(node.MaxSize),
-            };
-            var redis = GetRedisClient(redisEndpoint);
-
-            var redisServer = GetRedisServer(redisEndpoint);
-
             var redisKey = GetKeySuffix(key);
             if (key.Contains("*"))
             {
-                var keys = redisServer.Keys(database: redisEndpoint.DbIndex, pattern: redisKey).ToArray();
-                if (keys.Length > 0) 
+                foreach (var nodeDic in _context.Value.dicHash) 
                 {
-                    redis.KeyDeleteAsync(keys);
-                }
-                
+                    var nodes = nodeDic.Value.GetNodes();
+                    foreach (var node in nodes) 
+                    {
+                        var redisEndpoint = new RedisEndpoint()
+                        {
+                            DbIndex = int.Parse(node.Db),
+                            Host = node.Host,
+                            Password = node.Password,
+                            Port = int.Parse(node.Port),
+                            MinSize = int.Parse(node.MinSize),
+                            MaxSize = int.Parse(node.MaxSize),
+                        };
+                        var redis = GetRedisClient(redisEndpoint);
+
+                        var redisServer = GetRedisServer(redisEndpoint);
+                        var keys = redisServer.Keys(database: redisEndpoint.DbIndex, pattern: redisKey).ToArray();
+                        if (keys.Length > 0)
+                        {
+                            redis.KeyDeleteAsync(keys);
+                        }
+                    }
+                   
+                }                
             }
             else 
             {
+                var node = GetRedisNode(key);
+                var redisEndpoint = new RedisEndpoint()
+                {
+                    DbIndex = int.Parse(node.Db),
+                    Host = node.Host,
+                    Password = node.Password,
+                    Port = int.Parse(node.Port),
+                    MinSize = int.Parse(node.MinSize),
+                    MaxSize = int.Parse(node.MaxSize),
+                };
+                var redis = GetRedisClient(redisEndpoint);
                 if (redis.KeyExists(redisKey)) 
                 {
                     redis.Remove(redisKey);
                 }
             }
            
-
         }
 
         /// <summary>

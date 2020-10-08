@@ -72,20 +72,8 @@ namespace Surging.Core.Zookeeper.Configurations
             EnableChildrenMonitor = enableChildrenMonitor;
             if (!string.IsNullOrEmpty(connectionString))
             {
-                var addresses = connectionString.Split(",");
-                if (addresses.Length > 1)
-                {
-                    Addresses = addresses.Select(p => ConvertAddressModel(p));
-                }
-                else
-                {
-                    var address = ConvertAddressModel(connectionString);
-                    if (address != null)
-                    {
-                        var ipAddress = address as IpAddressModel;
-                        Addresses = new IpAddressModel[] { ipAddress};
-                    }
-                }
+                var addresses = connectionString.Split(";");
+                Addresses = addresses;
             }
         }
 
@@ -131,7 +119,7 @@ namespace Surging.Core.Zookeeper.Configurations
         public string ChRoot { get; set; }
 
 
-        public IEnumerable<AddressModel> Addresses { get; set; }
+        public IEnumerable<string> Addresses { get; set; }
 
         /// <summary>
         /// 缓存中心配置中心
@@ -145,15 +133,22 @@ namespace Surging.Core.Zookeeper.Configurations
         public string MqttRoutePath { get; set; }
        
 
-        public AddressModel ConvertAddressModel(string connection)
+        public IEnumerable<AddressModel> ConvertAddressModel(string connection)
         {
-            var address = connection.Split(":");
-            if (address.Length > 1)
+            var addressModels = new List<AddressModel>();
+            var addresses = connection.Split(",");
+            foreach (var addr in addresses) 
             {
-                int port;
-                int.TryParse(address[1], out port);
-                return new IpAddressModel(address[0], port);
+                var addressSegment = addr.Split(":");
+                if (addressSegment.Length > 1)
+                {
+                    int port;
+                    int.TryParse(addressSegment[1], out port);
+                    var ipAddesssModel = new IpAddressModel(addressSegment[0], port);
+                    addressModels.Add(ipAddesssModel);
+                }
             }
+            
             return null;
         }
     }

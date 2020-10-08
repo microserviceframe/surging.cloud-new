@@ -19,6 +19,7 @@ using Newtonsoft.Json.Linq;
 using Surging.Core.CPlatform.Transport.Implementation;
 using Surging.Core.CPlatform.Routing.Template;
 using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
+using Surging.Core.CPlatform.Runtime;
 
 namespace Surging.ApiGateway.Controllers
 {

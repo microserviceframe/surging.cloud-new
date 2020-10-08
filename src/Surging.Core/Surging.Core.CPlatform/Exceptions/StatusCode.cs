@@ -32,6 +32,10 @@
         /// 路由配置错误
         /// </summary>
         RouteError = 507,
+
+
+        LockerTimeout = 507,
+
         /// <summary>
         /// 数据访问错误
         /// </summary>

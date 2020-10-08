@@ -22,6 +22,11 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
         /// 服务可用地址。
         /// </summary>
         public IEnumerable<AddressModel> Address { get; set; }
+
+        /// <summary>
+        /// 可用的连接地址
+        /// </summary>
+        public IEnumerable<string> Connections { get; set; }
     }
 
     /// <summary>

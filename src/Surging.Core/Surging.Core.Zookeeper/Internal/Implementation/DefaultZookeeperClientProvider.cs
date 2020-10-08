@@ -26,7 +26,7 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
         private readonly IZookeeperAddressSelector _zookeeperAddressSelector;
         private readonly ILogger<DefaultZookeeperClientProvider> _logger;
         private readonly ConcurrentDictionary<string, IAddressSelector> _addressSelectors = new ConcurrentDictionary<string, IAddressSelector>();
-        private readonly ConcurrentDictionary<AddressModel, IZookeeperClient> _zookeeperClients = new ConcurrentDictionary<AddressModel, IZookeeperClient>();
+        private readonly ConcurrentDictionary<string, IZookeeperClient> _zookeeperClients = new ConcurrentDictionary<string, IZookeeperClient>();
 
 
         public DefaultZookeeperClientProvider(ConfigInfo config, IHealthCheckService healthCheckService, IZookeeperAddressSelector zookeeperAddressSelector,
@@ -41,31 +41,34 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
 
         public async Task<IZookeeperClient> GetZooKeeperClient()
         {
-            var address = new List<AddressModel>();
-
-            var addr = await _zookeeperAddressSelector.SelectAsync(new AddressSelectContext
+            var addr = await _zookeeperAddressSelector.SelectConnectionAsync(new AddressSelectContext
             {
                 Descriptor = new ServiceDescriptor { Id = nameof(DefaultZookeeperClientProvider) },
-                Address = _config.Addresses
+                Connections = _config.Addresses
             });
-            var ipAddress = addr as IpAddressModel;
-            return CreateZooKeeper(ipAddress);
+           
+            return CreateZooKeeper(addr);
         }
 
-        protected IZookeeperClient CreateZooKeeper(IpAddressModel ipAddress)
+        protected IZookeeperClient CreateZooKeeper(string conn)
         {
-            if (!_zookeeperClients.TryGetValue(ipAddress, out IZookeeperClient zookeeperClient))
+            if (_zookeeperClients.TryGetValue(conn, out IZookeeperClient zookeeperClient) 
+                && zookeeperClient.WaitForKeeperState(Watcher.Event.KeeperState.SyncConnected, zookeeperClient.Options.OperatingTimeout))
             {
-                var options = new ZookeeperClientOptions(ipAddress.ToString()) { 
+                return zookeeperClient;
+            }
+            else 
+            {
+                var options = new ZookeeperClientOptions(conn)
+                {
                     ConnectionTimeout = _config.ConnectionTimeout,
                     SessionTimeout = _config.SessionTimeout,
                     OperatingTimeout = _config.OperatingTimeout
                 };
                 zookeeperClient = new ZookeeperClient(options);
-
-                _zookeeperClients.AddOrUpdate(ipAddress, zookeeperClient, (k,v)=> zookeeperClient);
+                _zookeeperClients.AddOrUpdate(conn, zookeeperClient, (k, v) => zookeeperClient);
+                return zookeeperClient;
             }
-            return zookeeperClient;
         }
 
         public async Task<IEnumerable<IZookeeperClient>> GetZooKeeperClients()
@@ -73,22 +76,16 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
             var result = new List<IZookeeperClient>();
             foreach (var address in _config.Addresses)
             {
-                var ipAddress = address as IpAddressModel;
-                //if (await _healthCheckService.IsHealth(address))
-                //{
-                //    result.Add(CreateZooKeeper(ipAddress));
-
-                //}
-                result.Add(CreateZooKeeper(ipAddress));
+                result.Add(CreateZooKeeper(address));
             }
             return result;
         }
 
         public void Dispose()
         {
-            if (_zookeeperClients.Any()) 
+            if (_zookeeperClients.Any())
             {
-                foreach (var client in _zookeeperClients) 
+                foreach (var client in _zookeeperClients)
                 {
                     client.Value.Dispose();
                 }
