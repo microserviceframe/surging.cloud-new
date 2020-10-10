@@ -4,9 +4,11 @@ using Surging.Core.Consul.Configurations;
 using Surging.Core.Consul.Internal;
 using Surging.Core.Consul.Utilitys;
 using Surging.Core.Consul.WatcherProvider;
+using Surging.Core.CPlatform.Lock;
 using Surging.Core.CPlatform.Runtime.Client;
 using Surging.Core.CPlatform.Runtime.Client.Implementation;
 using Surging.Core.CPlatform.Serialization;
+using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +27,7 @@ namespace Surging.Core.Consul
         private readonly IClientWatchManager _manager;
         private readonly IConsulClientProvider _consulClientFactory;
         private ServiceSubscriber[] _subscribers;
+        private readonly ILockerProvider _lockerProvider;
 
         public ConsulServiceSubscribeManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
             ISerializer<string> stringSerializer, IClientWatchManager manager, IServiceSubscriberFactory serviceSubscriberFactory,
@@ -37,6 +40,7 @@ namespace Surging.Core.Consul
             _logger = logger;
             _manager = manager;
             _consulClientFactory = consulClientFactory;
+            _lockerProvider = ServiceLocator.GetService<ILockerProvider>();
             EnterSubscribers().Wait();
         }
 
@@ -55,17 +59,24 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                //根据前缀获取consul结果
-                var queryResult = await client.KV.List(_configInfo.SubscriberPath);
-                var response = queryResult.Response;
-                if (response != null)
+                using (var locker = await _lockerProvider.CreateLockAsync("subs_clear"))
                 {
-                    //删除操作
-                    foreach (var result in response)
+                    if (locker.IsAcquired)
                     {
-                        await client.KV.DeleteCAS(result);
+                        //根据前缀获取consul结果
+                        var queryResult = await client.KV.List(_configInfo.SubscriberPath);
+                        var response = queryResult.Response;
+                        if (response != null)
+                        {
+                            //删除操作
+                            foreach (var result in response)
+                            {
+                                await client.KV.DeleteCAS(result);
+                            }
+                        }
                     }
                 }
+               
             }
         }
 
@@ -79,22 +90,29 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                if (_subscribers != null)
+                using (var locker = await _lockerProvider.CreateLockAsync("set_subs"))
                 {
-                    var oldSubscriberIds = _subscribers.Select(i => i.ServiceDescriptor.Id).ToArray();
-                    var newSubscriberIds = subscribers.Select(i => i.ServiceDescriptor.Id).ToArray();
-                    var deletedSubscriberIds = oldSubscriberIds.Except(newSubscriberIds).ToArray();
-                    foreach (var deletedSubscriberId in deletedSubscriberIds)
+                    if (locker.IsAcquired)
                     {
-                        await client.KV.Delete($"{_configInfo.SubscriberPath}{deletedSubscriberId}");
+                        if (_subscribers != null)
+                        {
+                            var oldSubscriberIds = _subscribers.Select(i => i.ServiceDescriptor.Id).ToArray();
+                            var newSubscriberIds = subscribers.Select(i => i.ServiceDescriptor.Id).ToArray();
+                            var deletedSubscriberIds = oldSubscriberIds.Except(newSubscriberIds).ToArray();
+                            foreach (var deletedSubscriberId in deletedSubscriberIds)
+                            {
+                                await client.KV.Delete($"{_configInfo.SubscriberPath}{deletedSubscriberId}");
+                            }
+                        }
+                        foreach (var serviceSubscriber in subscribers)
+                        {
+                            var nodeData = _serializer.Serialize(serviceSubscriber);
+                            var keyValuePair = new KVPair($"{_configInfo.SubscriberPath}{serviceSubscriber.ServiceDescriptor.Id}") { Value = nodeData };
+                            await client.KV.Put(keyValuePair);
+                        }
                     }
                 }
-                foreach (var serviceSubscriber in subscribers)
-                {
-                    var nodeData = _serializer.Serialize(serviceSubscriber);
-                    var keyValuePair = new KVPair($"{_configInfo.SubscriberPath}{serviceSubscriber.ServiceDescriptor.Id}") { Value = nodeData };
-                    await client.KV.Put(keyValuePair);
-                }
+               
             }
         }
 

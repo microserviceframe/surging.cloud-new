@@ -6,6 +6,7 @@ using Surging.Core.Consul.Utilitys;
 using Surging.Core.Consul.WatcherProvider;
 using Surging.Core.Consul.WatcherProvider.Implementation;
 using Surging.Core.CPlatform.Address;
+using Surging.Core.CPlatform.Lock;
 using Surging.Core.CPlatform.Mqtt;
 using Surging.Core.CPlatform.Mqtt.Implementation;
 using Surging.Core.CPlatform.Runtime.Client;
@@ -32,6 +33,7 @@ namespace Surging.Core.Consul
         private MqttServiceRoute[] _routes;
         private readonly IConsulClientProvider _consulClientFactory;
         private readonly IServiceHeartbeatManager _serviceHeartbeatManager;
+        private readonly ILockerProvider _lockerProvider;
         public ConsulMqttServiceRouteManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
        ISerializer<string> stringSerializer, IClientWatchManager manager, IMqttServiceFactory mqttServiceFactory,
        ILogger<ConsulMqttServiceRouteManager> logger,IServiceHeartbeatManager serviceHeartbeatManager,
@@ -45,6 +47,7 @@ namespace Surging.Core.Consul
             _manager = manager;
             _serviceHeartbeatManager = serviceHeartbeatManager;
             _consulClientFactory = consulClientFactory;
+            _lockerProvider = ServiceLocator.GetService<ILockerProvider>();
             EnterRoutes().Wait();
         }
 
@@ -53,18 +56,23 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                //根据前缀获取consul结果
-                var queryResult = await client.KV.List(_configInfo.MqttRoutePath);
-                var response = queryResult.Response;
-                if (response != null)
+                using (var locker = await _lockerProvider.CreateLockAsync("mqtt_clear"))
                 {
-                    //删除操作
-                    foreach (var result in response)
+                    if (locker.IsAcquired)
                     {
-                        await client.KV.DeleteCAS(result);
+                        //根据前缀获取consul结果
+                        var queryResult = await client.KV.List(_configInfo.MqttRoutePath);
+                        var response = queryResult.Response;
+                        if (response != null)
+                        {
+                            //删除操作
+                            foreach (var result in response)
+                            {
+                                await client.KV.DeleteCAS(result);
+                            }
+                        }
                     }
                 }
-                
             }
         }
 
@@ -86,8 +94,9 @@ namespace Surging.Core.Consul
         {
             var hostAddr = NetUtils.GetHostAddress();
             var mqttServiceRoutes = await GetRoutes(routes.Select(p => $"{ _configInfo.MqttRoutePath}{p.MqttDescriptor.Topic}"));
+            await RemoveExceptRoutesAsync(mqttServiceRoutes, hostAddr);
             foreach (var route in routes)
-            {
+            {                
                 var mqttServiceRoute = mqttServiceRoutes.Where(p => p.MqttDescriptor.Topic == route.MqttDescriptor.Topic).FirstOrDefault();
 
                 if (mqttServiceRoute != null)
@@ -148,11 +157,17 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                foreach (var serviceRoute in routes)
+                using (var locker = await _lockerProvider.CreateLockAsync("set_mqtt_routes"))
                 {
-                    var nodeData = _serializer.Serialize(serviceRoute);
-                    var keyValuePair = new KVPair($"{_configInfo.MqttRoutePath}{serviceRoute.MqttDescriptor.Topic}") { Value = nodeData };
-                    await client.KV.Put(keyValuePair);                    
+                    if (locker.IsAcquired)
+                    {
+                        foreach (var serviceRoute in routes)
+                        {
+                            var nodeData = _serializer.Serialize(serviceRoute);
+                            var keyValuePair = new KVPair($"{_configInfo.MqttRoutePath}{serviceRoute.MqttDescriptor.Topic}") { Value = nodeData };
+                            await client.KV.Put(keyValuePair);
+                        }
+                    }
                 }
             }
         }
@@ -165,18 +180,26 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                if (_routes != null)
+                using (var locker = await _lockerProvider.CreateLockAsync("mqtt_removexxceptroutes"))
                 {
-                    var oldRouteTopics = _routes.Select(i => i.MqttDescriptor.Topic).ToArray();
-                    var newRouteTopics = routes.Select(i => i.MqttDescriptor.Topic).ToArray();
-                    var deletedRouteTopics = oldRouteTopics.Except(newRouteTopics).ToArray();
-                    foreach (var deletedRouteTopic in deletedRouteTopics)
+                    if (locker.IsAcquired)
                     {
-                        var addresses = _routes.Where(p => p.MqttDescriptor.Topic == deletedRouteTopic).Select(p => p.MqttEndpoint).FirstOrDefault();
-                        if (addresses.Contains(hostAddr))
-                            await client.KV.Delete($"{_configInfo.MqttRoutePath}{deletedRouteTopic}");
+                        if (_routes != null)
+                        {
+                            var oldRouteTopics = _routes.Select(i => i.MqttDescriptor.Topic).ToArray();
+                            var newRouteTopics = routes.Select(i => i.MqttDescriptor.Topic).ToArray();
+                            var deletedRouteTopics = oldRouteTopics.Except(newRouteTopics).ToArray();
+                            foreach (var deletedRouteTopic in deletedRouteTopics)
+                            {
+                                var addresses = _routes.Where(p => p.MqttDescriptor.Topic == deletedRouteTopic).Select(p => p.MqttEndpoint).FirstOrDefault();
+                                if (addresses.Contains(hostAddr))
+                                    await client.KV.Delete($"{_configInfo.MqttRoutePath}{deletedRouteTopic}");
+                            }
+                        }
                     }
                 }
+
+                
             }
         }
 

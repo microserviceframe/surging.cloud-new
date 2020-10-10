@@ -16,6 +16,7 @@ using Surging.Core.CPlatform.HashAlgorithms;
 using Surging.Core.CPlatform.Ids;
 using Surging.Core.CPlatform.Ids.Implementation;
 using Surging.Core.CPlatform.Ioc;
+using Surging.Core.CPlatform.Lock;
 using Surging.Core.CPlatform.Module;
 using Surging.Core.CPlatform.Mqtt;
 using Surging.Core.CPlatform.Routing;
@@ -459,6 +460,8 @@ namespace Surging.Core.CPlatform
             services.RegisterType(typeof(ServiceEngineLifetime)).As(typeof(IServiceEngineLifetime)).SingleInstance();
             //注册服务心跳管理 
             services.RegisterType(typeof(DefaultServiceHeartbeatManager)).As(typeof(IServiceHeartbeatManager)).SingleInstance();
+            // 注册分布式锁
+            services.RegisterType(typeof(LockerProvider)).As(typeof(ILockerProvider)).InstancePerDependency();
             return new ServiceBuilder(services)
                 .AddJsonSerialization()
                 .UseJsonCodec();

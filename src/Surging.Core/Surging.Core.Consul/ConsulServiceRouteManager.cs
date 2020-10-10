@@ -23,6 +23,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using CplatformAppConfig = Surging.Core.CPlatform.AppConfig;
+using Surging.Core.CPlatform.Lock;
+
 namespace Surging.Core.Consul
 {
     /// <summary>
@@ -39,6 +41,7 @@ namespace Surging.Core.Consul
         private ServiceRoute[] _routes;
         private readonly IConsulClientProvider _consulClientProvider;
         private readonly IServiceHeartbeatManager _serviceHeartbeatManager;
+        private readonly ILockerProvider _lockerProvider;
 
         public ConsulServiceRouteManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
        ISerializer<string> stringSerializer, IClientWatchManager manager, IServiceRouteFactory serviceRouteFactory,
@@ -53,6 +56,7 @@ namespace Surging.Core.Consul
             _consulClientProvider = consulClientProvider;
             _manager = manager;
             _serviceHeartbeatManager = serviceHeartbeatManager;
+            _lockerProvider = ServiceLocator.GetService<ILockerProvider>();
             EnterRoutes().Wait();
         }
 
@@ -65,17 +69,23 @@ namespace Surging.Core.Consul
             var clients = await _consulClientProvider.GetClients();
             foreach (var client in clients)
             {
-                //根据前缀获取consul结果
-                var queryResult = await client.KV.List(_configInfo.RoutePath);
-                var response = queryResult.Response;
-                if (response != null)
+                using (var locker = await _lockerProvider.CreateLockAsync("route_clear"))
                 {
-                    //删除操作
-                    foreach (var result in response)
+                    if (locker.IsAcquired)
                     {
-                        await client.KV.DeleteCAS(result);
+                        //根据前缀获取consul结果
+                        var queryResult = await client.KV.List(_configInfo.RoutePath);
+                        var response = queryResult.Response;
+                        if (response != null)
+                        {
+                            //删除操作
+                            foreach (var result in response)
+                            {
+                                await client.KV.DeleteCAS(result);
+                            }
+                        }
                     }
-                }
+                }     
             }
         }
 
@@ -255,18 +265,22 @@ namespace Surging.Core.Consul
             var clients = await _consulClientProvider.GetClients();
             foreach (var client in clients)
             {
-                
-                foreach (var serviceRoute in routes)
+
+                using (var locker = await _lockerProvider.CreateLockAsync("set_routes"))
                 {
-                    var locker = await client.AcquireLock($"lock_{_configInfo.RoutePath}{serviceRoute.ServiceDescriptor.Id}");
-                    var nodeData = _serializer.Serialize(serviceRoute);
-                    if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
-                        _logger.LogDebug($"准备设置服务路由信息：{Encoding.UTF8.GetString(nodeData)}。");
-                    var keyValuePair = new KVPair($"{_configInfo.RoutePath}{serviceRoute.ServiceDescriptor.Id}") { Value = nodeData };
-                    await client.KV.Put(keyValuePair);
-                    await locker.Release();
+                    if (locker.IsAcquired)
+                    {
+
+                        foreach (var serviceRoute in routes)
+                        {
+                            var nodeData = _serializer.Serialize(serviceRoute);
+                            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+                                _logger.LogDebug($"准备设置服务路由信息：{Encoding.UTF8.GetString(nodeData)}。");
+                            var keyValuePair = new KVPair($"{_configInfo.RoutePath}{serviceRoute.ServiceDescriptor.Id}") { Value = nodeData };
+                            await client.KV.Put(keyValuePair);
+                        }
+                    }
                 }
-               
             }
         }
 
@@ -275,13 +289,18 @@ namespace Surging.Core.Consul
             var clients = await _consulClientProvider.GetClients();
             foreach (var client in clients)
             {
-                var locker = await client.AcquireLock($"lock_{_configInfo.RoutePath}{route.ServiceDescriptor.Id}");
-                var nodeData = _serializer.Serialize(route);
-                if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
-                    _logger.LogDebug($"准备设置服务路由信息：{Encoding.UTF8.GetString(nodeData)}。");
-                var keyValuePair = new KVPair($"{_configInfo.RoutePath}{route.ServiceDescriptor.Id}") { Value = nodeData };
-                await client.KV.Put(keyValuePair);
-                await locker.Release();
+                using (var locker = await _lockerProvider.CreateLockAsync("set_route"))
+                {
+                    if (locker.IsAcquired)
+                    {
+                        var nodeData = _serializer.Serialize(route);
+                        if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+                            _logger.LogDebug($"准备设置服务路由信息：{Encoding.UTF8.GetString(nodeData)}。");
+                        var keyValuePair = new KVPair($"{_configInfo.RoutePath}{route.ServiceDescriptor.Id}") { Value = nodeData };
+                        await client.KV.Put(keyValuePair);
+                    }
+                }
+             
             }
         }
 
@@ -292,23 +311,30 @@ namespace Surging.Core.Consul
             var clients = await _consulClientProvider.GetClients();
             foreach (var client in clients)
             {
-                if (_routes != null)
+                using (var locker = await _lockerProvider.CreateLockAsync("removeexceptroutes"))
                 {
-                    var oldRouteIds = _routes.Select(i => i.ServiceDescriptor.Id).ToArray();
-                    var newRouteIds = routes.Select(i => i.ServiceDescriptor.Id).ToArray();
-                    var removeRouteIds = oldRouteIds.Except(newRouteIds).ToArray();
-                    foreach (var removeRouteId in removeRouteIds)
+                    if (locker.IsAcquired)
                     {
-                        var removeRoute = _routes.FirstOrDefault(p => p.ServiceDescriptor.Id == removeRouteId);
-                        removeRoute.Address = removeRoute.Address.Where(p => !p.Equals(hostAddr)).ToList();
-                        if (removeRoute != null && removeRoute.Address != null && removeRoute.Address.Any(p => p.Equals(hostAddr)))
+                        if (_routes != null)
                         {
-                            var nodePath = $"{_configInfo.RoutePath}{removeRouteId}";
-                            await SetRouteAsync(removeRoute);
-                        }
+                            var oldRouteIds = _routes.Select(i => i.ServiceDescriptor.Id).ToArray();
+                            var newRouteIds = routes.Select(i => i.ServiceDescriptor.Id).ToArray();
+                            var removeRouteIds = oldRouteIds.Except(newRouteIds).ToArray();
+                            foreach (var removeRouteId in removeRouteIds)
+                            {
+                                var removeRoute = _routes.FirstOrDefault(p => p.ServiceDescriptor.Id == removeRouteId);
+                                removeRoute.Address = removeRoute.Address.Where(p => !p.Equals(hostAddr)).ToList();
+                                if (removeRoute != null && removeRoute.Address != null && removeRoute.Address.Any(p => p.Equals(hostAddr)))
+                                {
+                                    var nodePath = $"{_configInfo.RoutePath}{removeRouteId}";
+                                    await SetRouteAsync(removeRoute);
+                                }
 
+                            }
+                        }
                     }
                 }
+
             }
         }
 

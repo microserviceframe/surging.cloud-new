@@ -18,6 +18,8 @@ using Surging.Core.CPlatform.Routing;
 using Surging.Core.CPlatform.Routing.Implementation;
 using Surging.Core.CPlatform.Runtime.Client;
 using Surging.Core.Consul.Internal;
+using Surging.Core.CPlatform.Lock;
+using Surging.Core.CPlatform.Utilities;
 
 namespace Surging.Core.Consul
 {
@@ -32,7 +34,7 @@ namespace Surging.Core.Consul
         private readonly IServiceRouteManager _serviceRouteManager;
         private readonly IServiceHeartbeatManager _serviceHeartbeatManager;
         private readonly IConsulClientProvider _consulClientFactory;
-
+        private readonly ILockerProvider _lockerProvider;
         public ConsulServiceCommandManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
         ISerializer<string> stringSerializer, IServiceRouteManager serviceRouteManager, IClientWatchManager manager, IServiceEntryManager serviceEntryManager,
             ILogger<ConsulServiceCommandManager> logger,
@@ -46,6 +48,7 @@ namespace Surging.Core.Consul
             _manager = manager;
             _serviceRouteManager = serviceRouteManager;
             _serviceHeartbeatManager = serviceHeartbeatManager;
+            _lockerProvider = ServiceLocator.GetService<ILockerProvider>();
             EnterServiceCommands().Wait();
             _serviceRouteManager.Removed += ServiceRouteManager_Removed;
         }
@@ -55,17 +58,24 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                //根据前缀获取consul结果
-                var queryResult = await client.KV.List(_configInfo.CommandPath);
-                var response = queryResult.Response;
-                if (response != null)
+                using (var locker = await _lockerProvider.CreateLockAsync("cmd_clear"))
                 {
-                    //删除操作
-                    foreach (var result in response)
-                    {
-                        await client.KV.DeleteCAS(result);
+                    if (locker.IsAcquired)
+                    {  
+                        //根据前缀获取consul结果
+                        var queryResult = await client.KV.List(_configInfo.CommandPath);
+                        var response = queryResult.Response;
+                        if (response != null)
+                        {
+                            //删除操作
+                            foreach (var result in response)
+                            {
+                                await client.KV.DeleteCAS(result);
+                            }
+                        }
                     }
                 }
+              
             }
         }
 
@@ -134,16 +144,23 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Information))
-                    _logger.LogInformation("准备添加服务命令。");
-                foreach (var serviceCommand in serviceCommands)
+                using (var locker = await _lockerProvider.CreateLockAsync("cmd_set"))
                 {
-                    var nodeData = _serializer.Serialize(serviceCommand);
-                    var keyValuePair = new KVPair($"{_configInfo.CommandPath}{serviceCommand.ServiceId}") { Value = nodeData };
-                    var isSuccess = await client.KV.Put(keyValuePair);
-                    if (isSuccess.Response)
-                        NodeChange(serviceCommand);
+                    if (locker.IsAcquired)
+                    {
+                        if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Information))
+                            _logger.LogInformation("准备添加服务命令。");
+                        foreach (var serviceCommand in serviceCommands)
+                        {
+                            var nodeData = _serializer.Serialize(serviceCommand);
+                            var keyValuePair = new KVPair($"{_configInfo.CommandPath}{serviceCommand.ServiceId}") { Value = nodeData };
+                            var isSuccess = await client.KV.Put(keyValuePair);
+                            if (isSuccess.Response)
+                                NodeChange(serviceCommand);
+                        }
+                    }
                 }
+
             }
         }
 
@@ -161,7 +178,13 @@ namespace Surging.Core.Consul
             var clients = _consulClientFactory.GetClients().Result;
             foreach (var client in clients)
             {
-                client.KV.Delete($"{_configInfo.CommandPath}{e.Route.ServiceDescriptor.Id}").Wait();
+                using (var locker = _lockerProvider.CreateLockAsync("remove_cmd_service").Result)
+                {
+                    if (locker.IsAcquired)
+                    {
+                        client.KV.Delete($"{_configInfo.CommandPath}{e.Route.ServiceDescriptor.Id}").Wait();
+                    }
+                }
             }
         }
 

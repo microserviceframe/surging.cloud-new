@@ -7,7 +7,9 @@ using Surging.Core.Consul.WatcherProvider;
 using Surging.Core.Consul.WatcherProvider.Implementation;
 using Surging.Core.CPlatform.Cache;
 using Surging.Core.CPlatform.Cache.Implementation;
+using Surging.Core.CPlatform.Lock;
 using Surging.Core.CPlatform.Serialization;
+using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +28,7 @@ namespace Surging.Core.Consul
         private readonly IServiceCacheFactory _serviceCacheFactory;
         private readonly ISerializer<string> _stringSerializer;
         private readonly IConsulClientProvider _consulClientFactory;
+        private readonly ILockerProvider _lockerProvider;
 
         public ConsulServiceCacheManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
         ISerializer<string> stringSerializer, IClientWatchManager manager, IServiceCacheFactory serviceCacheFactory,
@@ -37,7 +40,8 @@ namespace Surging.Core.Consul
             _serviceCacheFactory = serviceCacheFactory;
             _consulClientFactory = consulClientFactory;
             _logger = logger;
-            _manager = manager; 
+            _manager = manager;
+            _lockerProvider = ServiceLocator.GetService<ILockerProvider>();
            EnterCaches().Wait();
         }
 
@@ -46,16 +50,23 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                // 根据前缀获取consul结果
-                var queryResult = await client.KV.List(_configInfo.CachePath);
-                var response = queryResult.Response;
-                if (response != null)
+                using (var locker = await _lockerProvider.CreateLockAsync("cache_clear"))
                 {
-                    foreach (var result in response)
+                    if (locker.IsAcquired)
                     {
-                        await client.KV.DeleteCAS(result);
+                        // 根据前缀获取consul结果
+                        var queryResult = await client.KV.List(_configInfo.CachePath);
+                        var response = queryResult.Response;
+                        if (response != null)
+                        {
+                            foreach (var result in response)
+                            {
+                                await client.KV.DeleteCAS(result);
+                            }
+                        }
                     }
                 }
+               
             }
         }
 
@@ -99,12 +110,19 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                foreach (var cacheDescriptor in cacheDescriptors)
+                using (var locker = await _lockerProvider.CreateLockAsync("set_cache"))
                 {
-                    var nodeData = _serializer.Serialize(cacheDescriptor);
-                    var keyValuePair = new KVPair($"{_configInfo.CachePath}{cacheDescriptor.CacheDescriptor.Id}") { Value = nodeData };
-                    await client.KV.Put(keyValuePair);
-                }                
+                    if (locker.IsAcquired)
+                    {
+                        foreach (var cacheDescriptor in cacheDescriptors)
+                        {
+                            var nodeData = _serializer.Serialize(cacheDescriptor);
+                            var keyValuePair = new KVPair($"{_configInfo.CachePath}{cacheDescriptor.CacheDescriptor.Id}") { Value = nodeData };
+                            await client.KV.Put(keyValuePair);
+                        }
+                    }
+                }
+                              
             }
         }
 
@@ -163,14 +181,21 @@ namespace Surging.Core.Consul
                 var clients = await _consulClientFactory.GetClients();
                 foreach (var client in clients)
                 {
-                    var oldCacheIds = _serviceCaches.Select(i => i.CacheDescriptor.Id).ToArray();
-                    var newCacheIds = caches.Select(i => i.CacheDescriptor.Id).ToArray();
-                    var deletedCacheIds = oldCacheIds.Except(newCacheIds).ToArray();
-                    foreach (var deletedCacheId in deletedCacheIds)
+                    using (var locker = await _lockerProvider.CreateLockAsync("cache_remove"))
                     {
-                        var nodePath = $"{path}{deletedCacheId}";
-                        await client.KV.Delete(nodePath);
+                        if (locker.IsAcquired)
+                        {
+                            var oldCacheIds = _serviceCaches.Select(i => i.CacheDescriptor.Id).ToArray();
+                            var newCacheIds = caches.Select(i => i.CacheDescriptor.Id).ToArray();
+                            var deletedCacheIds = oldCacheIds.Except(newCacheIds).ToArray();
+                            foreach (var deletedCacheId in deletedCacheIds)
+                            {
+                                var nodePath = $"{path}{deletedCacheId}";
+                                await client.KV.Delete(nodePath);
+                            }
+                        }
                     }
+                    
                 }
             }
         }

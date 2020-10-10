@@ -61,6 +61,19 @@ namespace Surging.Core.CPlatform
             }
         }
 
+        private static LockOptions _lockOptions = new LockOptions();
+        public static LockOptions LockOptions 
+        {
+            get
+            {
+                return _lockOptions;
+            }
+            internal set
+            {
+                _lockOptions = value;
+            }
+        }
+
         public static IEnumerable<MapRoutePathOption> MapRoutePathOptions
         {
             get
