@@ -437,14 +437,21 @@ namespace Surging.Core.Zookeeper
         {
             ServiceRoute result = null;
             var zooKeeperClient = await _zookeeperClientProvider.GetZooKeeperClient();
-            if (await zooKeeperClient.StrictExistsAsync(path))
+            using (var locker = await _lockerProvider.CreateLockAsync("get_route"))
             {
-                var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-                var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-                result = await GetRoute(data);
+                if (locker.IsAcquired)
+                {
+                    if (await zooKeeperClient.StrictExistsAsync(path))
+                    {
+                        var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
+                        var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                        await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
+                        result = await GetRoute(data);
+                    }
+                }
             }
             return result;
+
         }
 
         private async Task<ServiceRoute[]> GetRoutes(IEnumerable<string> childrens)
@@ -472,24 +479,32 @@ namespace Surging.Core.Zookeeper
 
         private async Task EnterRoutes(bool needUpdateFromServiceCenter = false)
         {
-            if (_routes != null && _routes.Length > 0 && !needUpdateFromServiceCenter)
-                return;
             var zooKeeperClient = await _zookeeperClientProvider.GetZooKeeperClient();
-            var watcher = new ChildrenMonitorWatcher(_configInfo.RoutePath,
-                         async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
-            await zooKeeperClient.SubscribeChildrenChange(_configInfo.RoutePath, watcher.HandleChildrenChange);
-            if (await zooKeeperClient.StrictExistsAsync(_configInfo.RoutePath))
+            using (var locker = await _lockerProvider.CreateLockAsync("enter_routes")) 
             {
-                var childrens = (await zooKeeperClient.GetChildrenAsync(_configInfo.RoutePath)).ToArray();
-                watcher.SetCurrentData(childrens);
-                _routes = await GetRoutes(childrens);
+                if (locker.IsAcquired) 
+                {
+                    if (_routes != null && _routes.Length > 0 && !needUpdateFromServiceCenter)
+                        return;
+                   
+                    var watcher = new ChildrenMonitorWatcher(_configInfo.RoutePath,
+                                 async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
+                    await zooKeeperClient.SubscribeChildrenChange(_configInfo.RoutePath, watcher.HandleChildrenChange);
+                    if (await zooKeeperClient.StrictExistsAsync(_configInfo.RoutePath))
+                    {
+                        var childrens = (await zooKeeperClient.GetChildrenAsync(_configInfo.RoutePath)).ToArray();
+                        watcher.SetCurrentData(childrens);
+                        _routes = await GetRoutes(childrens);
+                    }
+                    else
+                    {
+                        if (_logger.IsEnabled(LogLevel.Warning))
+                            _logger.LogWarning($"无法获取路由信息，因为节点：{_configInfo.RoutePath}，不存在。");
+                        _routes = new ServiceRoute[0];
+                    }
+                }
             }
-            else
-            {
-                if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.LogWarning($"无法获取路由信息，因为节点：{_configInfo.RoutePath}，不存在。");
-                _routes = new ServiceRoute[0];
-            }
+               
 
         }
 

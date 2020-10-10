@@ -228,15 +228,21 @@ namespace Surging.Core.Zookeeper
             ServiceSubscriber result = null;
 
             var zooKeeperClient = await _zookeeperClientProvider.GetZooKeeperClient();
-            if (await zooKeeperClient.ExistsAsync(path))
+            using (var locker = await _lockerProvider.CreateLockAsync("mqtt_clear"))
             {
-                var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-                result = await GetSubscriber(data);
-                //var watcher = nodeWatchers.GetOrDefault(path);
-                //if (watcher != null)
-                //{
-                //    watcher.SetCurrentData(data);
-                //}
+                if (locker.IsAcquired)
+                {
+                    if (await zooKeeperClient.ExistsAsync(path))
+                    {
+                        var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
+                        result = await GetSubscriber(data);
+                        //var watcher = nodeWatchers.GetOrDefault(path);
+                        //if (watcher != null)
+                        //{
+                        //    watcher.SetCurrentData(data);
+                        //}
+                    }
+                }
             }
             return result;
         }

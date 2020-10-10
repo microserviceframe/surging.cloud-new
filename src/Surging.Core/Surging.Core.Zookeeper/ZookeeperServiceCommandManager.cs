@@ -256,13 +256,20 @@ namespace Surging.Core.Zookeeper
         {
             ServiceCommandDescriptor result = null;
             var zooKeeperClient = await _zookeeperClientProvider.GetZooKeeperClient();
-            if (await zooKeeperClient.ExistsAsync(path))
+            using (var locker = await _lockerProvider.CreateLockAsync("get_cmd"))
             {
-                var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-                var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-                result = GetServiceCommand(data);
+                if (locker.IsAcquired)
+                {
+                    if (await zooKeeperClient.ExistsAsync(path))
+                    {
+                        var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
+                        var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                        await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
+                        result = GetServiceCommand(data);
+                    }
+                }
             }
+            
             return result;
 
         }

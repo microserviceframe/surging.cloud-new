@@ -278,13 +278,20 @@ namespace Surging.Core.Zookeeper
         {
             MqttServiceRoute result = null;
             var zooKeeperClient = await _zookeeperClientProvider.GetZooKeeperClient();
-            if (await zooKeeperClient.ExistsAsync(path))
+            using (var locker = await _lockerProvider.CreateLockAsync("get_mqtt_route"))
             {
-                var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-                var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-                result = await GetRoute(data);
+                if (locker.IsAcquired)
+                {
+                    if (await zooKeeperClient.ExistsAsync(path))
+                    {
+                        var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
+                        var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                        await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
+                        result = await GetRoute(data);
+                    }
+                }
             }
+
             return result;
 
         }
