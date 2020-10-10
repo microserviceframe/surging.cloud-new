@@ -91,7 +91,7 @@ namespace Surging.Core.Consul.Configurations
         /// <summary>
         /// watch 时间间隔
         /// </summary>
-        public int WatchInterval { get; set; } = 60;
+        public int WatchInterval { get; set; } = 30;
 
         public int LockDelay { get; set; } = 600;
 

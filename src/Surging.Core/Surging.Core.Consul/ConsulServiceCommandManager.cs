@@ -229,11 +229,7 @@ namespace Surging.Core.Consul
             if (client != null) 
             {
                 var watcher = new NodeMonitorWatcher(GetConsulClient, _manager, path,
-                 (oldData, newData) => NodeChange(oldData, newData), tmpPath =>
-                 {
-                     var index = tmpPath.LastIndexOf("/");
-                     return _serviceHeartbeatManager.ExistsWhitelist(tmpPath.Substring(index + 1));
-                 });
+                 (oldData, newData) => NodeChange(oldData, newData), null);
                 var queryResult = await client.KV.Keys(path);
                 if (queryResult.Response != null)
                 {
