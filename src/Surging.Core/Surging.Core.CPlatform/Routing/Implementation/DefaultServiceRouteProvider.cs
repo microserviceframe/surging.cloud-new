@@ -47,7 +47,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
                 route = await UpdateServiceRouteCache(serviceId, route);
 
             }
-            route = await _serviceRouteManager.GetRouteByServiceIdAsync(serviceId, true);
+           
             return route;
         }
 
