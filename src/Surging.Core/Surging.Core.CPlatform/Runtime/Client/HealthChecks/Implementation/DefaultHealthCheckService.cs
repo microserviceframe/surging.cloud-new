@@ -2,6 +2,8 @@
 using Surging.Core.CPlatform.Address;
 using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Routing;
+using Surging.Core.CPlatform.Runtime.Server;
+using Surging.Core.CPlatform.Support;
 using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Concurrent;
@@ -25,50 +27,44 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         private readonly ConcurrentDictionary<Tuple<string, int,string>, MonitorEntry> _timeoutDictionaries = new ConcurrentDictionary<Tuple<string, int,string>, MonitorEntry>();
 
         private readonly IServiceRouteManager _serviceRouteManager;
+        private readonly IServiceEntryManager _serviceEntryManager;
+        private readonly IServiceRouteProvider _serviceRouteProvider;
         private readonly int _timeout = AppConfig.ServerOptions.HealthCheckTimeout;
         private readonly Timer _timer;
-        private EventHandler<HealthCheckEventArgs> _removed;
-
-        private EventHandler<HealthCheckEventArgs> _changed;
         private readonly ILogger<DefaultHealthCheckService> _logger;
-        public event EventHandler<HealthCheckEventArgs> Removed
-        {
-            add { _removed += value; }
-            remove { _removed -= value; }
-        }
+        public event EventHandler<HealthCheckEventArgs> Removed;
 
-        public event EventHandler<HealthCheckEventArgs> Changed
-        {
-            add { _changed += value; }
-            remove { _changed -= value; }
-        }
+        public event EventHandler<HealthCheckEventArgs> Changed;
 
         /// <summary>
         /// 默认心跳检查服务(每10秒会检查一次服务状态，在构造函数中添加服务管理事件) 
         /// </summary>
         /// <param name="serviceRouteManager"></param>
-        public DefaultHealthCheckService(IServiceRouteManager serviceRouteManager)
+        public DefaultHealthCheckService(IServiceRouteManager serviceRouteManager, IServiceEntryManager serviceEntryManager, IServiceRouteProvider serviceRouteProvider)
         {
+            _serviceRouteManager = serviceRouteManager;
+            _serviceEntryManager = serviceEntryManager;
+            _serviceRouteProvider = serviceRouteProvider;
             _logger = ServiceLocator.GetService<ILogger<DefaultHealthCheckService>>();
             var timeSpan = TimeSpan.FromSeconds(AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds);
 
-            _serviceRouteManager = serviceRouteManager;
             //建立计时器
             _timer = new Timer(async s =>
             {
                 //检查服务是否可用
                 await Check(_dictionaries.ToArray().Select(i => i.Value), _timeout);
+                await CheckServiceRegister();
                 //移除不可用的服务地址
                 ///RemoveUnhealthyAddress(_dictionaries.ToArray().Select(i => i.Value).Where(m => m.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes));
             }, null, timeSpan, timeSpan);
-            
+
             //去除监控。
-            serviceRouteManager.Removed += (s, e) =>
+            _serviceRouteManager.Removed += (s, e) =>
             {
                 Remove(e.Route.Address);
             };
             //重新监控。
-            serviceRouteManager.Created += async (s, e) =>
+            _serviceRouteManager.Created += async (s, e) =>
             {
                 var keys = e.Route.Address.Select(address =>
                 {
@@ -79,14 +75,27 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
             };
             //重新监控。
-            serviceRouteManager.Changed += async (s, e) =>
+            _serviceRouteManager.Changed += async (s, e) =>
             {
-                var keys = e.Route.Address.Select(address => {
+                var keys = e.Route.Address.Select(address =>
+                {
                     var ipAddress = address as IpAddressModel;
                     return new Tuple<string, int>(ipAddress.Ip, ipAddress.Port);
                 });
                 await Check(_dictionaries.Where(i => keys.Contains(i.Key)).Select(i => i.Value), _timeout);
             };
+           
+        }
+
+        private async Task CheckServiceRegister()
+        {
+            var serviceEntryCount = _serviceEntryManager.GetEntries().Count();
+
+            var localServiceRouteCount = (await _serviceRouteManager.GetLocalServiceRoutes()).Count();
+            if (localServiceRouteCount < serviceEntryCount) 
+            {
+                await _serviceRouteProvider.RegisterRoutes(0);
+            }
         }
 
 
@@ -159,40 +168,22 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             });
         }
 
-        public Task MarkTimeout(AddressModel address, string serviceId)
-        {
-            return Task.Run(() =>
-            {
-                var ipAddress = address as IpAddressModel;
-                var entry = _timeoutDictionaries.GetOrAdd(new Tuple<string, int, string>(ipAddress.Ip, ipAddress.Port, serviceId), k => new MonitorEntry(address));
-                if (entry.TimeOutTimes >= AppConfig.ServerOptions.AllowServerTimeOutTimes)
-                {
-                    RemoveTimeoutAddress(entry, serviceId);
-                }
-                else 
-                {
-                    entry.TimeOutTimes += 1;
-                }
-               
-            });
-        }
-
         protected void OnRemoved(params HealthCheckEventArgs[] args)
         {
-            if (_removed == null)
+            if (Removed == null)
                 return;
 
             foreach (var arg in args)
-                _removed(this, arg);
+                Removed(this, arg);
         }
 
         protected void OnChanged(params HealthCheckEventArgs[] args)
         {
-            if (_changed == null)
+            if (Changed == null)
                 return;
 
             foreach (var arg in args)
-                _changed(this, arg);
+                Changed(this, arg);
         }
 
         #endregion Implementation of IHealthCheckService

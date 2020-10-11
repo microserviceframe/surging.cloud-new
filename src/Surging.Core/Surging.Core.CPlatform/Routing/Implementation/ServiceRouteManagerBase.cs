@@ -61,32 +61,6 @@ namespace Surging.Core.CPlatform.Routing.Implementation
 
         #region Implementation of IServiceRouteManager
 
-        ///// <summary>
-        ///// 服务路由被创建。
-        ///// </summary>
-        //public event EventHandler<ServiceRouteEventArgs> Created
-        //{
-        //    add { _created += value; }
-        //    remove { _created -= value; }
-        //}
-
-        ///// <summary>
-        ///// 服务路由被删除。
-        ///// </summary>
-        //public event EventHandler<ServiceRouteEventArgs> Removed
-        //{
-        //    add { _removed += value; }
-        //    remove { _removed -= value; }
-        //}
-
-        ///// <summary>
-        ///// 服务路由被修改。
-        ///// </summary>
-        //public event EventHandler<ServiceRouteChangedEventArgs> Changed
-        //{
-        //    add { _changed += value; }
-        //    remove { _changed -= value; }
-        //}
 
         /// <summary>
         /// 获取所有可用的服务路由信息。
@@ -129,6 +103,13 @@ namespace Surging.Core.CPlatform.Routing.Implementation
                 ServiceDescriptor = route.ServiceDescriptor
             };
             return SetRouteAsync(descriptor);
+        }
+
+        public virtual async Task<IEnumerable<ServiceRoute>> GetLocalServiceRoutes()
+        {
+            var addess = NetUtils.GetHostAddress();
+            var localServiceRoutes = (await GetRoutesAsync()).Where(p => p.Address.Any(q => q.Equals(addess)));
+            return localServiceRoutes;
         }
 
         public abstract Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod);

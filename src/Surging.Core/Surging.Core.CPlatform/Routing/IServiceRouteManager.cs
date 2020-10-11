@@ -35,6 +35,8 @@ namespace Surging.Core.CPlatform.Routing
         /// <returns>服务路由集合。</returns>
         Task<IEnumerable<ServiceRoute>> GetRoutesAsync(bool needUpdateFromServiceCenter = false);
 
+        Task<IEnumerable<ServiceRoute>> GetLocalServiceRoutes();
+
         Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod);
 
         Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId, bool needUpdateFromServiceCenter = false);

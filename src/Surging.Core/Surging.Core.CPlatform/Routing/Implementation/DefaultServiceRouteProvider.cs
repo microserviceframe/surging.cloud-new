@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Surging.Core.CPlatform.Address;
-using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Runtime.Server;
 using Surging.Core.CPlatform.Transport.Implementation;
 using Surging.Core.CPlatform.Utilities;
@@ -16,9 +15,6 @@ namespace Surging.Core.CPlatform.Routing.Implementation
     public class DefaultServiceRouteProvider : IServiceRouteProvider
     {
         private readonly ConcurrentDictionary<string, ServiceRoute> _concurrent = new ConcurrentDictionary<string, ServiceRoute>();
-
-        private readonly List<ServiceRoute> _localRoutes = new List<ServiceRoute>();
-
         private readonly ConcurrentDictionary<Tuple<string, string>, ServiceRoute> _serviceRoute = new ConcurrentDictionary<Tuple<string, string>, ServiceRoute>();
         private readonly ConcurrentDictionary<string, int> _hostServiceAddressCount = new ConcurrentDictionary<string, int>();
         private readonly IServiceEntryManager _serviceEntryManager;
