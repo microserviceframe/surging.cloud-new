@@ -37,7 +37,7 @@ namespace Surging.Core.CPlatform.Routing
 
         Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod);
 
-        Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId);
+        Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId, bool needUpdateFromServiceCenter = false);
 
         /// <summary>
         /// 设置服务路由。

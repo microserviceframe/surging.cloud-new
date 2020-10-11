@@ -134,7 +134,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
         public abstract Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod);
 
 
-        public abstract Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId);
+        public abstract Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId, bool needUpdateFromServiceCenter = false);
        
 
         public abstract Task RemveAddressAsync(IEnumerable<AddressModel> address);

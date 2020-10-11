@@ -176,14 +176,28 @@ namespace Surging.Core.Consul
 
 
         }
-        public override async Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId)
+        public override async Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId, bool needUpdateFromServiceCenter = false)
         {
-            if (_routes != null && _routes.Any(p => p.ServiceDescriptor.Id == serviceId))
+            if (_routes != null && _routes.Any(p => p.ServiceDescriptor.Id == serviceId) && !needUpdateFromServiceCenter)
             {
                 return _routes.First(p => p.ServiceDescriptor.Id == serviceId);
             }
-            await EnterRoutes(true);
-            return _routes.FirstOrDefault(p => p.ServiceDescriptor.Id == serviceId);
+            var newRoute = await GetRoute(GetServiceRouteNodePath(serviceId));
+            var oldRoute = _routes.FirstOrDefault(p => p.ServiceDescriptor.Id == serviceId);
+            lock (_routes)
+            {
+                if (!newRoute.Equals(oldRoute))
+                {
+                    //删除旧路由，并添加上新的路由。
+                    _routes =
+                        _routes
+                            .Where(i => i.ServiceDescriptor.Id != newRoute.ServiceDescriptor.Id)
+                            .Concat(new[] { newRoute }).ToArray();
+                    //触发路由变更事件。
+                    OnChanged(new ServiceRouteChangedEventArgs(newRoute, oldRoute));
+                }
+            }
+            return newRoute;
         }
 
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> address)
@@ -232,6 +246,16 @@ namespace Surging.Core.Consul
                 await SetRouteAsync(routeDescriptor);
             }           
             
+        }
+
+
+        private string GetServiceRouteNodePath(string serviceId) 
+        {
+            var rootPath = _configInfo.RoutePath;
+            if (!rootPath.EndsWith("/"))
+                rootPath += "/";
+            var nodePath = $"{rootPath}{serviceId}";
+            return nodePath;
         }
 
         protected override async Task RemveAddressAsync(IEnumerable<AddressModel> Address, ServiceRoute route)

@@ -132,9 +132,9 @@ namespace Surging.Core.CPlatform.Routing.Implementation
         }
 
 
-        public override async Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId)
+        public override async Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId, bool needUpdateFromServiceCenter = false)
         {
-            if (_routes != null && _routes.Any(p => p.ServiceDescriptor.Id == serviceId))
+            if (_routes != null && _routes.Any(p => p.ServiceDescriptor.Id == serviceId) && !needUpdateFromServiceCenter)
             {
                 return _routes.First(p => p.ServiceDescriptor.Id == serviceId);
             }

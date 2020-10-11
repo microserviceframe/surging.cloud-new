@@ -43,17 +43,17 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             var maxServiceAddressCount = await GetHostMaxAddressCount(serviceId);
             if (route == null || route.Address.Count < maxServiceAddressCount)
             {
-                route = await _serviceRouteManager.GetRouteByServiceIdAsync(serviceId);
+                route = await _serviceRouteManager.GetRouteByServiceIdAsync(serviceId, true);
                 route = await UpdateServiceRouteCache(serviceId, route);
 
             }
-            
+            route = await _serviceRouteManager.GetRouteByServiceIdAsync(serviceId, true);
             return route;
         }
 
         private async Task<ServiceRoute> UpdateServiceRouteCache(string serviceId, ServiceRoute route)
         {
-            
+
             if (route == null)
             {
                 if (_logger.IsEnabled(LogLevel.Warning))
@@ -80,7 +80,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             }
             return route;
         }
-   
+
         public async Task<ServiceRoute> GetRouteByPathOrRegexPath(string path, string httpMethod)
         {
             var route = await GetRouteByPath(path, httpMethod);
@@ -89,9 +89,9 @@ namespace Surging.Core.CPlatform.Routing.Implementation
         }
 
 
-        public async Task<ServiceRoute> SearchRoute(string path,string httpMethod)
+        public async Task<ServiceRoute> SearchRoute(string path, string httpMethod)
         {
-            return await SearchRouteAsync(path,httpMethod);
+            return await SearchRouteAsync(path, httpMethod);
         }
 
         public async Task RegisterRoutes(decimal processorTime)
@@ -115,14 +115,14 @@ namespace Surging.Core.CPlatform.Routing.Implementation
         {
             var hostAddr = NetUtils.GetHostAddress();
             var serviceRoute = await Locate(serviceId);
-            _concurrent.AddOrUpdate(serviceId, serviceRoute, (k,v)=> serviceRoute);
-            foreach (var httpMethod in serviceRoute.ServiceDescriptor.HttpMethod()) 
+            _concurrent.AddOrUpdate(serviceId, serviceRoute, (k, v) => serviceRoute);
+            foreach (var httpMethod in serviceRoute.ServiceDescriptor.HttpMethod())
             {
                 _serviceRoute.AddOrUpdate(new Tuple<string, string>(serviceRoute.ServiceDescriptor.RoutePath, httpMethod), serviceRoute, (k, v) => serviceRoute);
 
             }
             var serviceGroup = GetServiceGroup(serviceId);
-            _hostServiceAddressCount.AddOrUpdate(serviceGroup,serviceRoute.Address.Count,(k,v)=> serviceRoute.Address.Count);
+            _hostServiceAddressCount.AddOrUpdate(serviceGroup, serviceRoute.Address.Count, (k, v) => serviceRoute.Address.Count);
             await _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { hostAddr }, serviceId);
         }
 
@@ -134,8 +134,8 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             {
                 return hostMaxAddressCount;
             }
-            var hostServiceGroup = (await _serviceRouteManager.GetRoutesAsync(true)).GroupBy(p=> p.ServiceDescriptor.Group).Select(s=> new { HostName = s.Key, MaxAddressCount = s.Max(p=> p.Address.Count) });
-            foreach (var hostService in hostServiceGroup) 
+            var hostServiceGroup = (await _serviceRouteManager.GetRoutesAsync(true)).GroupBy(p => p.ServiceDescriptor.Group).Select(s => new { HostName = s.Key, MaxAddressCount = s.Max(p => p.Address.Count) });
+            foreach (var hostService in hostServiceGroup)
             {
                 _hostServiceAddressCount.AddOrUpdate(serviceGroup, hostService.MaxAddressCount, (k, v) => hostService.MaxAddressCount);
             }
@@ -170,7 +170,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             var httpMethods = e.Route.ServiceDescriptor.HttpMethod();
             foreach (var httpMethod in httpMethods)
             {
-                _serviceRoute.AddOrUpdate(new Tuple<string, string>(e.Route.ServiceDescriptor.RoutePath,httpMethod), e.Route, (k, v) => e.Route);
+                _serviceRoute.AddOrUpdate(new Tuple<string, string>(e.Route.ServiceDescriptor.RoutePath, httpMethod), e.Route, (k, v) => e.Route);
             }
 
         }
@@ -186,7 +186,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             }
             else
             {
-                _serviceRoute.GetOrAdd(new Tuple<string, string>(path,httpMethod), route);
+                _serviceRoute.GetOrAdd(new Tuple<string, string>(path, httpMethod), route);
             }
             return route;
         }
@@ -203,12 +203,12 @@ namespace Surging.Core.CPlatform.Routing.Implementation
 
             else
             {
-                _serviceRoute.GetOrAdd(new Tuple<string, string>(path,httpMethod), route);
+                _serviceRoute.GetOrAdd(new Tuple<string, string>(path, httpMethod), route);
             }
             return route;
         }
 
-        private ServiceRoute GetRouteByRegexPath(IEnumerable<ServiceRoute> routes, string path,string httpMethod)
+        private ServiceRoute GetRouteByRegexPath(IEnumerable<ServiceRoute> routes, string path, string httpMethod)
         {
             var pattern = "/{.*?}";
 
@@ -230,7 +230,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             {
                 if (Regex.IsMatch(route.ServiceDescriptor.RoutePath, pattern))
                 {
-                    _serviceRoute.GetOrAdd(new Tuple<string, string>(path,httpMethod), route);
+                    _serviceRoute.GetOrAdd(new Tuple<string, string>(path, httpMethod), route);
                 }
             }
 
