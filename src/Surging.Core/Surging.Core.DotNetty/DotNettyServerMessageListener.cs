@@ -60,7 +60,7 @@ namespace Surging.Core.DotNetty
         public async Task StartAsync(EndPoint endPoint)
         {
             if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.LogDebug($"准备启动服务主机，监听地址：{endPoint}。");
+                _logger.LogDebug($"准备启动服务主机{AppConfig.ServerOptions.HostName}，监听地址：{endPoint}。");
 
             IEventLoopGroup bossGroup = new MultithreadEventLoopGroup(1);
             IEventLoopGroup workerGroup = new MultithreadEventLoopGroup();//Default eventLoopCount is Environment.ProcessorCount * 2
@@ -106,7 +106,7 @@ namespace Surging.Core.DotNetty
             }
             catch
             {
-                _logger.LogError($"服务主机启动失败，监听地址：{endPoint}。 ");
+                _logger.LogError($"服务主机{AppConfig.ServerOptions.HostName}启动失败，监听地址：{endPoint}。 ");
             }
         }
 

@@ -1,7 +1,10 @@
 ﻿using Surging.Core.CPlatform.Support;
+using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Reflection;
 
 namespace Surging.Core.CPlatform.Configurations
 {
@@ -66,8 +69,28 @@ namespace Surging.Core.CPlatform.Configurations
 
         public int HealthCheckTimeout { get; set; } = 1000;
 
-        public string HostName { get; set; } = "";
+        private string _hostName;
+        public string HostName {
+            get 
+            {
+                if (_hostName.IsNullOrEmpty()) 
+                {
+                    var hostAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(p => p.GetName().Name.ToLower().Contains("host") || p.GetName().Name.ToLower().Contains("server"));
+                    if (hostAssembly != null) 
+                    {
+                        return string.Join(".", hostAssembly.GetName().Name.Split(".").Take(ProjectSegment));
+                    }
+                    return "";
+                  
+                }
+                return _hostName;
+
+            }
+            set { _hostName = value; }
+        }
 
         public bool IsGateway { get; set; } = false;
+
+        public int ProjectSegment { get; set; } = 3;
     }
 }
