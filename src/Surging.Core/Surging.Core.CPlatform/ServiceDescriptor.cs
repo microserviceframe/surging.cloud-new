@@ -217,6 +217,14 @@ namespace Surging.Core.CPlatform
         /// </summary>
         public string Id { get; set; }
 
+        public string Group 
+        {
+            get 
+            {
+                return string.Join(".", Id.Split(".").Take(AppConfig.ServerOptions.ProjectSegment));
+            }
+        }
+
         /// <summary>
         /// 访问的令牌
         /// </summary>

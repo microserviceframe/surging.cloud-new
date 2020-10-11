@@ -49,9 +49,10 @@ namespace Surging.Core.CPlatform.Routing.Implementation
     public abstract class ServiceRouteManagerBase : IServiceRouteManager
     {
         private readonly ISerializer<string> _serializer;
-        private EventHandler<ServiceRouteEventArgs> _created;
-        private EventHandler<ServiceRouteEventArgs> _removed;
-        private EventHandler<ServiceRouteChangedEventArgs> _changed;
+
+        public event EventHandler<ServiceRouteEventArgs> Created;
+        public event EventHandler<ServiceRouteEventArgs> Removed;
+        public event EventHandler<ServiceRouteChangedEventArgs> Changed;
 
         protected ServiceRouteManagerBase(ISerializer<string> serializer)
         {
@@ -60,32 +61,32 @@ namespace Surging.Core.CPlatform.Routing.Implementation
 
         #region Implementation of IServiceRouteManager
 
-        /// <summary>
-        /// 服务路由被创建。
-        /// </summary>
-        public event EventHandler<ServiceRouteEventArgs> Created
-        {
-            add { _created += value; }
-            remove { _created -= value; }
-        }
+        ///// <summary>
+        ///// 服务路由被创建。
+        ///// </summary>
+        //public event EventHandler<ServiceRouteEventArgs> Created
+        //{
+        //    add { _created += value; }
+        //    remove { _created -= value; }
+        //}
 
-        /// <summary>
-        /// 服务路由被删除。
-        /// </summary>
-        public event EventHandler<ServiceRouteEventArgs> Removed
-        {
-            add { _removed += value; }
-            remove { _removed -= value; }
-        }
+        ///// <summary>
+        ///// 服务路由被删除。
+        ///// </summary>
+        //public event EventHandler<ServiceRouteEventArgs> Removed
+        //{
+        //    add { _removed += value; }
+        //    remove { _removed -= value; }
+        //}
 
-        /// <summary>
-        /// 服务路由被修改。
-        /// </summary>
-        public event EventHandler<ServiceRouteChangedEventArgs> Changed
-        {
-            add { _changed += value; }
-            remove { _changed -= value; }
-        }
+        ///// <summary>
+        ///// 服务路由被修改。
+        ///// </summary>
+        //public event EventHandler<ServiceRouteChangedEventArgs> Changed
+        //{
+        //    add { _changed += value; }
+        //    remove { _changed -= value; }
+        //}
 
         /// <summary>
         /// 获取所有可用的服务路由信息。
@@ -161,29 +162,29 @@ namespace Surging.Core.CPlatform.Routing.Implementation
 
         protected void OnCreated(params ServiceRouteEventArgs[] args)
         {
-            if (_created == null)
+            if (Created == null)
                 return;
 
             foreach (var arg in args)
-                _created(this, arg);
+                Created(this, arg);
         }
 
         protected void OnChanged(params ServiceRouteChangedEventArgs[] args)
         {
-            if (_changed == null)
+            if (Changed == null)
                 return;
 
             foreach (var arg in args)
-                _changed(this, arg);
+                Changed(this, arg);
         }
 
         protected void OnRemoved(params ServiceRouteEventArgs[] args)
         {
-            if (_removed == null)
+            if (Removed == null)
                 return;
 
             foreach (var arg in args)
-                _removed(this, arg);
+                Removed(this, arg);
         }
 
 
