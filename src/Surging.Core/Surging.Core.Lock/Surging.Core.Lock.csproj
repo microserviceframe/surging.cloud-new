@@ -1,17 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageId>$(PackagePrefix).Consul</PackageId>
+     <PackageId>$(PackagePrefix).Lock</PackageId>
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
-    <Description>基于Consul的服务注册组件</Description>
+    <Description>基于RedLock.net的分布式锁组件</Description>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="Consul" Version="1.6.1.1" />
+    <PackageReference Include="RedLock.net" Version="2.2.0" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Surging.Core.CPlatform\Surging.Core.CPlatform.csproj" />
   </ItemGroup>
-
 </Project>

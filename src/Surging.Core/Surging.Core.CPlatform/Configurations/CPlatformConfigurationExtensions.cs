@@ -59,12 +59,7 @@ namespace Surging.Core.CPlatform.Configurations
                 if (surgingSection.Exists())
                 {
                     AppConfig.ServerOptions = surgingSection.Get<SurgingServerOptions>();
-                }
-                var lockSection = AppConfig.Configuration.GetSection("Lock");
-                if (lockSection.Exists())
-                {
-                    AppConfig.LockOptions = lockSection.Get<LockOptions>();
-                }
+                }                
                 var actionMapSecetion = AppConfig.Configuration.GetSection("Swagger:Options:MapRoutePaths");
                 if (actionMapSecetion.Exists()) 
                 {

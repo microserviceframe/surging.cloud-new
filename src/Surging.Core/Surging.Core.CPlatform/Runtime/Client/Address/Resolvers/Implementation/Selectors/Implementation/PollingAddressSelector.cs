@@ -38,9 +38,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
         /// <returns>地址模型。</returns>
         protected override async Task<AddressModel> SelectAsync(AddressSelectContext context)
         {
-            var key = GetCacheKey(context.Descriptor);
-            //根据服务id缓存服务地址。
-            var addressEntry = _concurrent.GetOrAdd(key, k => new Lazy<AddressEntry>(() => new AddressEntry(context.Address))).Value;
+            var addressEntry = GetAddreEntry(context);
             AddressModel addressModel;
             var index = 0;
             var len = context.Address.Count();
@@ -58,6 +56,21 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
                 vt = await _healthCheckService.IsHealth(addressModel);
             } while (!vt);
             return addressModel;
+        }
+
+        private AddressEntry GetAddreEntry(AddressSelectContext context)
+        {
+            var key = GetCacheKey(context.Descriptor);
+            if (!_concurrent.TryGetValue(key, out Lazy<AddressEntry> lazyAddressEntry)) 
+            {
+                lazyAddressEntry = _concurrent.GetOrAdd(key, k => new Lazy<AddressEntry>(() => new AddressEntry(context.Address)));
+            }
+            var addressEntry = lazyAddressEntry.Value;
+            if (addressEntry.GetAddressCount() != context.Address.Count()) 
+            {
+                _concurrent.TryUpdate(key, new Lazy<AddressEntry>(() => new AddressEntry(context.Address)), lazyAddressEntry);
+            }
+            return addressEntry;
         }
 
         #endregion Overrides of AddressSelectorBase
@@ -108,6 +121,11 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
             #endregion Constructor
 
             #region Public Method
+
+            public int GetAddressCount() 
+            {
+                return _address.Length;
+            }
 
             public AddressModel GetAddress()
             {

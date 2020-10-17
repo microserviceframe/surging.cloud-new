@@ -1,6 +1,7 @@
 ﻿using Autofac.Core;
 using Microsoft.Extensions.Logging;
 using Surging.Core.CPlatform.Address;
+using Surging.Core.CPlatform.Diagnostics;
 using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Routing;
 using Surging.Core.CPlatform.Routing.Implementation;
@@ -27,7 +28,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
         private readonly ILogger<DefaultAddressResolver> _logger;
         private readonly IHealthCheckService _healthCheckService;
         private readonly CPlatformContainer _container;
-        private readonly ConcurrentDictionary<string, IAddressSelector> _addressSelectors=new
+        private readonly ConcurrentDictionary<string, IAddressSelector> _addressSelectors = new
             ConcurrentDictionary<string, IAddressSelector>();
         private readonly IServiceCommandProvider _commandProvider;
         private readonly IServiceHeartbeatManager _serviceHeartbeatManager;
@@ -40,7 +41,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
             ILogger<DefaultAddressResolver> logger,
             CPlatformContainer container,
             IHealthCheckService healthCheckService,
-            IServiceHeartbeatManager serviceHeartbeatManager, 
+            IServiceHeartbeatManager serviceHeartbeatManager,
             IServiceRouteProvider serviceRouteProvider)
         {
             _container = container;
@@ -79,29 +80,25 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
             if (serviceRoute == null)
             {
                 if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.LogWarning($"根据服务id：{serviceId}，找不到相关服务信息。");
-                return null;
+                    _logger.LogWarning($"根据服务id：{serviceId}，找不到服务路由信息。");
+                throw new CPlatformException("根据服务id：{serviceId}，找不到服务路由信息。");
             }
-            _serviceHeartbeatManager.AddWhitelist(serviceId);
-            var address = new List<AddressModel>();
-            foreach (var addressModel in serviceRoute.Address)
-            {
-                await _healthCheckService.Monitor(addressModel);
-                var isHealth = await _healthCheckService.IsHealth(addressModel);
-                if (!isHealth)
-                {
-                    continue;
-                }
-                address.Add(addressModel);
-            }
-
+            var address = await GetHealthAddress(serviceRoute);
             if (!address.Any())
             {
-                if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.LogWarning($"根据服务id：{serviceId}，找不到可用的地址。");
-                return null;
+                serviceRoute = await _serviceRouteProvider.Locate(serviceId, false);
+                if (serviceRoute == null) 
+                {
+                    throw new CPlatformException($"根据服务id：{serviceId},找不到服务路由信息【fromCache=false】。");
+                }
+                address = await GetHealthAddress(serviceRoute);
+            }
+            if (!address.Any()) 
+            {
+                throw new CPlatformException($"根据服务id：{serviceId},找不到可用的服务提供者的地址");
             }
 
+            _serviceHeartbeatManager.AddWhitelist(serviceId);
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.LogInformation($"根据服务id：{serviceId}，找到以下可用地址：{string.Join(",", address.Select(i => i.ToString()))}。");
             var vtCommand = _commandProvider.GetCommand(serviceId);
@@ -115,13 +112,35 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
                 Item = item
             });
             return selectAddress;
-        }  
+        }
+
+        private async Task<IEnumerable<AddressModel>> GetHealthAddress(ServiceRoute serviceRoute)
+        {
+            var address = new List<AddressModel>();
+            foreach (var addressModel in serviceRoute.Address)
+            {
+                await _healthCheckService.Monitor(addressModel);
+                var isHealth = await _healthCheckService.IsHealth(addressModel);
+                if (!isHealth)
+                {
+                    continue;
+                }
+                address.Add(addressModel);
+            }
+            if (!address.Any())
+            {
+                if (_logger.IsEnabled(LogLevel.Warning))
+                    _logger.LogWarning($"根据服务id：{serviceRoute.ServiceDescriptor.Id}，找不到可用的地址。");
+                return address;
+            }
+            return address;
+        }
 
         private void LoadAddressSelectors()
         {
             foreach (AddressSelectorMode item in Enum.GetValues(typeof(AddressSelectorMode)))
             {
-               _addressSelectors.TryAdd( item.ToString(), _container.GetInstances<IAddressSelector>(item.ToString()));
+                _addressSelectors.TryAdd(item.ToString(), _container.GetInstances<IAddressSelector>(item.ToString()));
             }
         }
 

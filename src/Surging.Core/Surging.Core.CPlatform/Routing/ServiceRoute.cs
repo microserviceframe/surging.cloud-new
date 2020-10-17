@@ -23,7 +23,6 @@ namespace Surging.Core.CPlatform.Routing
 
         public ServiceRoute Copy()
         {
-            var serializer = ServiceLocator.GetService<ISerializer<string>>();
             var serviceRoute = new ServiceRoute();
             serviceRoute.ServiceDescriptor = ServiceDescriptor.DeepCopy<ServiceDescriptor>();
             var copyAddresses = new List<AddressModel>();

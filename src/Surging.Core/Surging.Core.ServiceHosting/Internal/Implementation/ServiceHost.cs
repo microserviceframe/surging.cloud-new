@@ -38,7 +38,13 @@ namespace Surging.Core.ServiceHosting.Internal.Implementation
         public IDisposable Run()
         {
             RunAsync().GetAwaiter().GetResult();
+            AppDomain.CurrentDomain.UnhandledException += Application_Exception;
             return this;
+        }
+
+        private void Application_Exception(object sender, UnhandledExceptionEventArgs e)
+        {
+            Console.Out.WriteLine("应用程序异常: " + e.ExceptionObject.ToString());
         }
 
         public async Task RunAsync(CancellationToken cancellationToken = default(CancellationToken))

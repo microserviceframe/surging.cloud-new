@@ -2,13 +2,11 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Surging.Core.CPlatform.Address;
-using Surging.Core.CPlatform.Utilities;
+using Rabbit.Zookeeper;
+using Rabbit.Zookeeper.Implementation;
+using static org.apache.zookeeper.Watcher;
 
 namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
 {
@@ -16,8 +14,8 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
     {
         private readonly int _timeout = 3000;
         private readonly Timer _timer;
-        private readonly ConcurrentDictionary<Tuple<string, int>, MonitorEntry> _dictionary =
-    new ConcurrentDictionary<Tuple<string, int>, MonitorEntry>();
+        private readonly ConcurrentDictionary<string, MonitorEntry> _dictionary =
+        new ConcurrentDictionary<string, MonitorEntry>();
 
         #region Implementation of IHealthCheckService
         public DefaultHealthCheckService()
@@ -26,26 +24,23 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
 
             _timer = new Timer(async s =>
             {
-                await Check(_dictionary.ToArray().Select(i => i.Value), _timeout);
+                await Check(_dictionary.ToArray().Select(i => i.Value));
             }, null, timeSpan, timeSpan);
         }
 
-        public async Task<bool> IsHealth(AddressModel address)
+        public async Task<bool> IsHealth(string conn)
         {
-            var ipAddress = address as IpAddressModel;
             MonitorEntry entry;
-            var isHealth = !_dictionary.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out entry) ? await Check(address, _timeout) : entry.Health;
+            var isHealth = !_dictionary.TryGetValue(conn, out entry) ? await Check(conn) : entry.Health;
             return isHealth;
         }
 
-        public async Task Monitor(AddressModel address)
+        public async Task Monitor(string conn)
         {
-            var ipAddress = address as IpAddressModel;
-            if (!_dictionary.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry monitorEntry))
+            if (!_dictionary.TryGetValue(conn, out MonitorEntry entry)) 
             {
-                monitorEntry = new MonitorEntry(ipAddress);
-                await Check(monitorEntry.Address, _timeout);
-                _dictionary.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), monitorEntry);
+                entry = new MonitorEntry(conn, await Check(conn));
+                _dictionary.GetOrAdd(conn, entry);
             }
         }
 
@@ -61,27 +56,83 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
 
         #region Private Method
 
-        private async Task<bool> Check(AddressModel address, int timeout)
+        private async Task Check(MonitorEntry entry)
         {
-            var ipAddress = address as IpAddressModel;
-            return SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout);
+            ZookeeperClient zookeeperClient = null;
+            try
+            {
+                var options = new ZookeeperClientOptions(entry.Connection) 
+                {
+                    ConnectionTimeout = TimeSpan.FromMilliseconds(_timeout)
+                };
+                zookeeperClient = new ZookeeperClient(options);
+                entry.Health = true;
+            }
+            catch (Exception)
+            {
+                entry.Health = false;
+            }
+            finally
+            {
+                if (zookeeperClient != null) 
+                {
+                    zookeeperClient.Dispose();
+                }
+            };
         }
 
-        private async Task Check(IEnumerable<MonitorEntry> entrys, int timeout)
+        private async Task<bool> Check(string conn)
         {
-            foreach (var entry in entrys)
+            ZookeeperClient zookeeperClient = null;
+            try
             {
-                var ipAddress = entry.Address as IpAddressModel;
-                if (SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout))
+                var options = new ZookeeperClientOptions(conn)
                 {
+                    ConnectionTimeout = TimeSpan.FromMilliseconds(_timeout)
+                };
+                zookeeperClient = new ZookeeperClient(options);
+                return zookeeperClient.WaitForKeeperState(Event.KeeperState.SyncConnected, TimeSpan.FromMilliseconds(_timeout));
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                if (zookeeperClient != null)
+                {
+                    zookeeperClient.Dispose();
+                }
+            };
+        }
+
+        private async Task Check(IEnumerable<MonitorEntry> entries)
+        {
+            foreach (var entry in entries) 
+            {
+                ZookeeperClient zookeeperClient = null;
+                try
+                {
+                    var options = new ZookeeperClientOptions(entry.Connection)
+                    {
+                        ConnectionTimeout = TimeSpan.FromMilliseconds(_timeout)
+                    };
+                    zookeeperClient = new ZookeeperClient(options);
                     entry.UnhealthyTimes = 0;
                     entry.Health = true;
                 }
-                else
+                catch (Exception)
                 {
                     entry.UnhealthyTimes++;
                     entry.Health = false;
                 }
+                finally
+                {
+                    if (zookeeperClient != null)
+                    {
+                        zookeeperClient.Dispose();
+                    }
+                };
             }
         }
 
@@ -91,16 +142,16 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
 
         protected class MonitorEntry
         {
-            public MonitorEntry(AddressModel address, bool health = true)
+            public MonitorEntry(string conn, bool health = true)
             {
-                Address = address;
+                Connection = conn;
                 Health = health;
 
             }
 
             public int UnhealthyTimes { get; set; }
 
-            public AddressModel Address { get; set; }
+            public string Connection { get; set; }
             public bool Health { get; set; }
         }
 

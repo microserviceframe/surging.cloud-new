@@ -6,13 +6,11 @@ using Surging.Core.Consul.Utilitys;
 using Surging.Core.Consul.WatcherProvider;
 using Surging.Core.Consul.WatcherProvider.Implementation;
 using Surging.Core.CPlatform.Address;
-using Surging.Core.CPlatform.Lock;
 using Surging.Core.CPlatform.Mqtt;
 using Surging.Core.CPlatform.Mqtt.Implementation;
 using Surging.Core.CPlatform.Runtime.Client;
 using Surging.Core.CPlatform.Serialization;
 using Surging.Core.CPlatform.Support;
-using Surging.Core.CPlatform.Transport.Implementation;
 using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
@@ -33,7 +31,7 @@ namespace Surging.Core.Consul
         private MqttServiceRoute[] _routes;
         private readonly IConsulClientProvider _consulClientFactory;
         private readonly IServiceHeartbeatManager _serviceHeartbeatManager;
-        private readonly ILockerProvider _lockerProvider;
+
         public ConsulMqttServiceRouteManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
        ISerializer<string> stringSerializer, IClientWatchManager manager, IMqttServiceFactory mqttServiceFactory,
        ILogger<ConsulMqttServiceRouteManager> logger,IServiceHeartbeatManager serviceHeartbeatManager,
@@ -47,7 +45,6 @@ namespace Surging.Core.Consul
             _manager = manager;
             _serviceHeartbeatManager = serviceHeartbeatManager;
             _consulClientFactory = consulClientFactory;
-            _lockerProvider = ServiceLocator.GetService<ILockerProvider>();
             EnterRoutes().Wait();
         }
 
@@ -56,21 +53,15 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                using (var locker = await _lockerProvider.CreateLockAsync("mqtt_clear"))
+                //根据前缀获取consul结果
+                var queryResult = await client.KV.List(_configInfo.MqttRoutePath);
+                var response = queryResult.Response;
+                if (response != null)
                 {
-                    if (locker.IsAcquired)
+                    //删除操作
+                    foreach (var result in response)
                     {
-                        //根据前缀获取consul结果
-                        var queryResult = await client.KV.List(_configInfo.MqttRoutePath);
-                        var response = queryResult.Response;
-                        if (response != null)
-                        {
-                            //删除操作
-                            foreach (var result in response)
-                            {
-                                await client.KV.DeleteCAS(result);
-                            }
-                        }
+                        await client.KV.DeleteCAS(result);
                     }
                 }
             }
@@ -157,17 +148,11 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                using (var locker = await _lockerProvider.CreateLockAsync("set_mqtt_routes"))
+                foreach (var serviceRoute in routes)
                 {
-                    if (locker.IsAcquired)
-                    {
-                        foreach (var serviceRoute in routes)
-                        {
-                            var nodeData = _serializer.Serialize(serviceRoute);
-                            var keyValuePair = new KVPair($"{_configInfo.MqttRoutePath}{serviceRoute.MqttDescriptor.Topic}") { Value = nodeData };
-                            await client.KV.Put(keyValuePair);
-                        }
-                    }
+                    var nodeData = _serializer.Serialize(serviceRoute);
+                    var keyValuePair = new KVPair($"{_configInfo.MqttRoutePath}{serviceRoute.MqttDescriptor.Topic}") { Value = nodeData };
+                    await client.KV.Put(keyValuePair);
                 }
             }
         }
@@ -180,26 +165,20 @@ namespace Surging.Core.Consul
             var clients = await _consulClientFactory.GetClients();
             foreach (var client in clients)
             {
-                using (var locker = await _lockerProvider.CreateLockAsync("mqtt_removexxceptroutes"))
+                if (_routes != null)
                 {
-                    if (locker.IsAcquired)
+                    var oldRouteTopics = _routes.Select(i => i.MqttDescriptor.Topic).ToArray();
+                    var newRouteTopics = routes.Select(i => i.MqttDescriptor.Topic).ToArray();
+                    var deletedRouteTopics = oldRouteTopics.Except(newRouteTopics).ToArray();
+                    foreach (var deletedRouteTopic in deletedRouteTopics)
                     {
-                        if (_routes != null)
-                        {
-                            var oldRouteTopics = _routes.Select(i => i.MqttDescriptor.Topic).ToArray();
-                            var newRouteTopics = routes.Select(i => i.MqttDescriptor.Topic).ToArray();
-                            var deletedRouteTopics = oldRouteTopics.Except(newRouteTopics).ToArray();
-                            foreach (var deletedRouteTopic in deletedRouteTopics)
-                            {
-                                var addresses = _routes.Where(p => p.MqttDescriptor.Topic == deletedRouteTopic).Select(p => p.MqttEndpoint).FirstOrDefault();
-                                if (addresses.Contains(hostAddr))
-                                    await client.KV.Delete($"{_configInfo.MqttRoutePath}{deletedRouteTopic}");
-                            }
-                        }
+                        var addresses = _routes.Where(p => p.MqttDescriptor.Topic == deletedRouteTopic).Select(p => p.MqttEndpoint).FirstOrDefault();
+                        if (addresses.Contains(hostAddr))
+                            await client.KV.Delete($"{_configInfo.MqttRoutePath}{deletedRouteTopic}");
                     }
                 }
 
-                
+
             }
         }
 

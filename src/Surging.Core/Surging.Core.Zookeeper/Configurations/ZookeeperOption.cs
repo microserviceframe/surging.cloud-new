@@ -7,11 +7,11 @@ namespace Surging.Core.Zookeeper.Configurations
     public class ZookeeperOption
     {
 
-        public string SessionTimeout { get; set; }
+        public double SessionTimeout { get; set; } = 20;
 
-        public string ConnectionTimeout { get; set; }
+        public double ConnectionTimeout { get; set; } = 10;
 
-        public string OperatingTimeout { get; set; }
+        public double OperatingTimeout { get; set; } = 20;
 
         public string ConnectionString { get; set; }
 

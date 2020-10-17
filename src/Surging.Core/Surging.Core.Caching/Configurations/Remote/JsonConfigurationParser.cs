@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Surging.Core.Caching.Utilities;
+using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;

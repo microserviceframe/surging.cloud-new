@@ -1,5 +1,6 @@
 ﻿using Surging.Core.CPlatform.Address;
 using Surging.Core.CPlatform.Routing.Implementation;
+using Surging.Core.CPlatform.Runtime.Server;
 using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
@@ -35,11 +36,9 @@ namespace Surging.Core.CPlatform.Routing
         /// <returns>服务路由集合。</returns>
         Task<IEnumerable<ServiceRoute>> GetRoutesAsync(bool needUpdateFromServiceCenter = false);
 
-        Task<IEnumerable<ServiceRoute>> GetLocalServiceRoutes();
-
         Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod);
 
-        Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId, bool needUpdateFromServiceCenter = false);
+        Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId, bool isCache = true);
 
         /// <summary>
         /// 设置服务路由。
@@ -89,7 +88,20 @@ namespace Surging.Core.CPlatform.Routing
             return await serviceRouteManager.GetRouteByServiceIdAsync(serviceId);
         }
 
-       
+        public static async Task<ICollection<ServiceRoute>> GetLocalServiceRoutes(this IServiceRouteManager serviceRouteManager, IEnumerable<ServiceEntry> serviceEntries)
+        {
+            var serviceRoutes = await serviceRouteManager.GetRoutesAsync();
+            var localServiceRoutes = new List<ServiceRoute>();
+            foreach (var entry in serviceEntries) 
+            {
+                var serviceRoute = serviceRoutes.FirstOrDefault(p => p.ServiceDescriptor.Id == entry.Descriptor.Id);
+                if (serviceRoute != null) 
+                {
+                    localServiceRoutes.Add(serviceRoute);
+                }
+            }
+            return localServiceRoutes;
+        }
 
         /// <summary>
         /// 获取地址

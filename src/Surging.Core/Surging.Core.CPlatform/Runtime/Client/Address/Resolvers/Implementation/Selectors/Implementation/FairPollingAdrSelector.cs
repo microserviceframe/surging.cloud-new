@@ -40,9 +40,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
 
         protected override async Task<AddressModel> SelectAsync(AddressSelectContext context)
         {
-            var key = GetCacheKey(context.Descriptor);
-            //根据服务id缓存服务地址。
-            var addressEntry = _concurrent.GetOrAdd(key, k => new Lazy<AddressEntry>(() => new AddressEntry(context.Address))).Value;
+            var addressEntry = GetAddreEntry(context);
             AddressModel addressModel;
             var index = 0;
             var len = context.Address.Count();
@@ -57,6 +55,21 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
                 index++;
             } while (await _healthCheckService.IsHealth(addressModel) == false);
             return addressModel;
+        }
+
+        private AddressEntry GetAddreEntry(AddressSelectContext context)
+        {
+            var key = GetCacheKey(context.Descriptor);
+            if (!_concurrent.TryGetValue(key, out Lazy<AddressEntry> lazyAddressEntry))
+            {
+                lazyAddressEntry = _concurrent.GetOrAdd(key, k => new Lazy<AddressEntry>(() => new AddressEntry(context.Address)));
+            }
+            var addressEntry = lazyAddressEntry.Value;
+            if (addressEntry.GetAddressCount() != context.Address.Count())
+            {
+                _concurrent.TryUpdate(key, new Lazy<AddressEntry>(() => new AddressEntry(context.Address)), lazyAddressEntry);
+            }
+            return addressEntry;
         }
 
         #region Help Class
@@ -79,10 +92,15 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
                 _address = address.OrderBy(p=>p.ProcessorTime).ToArray();
                 _maxIndex = _address.Length - 1;
             }
-            
+
             #endregion Constructor
 
             #region Public Method
+
+            public int GetAddressCount()
+            {
+                return _address.Length;
+            }
 
             public AddressModel GetAddress()
             {

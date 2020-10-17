@@ -28,6 +28,8 @@ namespace Surging.Core.CPlatform.Configurations
 
         public int HealthCheckWatchIntervalInSeconds { get; set; } = 60;
 
+        public int CheckServiceRegisterIntervalInSeconds { get; set; } = 120;
+
         public int AllowServerUnhealthyTimes { get; set; } = 5;
 
         public int AllowServerTimeOutTimes { get; set; } = 4;
@@ -92,5 +94,6 @@ namespace Surging.Core.CPlatform.Configurations
         public bool IsGateway { get; set; } = false;
 
         public int ProjectSegment { get; set; } = 3;
+       
     }
 }

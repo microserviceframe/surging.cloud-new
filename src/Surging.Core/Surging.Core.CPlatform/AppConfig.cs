@@ -49,6 +49,7 @@ namespace Surging.Core.CPlatform
             return Configuration?.GetSection(name);
         }
 
+
         public static SurgingServerOptions ServerOptions
         {
             get
@@ -61,18 +62,6 @@ namespace Surging.Core.CPlatform
             }
         }
 
-        private static LockOptions _lockOptions = new LockOptions();
-        public static LockOptions LockOptions 
-        {
-            get
-            {
-                return _lockOptions;
-            }
-            internal set
-            {
-                _lockOptions = value;
-            }
-        }
 
         public static IEnumerable<MapRoutePathOption> MapRoutePathOptions
         {

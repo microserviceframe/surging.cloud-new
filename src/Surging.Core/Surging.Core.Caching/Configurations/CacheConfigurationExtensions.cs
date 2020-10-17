@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 using Surging.Core.Caching.Utilities;
+using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;

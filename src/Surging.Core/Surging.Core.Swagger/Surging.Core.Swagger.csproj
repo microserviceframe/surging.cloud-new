@@ -3,6 +3,7 @@
   <PropertyGroup>
     <PackageId>$(PackagePrefix).Swagger</PackageId>
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <Description>通过swagger生成API文档</Description>
   </PropertyGroup>
 
   <ItemGroup>

@@ -3,6 +3,7 @@
   <PropertyGroup>
     <PackageId>$(PackagePrefix).Protocol.Udp</PackageId>
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <Description>udp协议组件(rpc通信通过udp协议)</Description>
   </PropertyGroup>
 
   <ItemGroup>

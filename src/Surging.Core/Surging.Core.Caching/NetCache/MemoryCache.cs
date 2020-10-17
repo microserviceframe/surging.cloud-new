@@ -7,6 +7,7 @@ using System.Threading;
 using System.Linq;
 using System.Collections;
 using System.Text.RegularExpressions;
+using Surging.Core.CPlatform.Utilities;
 
 namespace Surging.Core.Caching.NetCache
 {

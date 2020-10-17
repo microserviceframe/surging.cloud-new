@@ -1,17 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using Surging.Core.CPlatform.Address;
-using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Routing;
 using Surging.Core.CPlatform.Runtime.Server;
-using Surging.Core.CPlatform.Support;
 using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,13 +19,14 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
     {
         private readonly ConcurrentDictionary<Tuple<string, int>, MonitorEntry> _dictionaries = new ConcurrentDictionary<Tuple<string, int>, MonitorEntry>();
 
-        private readonly ConcurrentDictionary<Tuple<string, int,string>, MonitorEntry> _timeoutDictionaries = new ConcurrentDictionary<Tuple<string, int,string>, MonitorEntry>();
+        private readonly ConcurrentDictionary<Tuple<string, int, string>, MonitorEntry> _timeoutDictionaries = new ConcurrentDictionary<Tuple<string, int, string>, MonitorEntry>();
 
         private readonly IServiceRouteManager _serviceRouteManager;
         private readonly IServiceEntryManager _serviceEntryManager;
         private readonly IServiceRouteProvider _serviceRouteProvider;
         private readonly int _timeout = AppConfig.ServerOptions.HealthCheckTimeout;
-        private readonly Timer _timer;
+        private readonly Timer _serviceHealthCheckTimer;
+        private readonly Timer _synchServiceRoutesTimer;
         private readonly ILogger<DefaultHealthCheckService> _logger;
         public event EventHandler<HealthCheckEventArgs> Removed;
 
@@ -49,14 +45,20 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             var timeSpan = TimeSpan.FromSeconds(AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds);
 
             //建立计时器
-            _timer = new Timer(async s =>
+            _serviceHealthCheckTimer = new Timer(async s =>
             {
                 //检查服务是否可用
                 await Check(_dictionaries.ToArray().Select(i => i.Value), _timeout);
-                await CheckServiceRegister();
-                //移除不可用的服务地址
-                ///RemoveUnhealthyAddress(_dictionaries.ToArray().Select(i => i.Value).Where(m => m.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes));
+
             }, null, timeSpan, timeSpan);
+
+            var synchServiceRoutesTimeSpan = GetSynchServiceRoutesTimeSpan();
+            _synchServiceRoutesTimer = new Timer(async s =>
+            {
+                await CheckServiceRegister();
+
+            }, null, synchServiceRoutesTimeSpan, synchServiceRoutesTimeSpan);
+
 
             //去除监控。
             _serviceRouteManager.Removed += (s, e) =>
@@ -84,18 +86,45 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 });
                 await Check(_dictionaries.Where(i => keys.Contains(i.Key)).Select(i => i.Value), _timeout);
             };
-           
+
+        }
+
+        private TimeSpan GetSynchServiceRoutesTimeSpan()
+        {
+            var random = new Random();
+            var seed = random.Next(1, 60);
+            return TimeSpan.FromSeconds(AppConfig.ServerOptions.CheckServiceRegisterIntervalInSeconds + seed);
         }
 
         private async Task CheckServiceRegister()
         {
-            var serviceEntryCount = _serviceEntryManager.GetEntries().Count();
-
-            var localServiceRouteCount = (await _serviceRouteManager.GetLocalServiceRoutes()).Count();
-            if (localServiceRouteCount < serviceEntryCount) 
+            var serviceRoutes = await _serviceRouteManager.GetRoutesAsync(true);
+            if (serviceRoutes == null)
             {
-                await _serviceRouteProvider.RegisterRoutes(0);
+                return;
             }
+            foreach (var serviceRoute in serviceRoutes)
+            {
+                _serviceRouteProvider.UpdateServiceRouteCache(serviceRoute);
+            }
+            var localServiceEntries = _serviceEntryManager.GetEntries();
+            var localServiceRoutes = serviceRoutes.Where(p => localServiceEntries.Any(q => q.Descriptor.Id == p.ServiceDescriptor.Id));
+            var addess = NetUtils.GetHostAddress();
+            var registerServiceEntries = localServiceEntries.Where(e => localServiceRoutes.Any(p => !p.Address.Any(q => q.Equals(addess)) && p.ServiceDescriptor.Id == e.Descriptor.Id));
+            if (registerServiceEntries.Any())
+            {
+                _logger.LogWarning("服务路由未注册成功,重新注册服务路由");
+                try
+                {
+                    await _serviceRouteProvider.RegisterRoutes(registerServiceEntries);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"服务路由注册失败,原因:{ex.Message}");
+                }
+
+            }
+            
         }
 
 
@@ -109,10 +138,10 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         public async Task Monitor(AddressModel address)
         {
             var ipAddress = address as IpAddressModel;
-            if (!_dictionaries.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry monitorEntry)) 
+            if (!_dictionaries.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry monitorEntry))
             {
                 monitorEntry = new MonitorEntry(ipAddress);
-                await Check(monitorEntry,_timeout);
+                await Check(monitorEntry, _timeout);
                 _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), monitorEntry);
             }
             OnChanged(new HealthCheckEventArgs(address, monitorEntry.Health));
@@ -136,7 +165,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
             if (entry.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes)
             {
-               await RemoveUnhealthyAddress(entry);
+                await RemoveUnhealthyAddress(entry);
             }
             OnChanged(new HealthCheckEventArgs(address, entry.Health));
             return entry.Health;
@@ -159,12 +188,12 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 entry.UnhealthyTimes += 1;
             });
         }
-        public Task MarkSuccess(AddressModel address,string serviceId) 
+        public Task MarkSuccess(AddressModel address, string serviceId)
         {
             return Task.Run(() =>
             {
                 var ipAddress = address as IpAddressModel;
-                var entry = _timeoutDictionaries.TryRemove(new Tuple<string, int,string>(ipAddress.Ip, ipAddress.Port, serviceId), out MonitorEntry value);             
+                var entry = _timeoutDictionaries.TryRemove(new Tuple<string, int, string>(ipAddress.Ip, ipAddress.Port, serviceId), out MonitorEntry value);
             });
         }
 
@@ -193,7 +222,12 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-            _timer.Dispose();
+            _serviceHealthCheckTimer.Dispose();
+            if (_synchServiceRoutesTimer != null) 
+            {
+                _synchServiceRoutesTimer.Dispose();
+            }
+            
         }
 
         #endregion Implementation of IDisposable
@@ -210,39 +244,9 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             }
         }
 
-        private async Task RemoveUnhealthyAddress(IEnumerable<MonitorEntry> monitorEntry)
-        {
-            if (monitorEntry.Any())
-            {
-                var addresses = monitorEntry.Select(p =>
-                {
-                    var ipAddress = p.Address as IpAddressModel;
-                    return new IpAddressModel(ipAddress.Ip, ipAddress.Port);
-                }).ToList();
-                if (addresses.Any()) 
-                {
-                    await _serviceRouteManager.RemveAddressAsync(addresses);
-                    addresses.ForEach(p => {
-                        var ipAddress = p as IpAddressModel;
-                        _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry value);
-                    });
-                    OnRemoved(addresses.Select(p => new HealthCheckEventArgs(p)).ToArray());
-                }
-                
-            }
-        }
-
-        private void RemoveTimeoutAddress(MonitorEntry monitorEntry, string serviceId) 
-        {
-            var ipAddress = monitorEntry.Address as IpAddressModel;
-            var address = new IpAddressModel(ipAddress.Ip, ipAddress.Port);
-            _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { address }, serviceId).Wait();
-        }
-
-
         private async Task RemoveUnhealthyAddress(MonitorEntry monitorEntry)
         {
-            var ipAddress = monitorEntry.Address as IpAddressModel;            
+            var ipAddress = monitorEntry.Address as IpAddressModel;
             await _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { ipAddress });
             _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry value);
             OnRemoved(new HealthCheckEventArgs(ipAddress));
@@ -263,7 +267,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                     _logger.LogWarning($"服务地址{entry.Address}不健康,UnhealthyTimes={entry.UnhealthyTimes},服务将会被移除");
                     await RemoveUnhealthyAddress(entry);
                 }
-                else 
+                else
                 {
                     entry.UnhealthyTimes++;
                     entry.Health = false;

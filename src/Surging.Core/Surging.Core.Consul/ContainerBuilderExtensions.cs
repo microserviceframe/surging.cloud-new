@@ -21,7 +21,6 @@ using Surging.Core.Consul.Internal.Cluster.HealthChecks;
 using Surging.Core.Consul.Internal.Cluster.Implementation.Selectors;
 using Autofac;
 using Surging.Core.Consul.Internal.Cluster.HealthChecks.Implementation;
-
 namespace Surging.Core.Consul
 {
     public static class ContainerBuilderExtensions

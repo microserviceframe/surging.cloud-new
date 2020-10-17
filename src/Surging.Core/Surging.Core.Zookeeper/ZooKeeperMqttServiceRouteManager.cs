@@ -2,7 +2,6 @@
 using org.apache.zookeeper;
 using Rabbit.Zookeeper;
 using Surging.Core.CPlatform.Address;
-using Surging.Core.CPlatform.Lock;
 using Surging.Core.CPlatform.Mqtt;
 using Surging.Core.CPlatform.Mqtt.Implementation;
 using Surging.Core.CPlatform.Serialization;
@@ -27,7 +26,6 @@ namespace Surging.Core.Zookeeper
         private MqttServiceRoute[] _routes;
         private readonly IZookeeperClientProvider _zookeeperClientProvider;
         private IDictionary<string, NodeMonitorWatcher> nodeWatchers = new Dictionary<string, NodeMonitorWatcher>();
-        private readonly ILockerProvider _lockerProvider;
         public ZooKeeperMqttServiceRouteManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
             ISerializer<string> stringSerializer, IMqttServiceFactory mqttServiceFactory,
             ILogger<ZooKeeperMqttServiceRouteManager> logger, IZookeeperClientProvider zookeeperClientProvider) : base(stringSerializer)
@@ -37,7 +35,6 @@ namespace Surging.Core.Zookeeper
             _mqttServiceFactory = mqttServiceFactory;
             _logger = logger;
             _zookeeperClientProvider = zookeeperClientProvider;
-            _lockerProvider = ServiceLocator.GetService<ILockerProvider>();
             EnterRoutes().Wait();
         }
 
@@ -63,42 +60,36 @@ namespace Surging.Core.Zookeeper
             var zooKeepers = await _zookeeperClientProvider.GetZooKeeperClients();
             foreach (var zooKeeperClient in zooKeepers)
             {
-                using (var locker = await _lockerProvider.CreateLockAsync("mqtt_clear")) 
+                var path = _configInfo.MqttRoutePath;
+                var childrens = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+                var index = 0;
+                while (childrens.Count() > 1)
                 {
-                    if (locker.IsAcquired) 
+                    var nodePath = "/" + string.Join("/", childrens);
+
+                    if (await zooKeeperClient.ExistsAsync(nodePath))
                     {
-                        var path = _configInfo.MqttRoutePath;
-                        var childrens = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-
-                        var index = 0;
-                        while (childrens.Count() > 1)
+                        var children = await zooKeeperClient.GetChildrenAsync(nodePath);
+                        if (children != null && children.Any())
                         {
-                            var nodePath = "/" + string.Join("/", childrens);
-
-                            if (await zooKeeperClient.ExistsAsync(nodePath))
+                            foreach (var child in children)
                             {
-                                var children = await zooKeeperClient.GetChildrenAsync(nodePath);
-                                if (children != null && children.Any())
-                                {
-                                    foreach (var child in children)
-                                    {
-                                        var childPath = $"{nodePath}/{child}";
-                                        if (_logger.IsEnabled(LogLevel.Debug))
-                                            _logger.LogDebug($"准备删除：{childPath}。");
-                                        await zooKeeperClient.DeleteAsync(childPath);
-                                    }
-                                }
+                                var childPath = $"{nodePath}/{child}";
                                 if (_logger.IsEnabled(LogLevel.Debug))
-                                    _logger.LogDebug($"准备删除：{nodePath}。");
-                                await zooKeeperClient.DeleteAsync(nodePath);
+                                    _logger.LogDebug($"准备删除：{childPath}。");
+                                await zooKeeperClient.DeleteAsync(childPath);
                             }
-                            index++;
-                            childrens = childrens.Take(childrens.Length - index).ToArray();
                         }
-                        if (_logger.IsEnabled(LogLevel.Information))
-                            _logger.LogInformation("路由配置清空完成。");
+                        if (_logger.IsEnabled(LogLevel.Debug))
+                            _logger.LogDebug($"准备删除：{nodePath}。");
+                        await zooKeeperClient.DeleteAsync(nodePath);
                     }
+                    index++;
+                    childrens = childrens.Take(childrens.Length - index).ToArray();
                 }
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("路由配置清空完成。");
             }
         }
 
@@ -114,46 +105,42 @@ namespace Surging.Core.Zookeeper
             var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
             foreach (var zooKeeperClient in zooKeeperClients)
             {
-                using (var locker = await _lockerProvider.CreateLockAsync("set_mqtt_routes"))
+                await CreateSubdirectory(zooKeeperClient, _configInfo.MqttRoutePath);
+
+                var path = _configInfo.MqttRoutePath;
+
+                routes = routes.ToArray();
+
+                foreach (var serviceRoute in routes)
                 {
-                    if (locker.IsAcquired)
+                    var nodePath = $"{path}{serviceRoute.MqttDescriptor.Topic}";
+                    var nodeData = _serializer.Serialize(serviceRoute);
+                    if (!nodeWatchers.ContainsKey(path)) 
                     {
-                        await CreateSubdirectory(zooKeeperClient, _configInfo.MqttRoutePath);
-
-                        var path = _configInfo.MqttRoutePath;
-
-                        routes = routes.ToArray();
-
-                        foreach (var serviceRoute in routes)
+                        var nodeWathcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                        await zooKeeperClient.SubscribeDataChange(path, nodeWathcher.HandleNodeDataChange);
+                    }
+                    
+                    if (!await zooKeeperClient.ExistsAsync(nodePath))
+                    {
+                        if (_logger.IsEnabled(LogLevel.Debug))
+                            _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
+                        await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    }
+                    else
+                    {
+                        if (_logger.IsEnabled(LogLevel.Debug))
+                            _logger.LogDebug($"将更新节点：{nodePath}的数据。");
+                        var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
+                        if (!DataEquals(nodeData, onlineData))
                         {
-                            var nodePath = $"{path}{serviceRoute.MqttDescriptor.Topic}";
-                            var nodeData = _serializer.Serialize(serviceRoute);
-                            var nodeWathcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                            await zooKeeperClient.SubscribeDataChange(path, nodeWathcher.HandleNodeDataChange);
-                            if (!await zooKeeperClient.ExistsAsync(nodePath))
-                            {
-                                if (_logger.IsEnabled(LogLevel.Debug))
-                                    _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
-                                await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                            }
-                            else
-                            {
-                                if (_logger.IsEnabled(LogLevel.Debug))
-                                    _logger.LogDebug($"将更新节点：{nodePath}的数据。");
-                                var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
-                                if (!DataEquals(nodeData, onlineData))
-                                {
-                                    await zooKeeperClient.SetDataAsync(nodePath, nodeData);
-                                }
-                            }
+                            await zooKeeperClient.SetDataAsync(nodePath, nodeData);
                         }
-                        if (_logger.IsEnabled(LogLevel.Information))
-                            _logger.LogInformation("mqtt服务路由添加成功。");
-
                     }
                 }
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("mqtt服务路由添加成功。");
 
-                        
             }
         }
 
@@ -213,28 +200,22 @@ namespace Surging.Core.Zookeeper
             var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
             foreach (var zooKeeperClient in zooKeeperClients)
             {
-                using (var locker = await _lockerProvider.CreateLockAsync("mqtt_remove"))
+                if (_routes != null)
                 {
-                    if (locker.IsAcquired)
+                    var oldRouteTopics = _routes.Select(i => i.MqttDescriptor.Topic).ToArray();
+                    var newRouteTopics = routes.Select(i => i.MqttDescriptor.Topic).ToArray();
+                    var deletedRouteTopics = oldRouteTopics.Except(newRouteTopics).ToArray();
+                    foreach (var deletedRouteTopic in deletedRouteTopics)
                     {
-                        if (_routes != null)
+                        var addresses = _routes.Where(p => p.MqttDescriptor.Topic == deletedRouteTopic).Select(p => p.MqttEndpoint).FirstOrDefault();
+                        if (addresses.Contains(hostAddr))
                         {
-                            var oldRouteTopics = _routes.Select(i => i.MqttDescriptor.Topic).ToArray();
-                            var newRouteTopics = routes.Select(i => i.MqttDescriptor.Topic).ToArray();
-                            var deletedRouteTopics = oldRouteTopics.Except(newRouteTopics).ToArray();
-                            foreach (var deletedRouteTopic in deletedRouteTopics)
-                            {
-                                var addresses = _routes.Where(p => p.MqttDescriptor.Topic == deletedRouteTopic).Select(p => p.MqttEndpoint).FirstOrDefault();
-                                if (addresses.Contains(hostAddr))
-                                {
-                                    var nodePath = $"{path}{deletedRouteTopic}";
-                                    await zooKeeperClient.DeleteAsync(nodePath);
-                                }
-                            }
+                            var nodePath = $"{path}{deletedRouteTopic}";
+                            await zooKeeperClient.DeleteAsync(nodePath);
                         }
                     }
                 }
-                
+
 
             }
         }
@@ -278,18 +259,20 @@ namespace Surging.Core.Zookeeper
         {
             MqttServiceRoute result = null;
             var zooKeeperClient = await _zookeeperClientProvider.GetZooKeeperClient();
-            using (var locker = await _lockerProvider.CreateLockAsync("get_mqtt_route"))
+            if (zooKeeperClient == null) 
             {
-                if (locker.IsAcquired)
+                return result;
+            }
+            if (await zooKeeperClient.ExistsAsync(path))
+            {
+                var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
+                if (!nodeWatchers.ContainsKey(path)) 
                 {
-                    if (await zooKeeperClient.ExistsAsync(path))
-                    {
-                        var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-                        var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                        await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-                        result = await GetRoute(data);
-                    }
+                    var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                    await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
                 }
+
+                result = await GetRoute(data);
             }
 
             return result;
@@ -322,14 +305,24 @@ namespace Surging.Core.Zookeeper
             if (_routes != null && _routes.Any())
                 return;
             var zooKeeperClient = await _zookeeperClientProvider.GetZooKeeperClient();
-            var watcher = new ChildrenMonitorWatcher(_configInfo.MqttRoutePath, async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
+            if (zooKeeperClient == null) 
+            {
+                return;
+            }
+            ChildrenMonitorWatcher watcher = null;
+            if (_routes == null) 
+            {
+                watcher = new ChildrenMonitorWatcher(_configInfo.MqttRoutePath, async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
+            }
             await zooKeeperClient.SubscribeChildrenChange(_configInfo.MqttRoutePath, watcher.HandleChildrenChange);
             if (await zooKeeperClient.StrictExistsAsync(_configInfo.MqttRoutePath))
             {
                 var childrens = await zooKeeperClient.GetChildrenAsync(_configInfo.MqttRoutePath);
                 _routes = await GetRoutes(childrens);
-                watcher.SetCurrentData(childrens.ToArray());
-
+                if (_routes != null) 
+                {
+                    watcher.SetCurrentData(childrens.ToArray());
+                }
             }
             else
             {

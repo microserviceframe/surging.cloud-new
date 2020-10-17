@@ -2,15 +2,12 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using org.apache.zookeeper;
 using Rabbit.Zookeeper;
 using Rabbit.Zookeeper.Implementation;
 using Surging.Core.CPlatform;
-using Surging.Core.CPlatform.Address;
-using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation.Selectors;
 using Surging.Core.Zookeeper.Configurations;
 using Surging.Core.Zookeeper.Internal.Cluster.HealthChecks;
@@ -41,23 +38,38 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
 
         public async Task<IZookeeperClient> GetZooKeeperClient()
         {
+            var conns = new List<string>();
+            foreach (var conn in _config.Addresses) 
+            {
+                await _healthCheckService.Monitor(conn);
+                if (!await _healthCheckService.IsHealth(conn)) 
+                {
+                    continue;
+                }
+                conns.Add(conn);
+            }
+            if (!conns.Any())
+            {
+                if (_logger.IsEnabled(Level.Warning))
+                    _logger.LogWarning($"找不到可用的注册中心地址。");
+                return default;
+            }
             var addr = await _zookeeperAddressSelector.SelectConnectionAsync(new AddressSelectContext
             {
                 Descriptor = new ServiceDescriptor { Id = nameof(DefaultZookeeperClientProvider) },
-                Connections = _config.Addresses
+                Connections = conns
             });
-           
             return CreateZooKeeper(addr);
         }
 
         protected IZookeeperClient CreateZooKeeper(string conn)
         {
-            if (_zookeeperClients.TryGetValue(conn, out IZookeeperClient zookeeperClient) 
-                && zookeeperClient.WaitForKeeperState(Watcher.Event.KeeperState.SyncConnected, zookeeperClient.Options.OperatingTimeout))
+            if (_zookeeperClients.TryGetValue(conn, out IZookeeperClient zookeeperClient)
+                    && zookeeperClient.WaitForKeeperState(Watcher.Event.KeeperState.SyncConnected, zookeeperClient.Options.OperatingTimeout))
             {
                 return zookeeperClient;
             }
-            else 
+            else
             {
                 var options = new ZookeeperClientOptions(conn)
                 {
@@ -69,6 +81,7 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
                 _zookeeperClients.AddOrUpdate(conn, zookeeperClient, (k, v) => zookeeperClient);
                 return zookeeperClient;
             }
+
         }
 
         public async Task<IEnumerable<IZookeeperClient>> GetZooKeeperClients()
@@ -76,7 +89,10 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
             var result = new List<IZookeeperClient>();
             foreach (var address in _config.Addresses)
             {
-                result.Add(CreateZooKeeper(address));
+                if (await _healthCheckService.IsHealth(address)) 
+                {
+                    result.Add(CreateZooKeeper(address));
+                }
             }
             return result;
         }

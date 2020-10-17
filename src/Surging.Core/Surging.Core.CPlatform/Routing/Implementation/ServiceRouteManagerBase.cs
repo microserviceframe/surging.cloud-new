@@ -1,9 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
-using Surging.Core.CPlatform.Address;
-using Surging.Core.CPlatform.Configurations;
-using Surging.Core.CPlatform.Runtime.Client.HealthChecks;
+﻿using Surging.Core.CPlatform.Address;
 using Surging.Core.CPlatform.Serialization;
-using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -105,17 +101,10 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             return SetRouteAsync(descriptor);
         }
 
-        public virtual async Task<IEnumerable<ServiceRoute>> GetLocalServiceRoutes()
-        {
-            var addess = NetUtils.GetHostAddress();
-            var localServiceRoutes = (await GetRoutesAsync()).Where(p => p.Address.Any(q => q.Equals(addess)));
-            return localServiceRoutes;
-        }
-
         public abstract Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod);
 
 
-        public abstract Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId, bool needUpdateFromServiceCenter = false);
+        public abstract Task<ServiceRoute> GetRouteByServiceIdAsync(string serviceId, bool isCache = true);
        
 
         public abstract Task RemveAddressAsync(IEnumerable<AddressModel> address);

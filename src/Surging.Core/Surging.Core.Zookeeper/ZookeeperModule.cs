@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Surging.Core.CPlatform;
 using Surging.Core.CPlatform.Cache;
 using Surging.Core.CPlatform.Module;
 using Surging.Core.CPlatform.Mqtt;
@@ -206,9 +205,18 @@ namespace Surging.Core.Zookeeper
                 var sessionTimeout = config.SessionTimeout.TotalSeconds;
                 var connectionTimeout = config.ConnectionTimeout.TotalSeconds;
                 var operatingTimeout = config.OperatingTimeout.TotalSeconds;
-                Double.TryParse(option.SessionTimeout, out sessionTimeout);
-                Double.TryParse(option.ConnectionTimeout, out connectionTimeout);
-                Double.TryParse(option.OperatingTimeout, out operatingTimeout);
+                if (option.SessionTimeout > 0)
+                {
+                    sessionTimeout = option.SessionTimeout;
+                }
+                if (option.ConnectionTimeout > 0)
+                {
+                    connectionTimeout = option.ConnectionTimeout;
+                }
+                if (option.OperatingTimeout > 0)
+                {
+                    operatingTimeout = option.OperatingTimeout;
+                }
                 config = new ConfigInfo(
                     option.ConnectionString,
                     TimeSpan.FromSeconds(sessionTimeout),

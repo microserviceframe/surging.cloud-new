@@ -3,6 +3,7 @@
   <PropertyGroup>
     <PackageId>$(PackagePrefix).Stage</PackageId>
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <Description>Stage组件</Description>
   </PropertyGroup>
 
   <ItemGroup>

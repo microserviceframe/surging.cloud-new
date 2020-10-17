@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-     <PackageId>$(PackagePrefix).DNS</PackageId>
+    <PackageId>$(PackagePrefix).DNS</PackageId>
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <Description>DNS服务组件</Description>
   </PropertyGroup>
 
   <ItemGroup>

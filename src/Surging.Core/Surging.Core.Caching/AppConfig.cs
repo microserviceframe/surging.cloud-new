@@ -3,6 +3,7 @@ using Surging.Core.Caching.DependencyResolution;
 using Surging.Core.Caching.HashAlgorithms;
 using Surging.Core.Caching.Models;
 using Surging.Core.Caching.Utilities;
+using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

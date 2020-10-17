@@ -1,4 +1,5 @@
 ﻿using Surging.Core.CPlatform.Routing;
+using Surging.Core.CPlatform.Runtime.Server;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -14,7 +15,7 @@ namespace Surging.Core.CPlatform.Routing
         /// </summary>
         /// <param name="serviceId"></param>
         /// <returns></returns>
-        Task<ServiceRoute> Locate(string serviceId);
+        Task<ServiceRoute> Locate(string serviceId,bool fromCache = true);
 
         Task<ServiceRoute> GetRouteByPathOrRegexPath(string path,string httpMethod);
 
@@ -33,5 +34,9 @@ namespace Surging.Core.CPlatform.Routing
         Task RegisterRoutes(decimal processorTime);
 
         Task RemoveHostAddress(string serviceId);
+
+        Task RegisterRoutes(IEnumerable<ServiceEntry> serviceEntries);
+
+        void UpdateServiceRouteCache(ServiceRoute serviceRoute);
     }
 }

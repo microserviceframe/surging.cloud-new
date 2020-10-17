@@ -1,18 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageId>$(PackagePrefix).CPlatform</PackageId>
+    <PackageId>$(PackagePrefix).CPlatform</PackageId
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
-     <PackageReleaseNotes>1.multiple register center cluster
-2. fix bug</PackageReleaseNotes>
+    <Description>surging平台基础组件;1.封装rpc通信底层接口和通信模型;2.定义模块化组件协议;3.封装IOC容器；4.封装服务主机</Description>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="ServiceCommand\**" />
-    <EmbeddedResource Remove="ServiceCommand\**" />
-    <None Remove="ServiceCommand\**" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.8.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="2.9.0" />
@@ -25,7 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="RedLock.net" Version="2.2.0" />
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="4.7.0" />
   </ItemGroup>
 
   <ItemGroup>

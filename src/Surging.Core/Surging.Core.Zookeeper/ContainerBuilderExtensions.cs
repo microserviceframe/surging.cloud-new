@@ -37,7 +37,8 @@ namespace Surging.Core.Zookeeper
                 provider.GetRequiredService<ISerializer<string>>(),
                 provider.GetRequiredService<IServiceRouteFactory>(),
                 provider.GetRequiredService<ILogger<ZooKeeperServiceRouteManager>>(),
-                  provider.GetRequiredService<IZookeeperClientProvider>()));
+                provider.GetRequiredService<IZookeeperClientProvider>()
+                  ));
         }
 
         public static IServiceBuilder UseZooKeeperMqttRouteManager(this IServiceBuilder builder, ConfigInfo configInfo)
@@ -168,14 +169,24 @@ namespace Surging.Core.Zookeeper
                 var sessionTimeout = config.SessionTimeout.TotalSeconds;
                 var connectionTimeout = config.ConnectionTimeout.TotalSeconds;
                 var operatingTimeout = config.OperatingTimeout.TotalSeconds;
-                Double.TryParse(option.SessionTimeout, out sessionTimeout);
-                Double.TryParse(option.ConnectionTimeout, out connectionTimeout);
-                Double.TryParse(option.OperatingTimeout, out operatingTimeout);
+                if (option.SessionTimeout > 0) 
+                {
+                    sessionTimeout = option.SessionTimeout;
+                }
+                if (option.ConnectionTimeout > 0) 
+                {
+                    connectionTimeout = option.ConnectionTimeout;
+                }
+                if (option.OperatingTimeout > 0)
+                {
+                    operatingTimeout = option.OperatingTimeout;
+                }
+
                 config = new ConfigInfo(
                     option.ConnectionString,
                     TimeSpan.FromSeconds(sessionTimeout),
                     TimeSpan.FromSeconds(connectionTimeout),
-                     TimeSpan.FromSeconds(operatingTimeout),
+                    TimeSpan.FromSeconds(operatingTimeout),
                     option.RoutePath ?? config.RoutePath,
                     option.SubscriberPath ?? config.SubscriberPath,
                     option.CommandPath ?? config.CommandPath,
