@@ -36,8 +36,7 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.Implementation.Selectors.Imple
             }
             else
             {
-                var vt = SelectAsync(context);
-                return vt.IsCompletedSuccessfully ? vt.Result : await vt;
+                return await SelectAsync(context);
             }
         }
 
@@ -59,8 +58,7 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.Implementation.Selectors.Imple
             }
             else
             {
-                var vt = SelectConnAsync(context);
-                return vt.IsCompletedSuccessfully ? vt.Result : await vt;
+                return await SelectConnectionAsync(context);
             }
         }
 

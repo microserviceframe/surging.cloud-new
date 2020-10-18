@@ -101,6 +101,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             var serviceRoutes = await _serviceRouteManager.GetRoutesAsync(true);
             if (serviceRoutes == null)
             {
+                _logger.LogWarning("从服务注册中心获取路由失败");
                 return;
             }
             foreach (var serviceRoute in serviceRoutes)
@@ -113,7 +114,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             var registerServiceEntries = localServiceEntries.Where(e => localServiceRoutes.Any(p => !p.Address.Any(q => q.Equals(addess)) && p.ServiceDescriptor.Id == e.Descriptor.Id));
             if (registerServiceEntries.Any())
             {
-                _logger.LogWarning("服务路由未注册成功,重新注册服务路由");
+                _logger.LogWarning($"服务路由未注册成功,重新注册服务路由,服务条目数量为:{registerServiceEntries.Count()}");
                 try
                 {
                     await _serviceRouteProvider.RegisterRoutes(registerServiceEntries);
@@ -124,7 +125,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 }
 
             }
-            
+
         }
 
 
@@ -140,12 +141,12 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             var ipAddress = address as IpAddressModel;
             if (!_dictionaries.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry monitorEntry))
             {
-                monitorEntry = new MonitorEntry(ipAddress);
-                await Check(monitorEntry, _timeout);
+                monitorEntry = new MonitorEntry(ipAddress, Check(ipAddress, _timeout));
                 _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), monitorEntry);
             }
             OnChanged(new HealthCheckEventArgs(address, monitorEntry.Health));
         }
+
 
         /// <summary>
         /// 判断一个地址是否健康。
@@ -158,8 +159,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             MonitorEntry entry;
             if (!_dictionaries.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out entry))
             {
-                entry = new MonitorEntry(address);
-                await Check(entry, _timeout);
+                entry = new MonitorEntry(address, Check(ipAddress, _timeout));
                 _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), entry);
             }
 
@@ -183,7 +183,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             return Task.Run(() =>
             {
                 var ipAddress = address as IpAddressModel;
-                var entry = _dictionaries.GetOrAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), k => new MonitorEntry(address));
+                var entry = _dictionaries.GetOrAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), k => new MonitorEntry(address, Check(ipAddress, _timeout)));
                 entry.Health = false;
                 entry.UnhealthyTimes += 1;
             });
@@ -223,11 +223,11 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         public void Dispose()
         {
             _serviceHealthCheckTimer.Dispose();
-            if (_synchServiceRoutesTimer != null) 
+            if (_synchServiceRoutesTimer != null)
             {
                 _synchServiceRoutesTimer.Dispose();
             }
-            
+
         }
 
         #endregion Implementation of IDisposable
@@ -278,6 +278,11 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
         }
 
+        private bool Check(IpAddressModel ipAddress, int timeout)
+        {
+            return SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout);
+        }
+
         private async Task Check(IEnumerable<MonitorEntry> entrys, int timeout)
         {
             foreach (var entry in entrys)
@@ -312,10 +317,10 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
         protected class MonitorEntry
         {
-            public MonitorEntry(AddressModel addressModel)
+            public MonitorEntry(AddressModel addressModel, bool health)
             {
                 Address = addressModel;
-                Health = false;
+                Health = health;
                 UnhealthyTimes = 0;
 
             }

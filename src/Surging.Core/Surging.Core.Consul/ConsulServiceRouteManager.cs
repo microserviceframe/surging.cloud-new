@@ -103,7 +103,11 @@ namespace Surging.Core.Consul
                 var serviceRoute = serviceRoutes.FirstOrDefault(p => p.ServiceDescriptor.Id == route.ServiceDescriptor.Id);
                 if (serviceRoute != null)
                 {
-                    var addresses = serviceRoute.Address.Concat(route.Address).Distinct();
+                    var addresses = serviceRoute.Address.Concat(route.Address).Distinct().ToList();
+                    if (!addresses.Contains(hostAddr))
+                    {
+                        addresses.Add(hostAddr);
+                    }
                     route.Address = addresses.ToList();
                 }
             }
@@ -211,8 +215,7 @@ namespace Surging.Core.Consul
             foreach (var client in clients)
             {
                 var nodeData = _serializer.Serialize(route);
-                if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
-                    _logger.LogDebug($"准备设置服务路由信息：{Encoding.UTF8.GetString(nodeData)}。");
+                _logger.LogDebug($"准备设置服务路由信息：{Encoding.UTF8.GetString(nodeData)}。");
                 var keyValuePair = new KVPair($"{_configInfo.RoutePath}{route.ServiceDescriptor.Id}") { Value = nodeData };
                 await client.KV.Put(keyValuePair);
             }
@@ -385,6 +388,10 @@ namespace Surging.Core.Consul
                         _logger.LogWarning($"无法获取路由信息，因为节点：{_configInfo.RoutePath}，不存在。");
                     _routes = new ServiceRoute[0];
                 }
+            }
+            else 
+            {
+                _logger.LogWarning("没有找到可用的服务注册中心");
             }
 
         }

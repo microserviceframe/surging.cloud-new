@@ -29,7 +29,7 @@ namespace Surging.Core.Zookeeper
         private ServiceRoute[] _routes;
         private readonly IZookeeperClientProvider _zookeeperClientProvider;
         private IDictionary<string, NodeMonitorWatcher> nodeWatchers = new Dictionary<string, NodeMonitorWatcher>();
-
+        private ChildrenMonitorWatcher watcher = null;
         public ZooKeeperServiceRouteManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
             ISerializer<string> stringSerializer, IServiceRouteFactory serviceRouteFactory,
             ILogger<ZooKeeperServiceRouteManager> logger, IZookeeperClientProvider zookeeperClientProvider)
@@ -134,48 +134,58 @@ namespace Surging.Core.Zookeeper
 
         protected override async Task SetRouteAsync(ServiceRouteDescriptor route)
         {
-            if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation("准备添加服务路由。");
-            var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
-            foreach (var zooKeeperClient in zooKeeperClients)
+            try
             {
-                await CreateSubdirectory(zooKeeperClient, _configInfo.RoutePath);
-                var path = _configInfo.RoutePath;
-                if (!path.EndsWith("/"))
-                    path += "/";
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("准备添加服务路由。");
+                var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
+                foreach (var zooKeeperClient in zooKeeperClients)
+                {
+                    await CreateSubdirectory(zooKeeperClient, _configInfo.RoutePath);
+                    var path = _configInfo.RoutePath;
+                    if (!path.EndsWith("/"))
+                        path += "/";
 
-                var nodePath = $"{path}{route.ServiceDescriptor.Id}";
-                var nodeData = _serializer.Serialize(route);
-                if (!nodeWatchers.ContainsKey(path))
-                {
-                    var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                    await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-                }
-                if (!await zooKeeperClient.ExistsAsync(nodePath))
-                {
-                    _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
-                    await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                }
-                else
-                {
-                    _logger.LogDebug($"将更新节点：{nodePath}的数据。");
-
-                    var onlineDataResult = await zooKeeperClient.ZooKeeper.getDataAsync(nodePath);
-                    var onlineData = onlineDataResult.Data;
-                    if (!DataEquals(nodeData, onlineData))
+                    var nodePath = $"{path}{route.ServiceDescriptor.Id}";
+                    var nodeData = _serializer.Serialize(route);
+                    _logger.LogDebug($"服务路由内容为：{Encoding.UTF8.GetString(nodeData)}。");
+                    if (!nodeWatchers.ContainsKey(path))
                     {
-                        var stat = await zooKeeperClient.SetDataAsync(nodePath, nodeData);
-                        if (stat.getVersion() > onlineDataResult.Stat.getVersion())
-                        {
-                            _logger.LogInformation($"{nodePath}节点的缓存的服务路由与服务注册中心不一致,路由数据已被更新。");
-                        }
-                        else
-                        {
-                            _logger.LogInformation($"{nodePath}节点路由数据更新失败");
-                        }
-
+                        var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                        await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
                     }
+                    if (!await zooKeeperClient.ExistsAsync(nodePath))
+                    {
+                        _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
+                        await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    }
+                    else
+                    {
+                        _logger.LogDebug($"将更新节点：{nodePath}的数据。");
+
+                        var onlineDataResult = await zooKeeperClient.ZooKeeper.getDataAsync(nodePath);
+                        var onlineData = onlineDataResult.Data;
+                        if (!DataEquals(nodeData, onlineData))
+                        {
+
+                            var stat = await zooKeeperClient.SetDataAsync(nodePath, nodeData);
+                            if (stat.getVersion() > onlineDataResult.Stat.getVersion())
+                            {
+                                _logger.LogInformation($"{nodePath}节点的缓存的服务路由与服务注册中心不一致,路由数据已被更新。");
+                            }
+                            else
+                            {
+                                _logger.LogInformation($"{nodePath}节点路由数据更新失败");
+                            }
+
+                        }
+                    }
+
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"{route.ServiceDescriptor.Id}服务的路由注册失败,原因:{ex.Message}" );
 
             }
 
@@ -276,8 +286,12 @@ namespace Surging.Core.Zookeeper
                     var serviceRoute = serviceRoutes.FirstOrDefault(p => p.ServiceDescriptor.Id == route.ServiceDescriptor.Id);
                     if (serviceRoute != null)
                     {
-                        var addresses = serviceRoute.Address.Concat(route.Address).Distinct();
-                        route.Address = addresses.ToList();
+                        var addresses = serviceRoute.Address.Concat(route.Address).Distinct().ToList();
+                        if (!addresses.Contains(hostAddr)) 
+                        {
+                            addresses.Add(hostAddr);
+                        }
+                        route.Address = addresses;
                     }
                 }
             }
@@ -346,8 +360,7 @@ namespace Surging.Core.Zookeeper
 
         private async Task<ServiceRoute> GetRoute(byte[] data)
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.LogDebug($"准备转换服务路由，配置内容：{Encoding.UTF8.GetString(data)}。");
+            _logger.LogDebug($"准备转换服务路由，配置内容：{Encoding.UTF8.GetString(data)}。");
 
             if (data == null || data.Length <= 0)
                 return null;
@@ -364,6 +377,7 @@ namespace Surging.Core.Zookeeper
             {
                 return null;
             }
+            _logger.LogDebug($"准备从节点：{path}中获取路由信息。");
             if (await zooKeeperClient.StrictExistsAsync(path))
             {
                 var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
@@ -373,6 +387,19 @@ namespace Surging.Core.Zookeeper
                     await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
                 }
                 result = await GetRoute(data);
+                if (result != null)
+                {
+                    _logger.LogDebug($"从服务注册中心获取到服务{GetServiceIdByNodePath(path)}的路由数据为:{_stringSerializer.Serialize(result)}");
+                }
+                else 
+                {
+                    _logger.LogWarning($"服务注册中心不存在{GetServiceIdByNodePath(path)}服务的路由数据");
+                }
+                
+            }
+            else 
+            {
+                _logger.LogWarning($"服务注册中心不存在{GetServiceIdByNodePath(path)}服务的路由数据");
             }
 
             return result;
@@ -384,19 +411,17 @@ namespace Surging.Core.Zookeeper
             var rootPath = _configInfo.RoutePath;
             if (!rootPath.EndsWith("/"))
                 rootPath += "/";
-
-            childrens = childrens.ToArray();
             var routes = new List<ServiceRoute>();
 
             foreach (var children in childrens)
             {
-                if (_logger.IsEnabled(LogLevel.Debug))
-                    _logger.LogDebug($"准备从节点：{children}中获取路由信息。");
-
+               
                 var nodePath = $"{rootPath}{children}";
                 var route = await GetRoute(nodePath);
                 if (route != null)
-                    routes.Add(route);
+                {
+                    routes.Add(route);                  
+                }
             }
 
             return routes.ToArray();
@@ -423,12 +448,12 @@ namespace Surging.Core.Zookeeper
             var zooKeeperClient = await _zookeeperClientProvider.GetZooKeeperClient();
             if (zooKeeperClient == null)
             {
+                _logger.LogWarning("没有找到可用的服务注册中心");
                 return;
             }
             try
             {
-                ChildrenMonitorWatcher watcher = null;
-                if (_routes == null || _routes.Length <= 0)
+                if (watcher == null)
                 {
                     watcher = new ChildrenMonitorWatcher(_configInfo.RoutePath,
                             async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
@@ -478,7 +503,7 @@ namespace Surging.Core.Zookeeper
                 return;
 
             var newRoute = await GetRoute(newData);
-
+            _logger.LogInformation($"接收到服务注册中心推送到的路由信息为:{_stringSerializer.Serialize(newRoute)}");
             if (_routes != null && _routes.Any() && newRoute != null)
             {  //得到旧的路由。
                 var oldRoute = _routes.FirstOrDefault(i => i.ServiceDescriptor.Id == newRoute.ServiceDescriptor.Id);

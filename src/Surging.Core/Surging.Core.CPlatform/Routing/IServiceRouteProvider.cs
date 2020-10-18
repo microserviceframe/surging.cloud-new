@@ -31,11 +31,11 @@ namespace Surging.Core.CPlatform.Routing
         /// </summary>
         /// <param name="processorTime"></param>
         /// <returns></returns>
-        Task RegisterRoutes(decimal processorTime);
+        Task RegisterRoutes(double processorTime);
 
         Task RemoveHostAddress(string serviceId);
 
-        Task RegisterRoutes(IEnumerable<ServiceEntry> serviceEntries);
+        Task RegisterRoutes(IEnumerable<ServiceEntry> serviceEntries, double processorTime = 0);
 
         void UpdateServiceRouteCache(ServiceRoute serviceRoute);
     }

@@ -27,7 +27,7 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
 
 
         public DefaultZookeeperClientProvider(ConfigInfo config, IHealthCheckService healthCheckService, IZookeeperAddressSelector zookeeperAddressSelector,
-      ILogger<DefaultZookeeperClientProvider> logger)
+          ILogger<DefaultZookeeperClientProvider> logger)
         {
             _config = config;
             _healthCheckService = healthCheckService;
@@ -50,8 +50,7 @@ namespace Surging.Core.Zookeeper.Internal.Implementation
             }
             if (!conns.Any())
             {
-                if (_logger.IsEnabled(Level.Warning))
-                    _logger.LogWarning($"找不到可用的注册中心地址。");
+                _logger.LogWarning($"找不到可用的注册中心地址。");
                 return default;
             }
             var addr = await _zookeeperAddressSelector.SelectConnectionAsync(new AddressSelectContext

@@ -79,8 +79,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
             var serviceRoute = await _serviceRouteProvider.Locate(serviceId);
             if (serviceRoute == null)
             {
-                if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.LogWarning($"根据服务id：{serviceId}，找不到服务路由信息。");
+                _logger.LogWarning($"根据服务id：{serviceId}，找不到服务路由信息。");
                 throw new CPlatformException("根据服务id：{serviceId}，找不到服务路由信息。");
             }
             var address = await GetHealthAddress(serviceRoute);
@@ -99,8 +98,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
             }
 
             _serviceHeartbeatManager.AddWhitelist(serviceId);
-            if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation($"根据服务id：{serviceId}，找到以下可用地址：{string.Join(",", address.Select(i => i.ToString()))}。");
+           
             var vtCommand = _commandProvider.GetCommand(serviceId);
             var command = vtCommand.IsCompletedSuccessfully ? vtCommand.Result : await vtCommand;
             var addressSelector = _addressSelectors[command.ShuntStrategy.ToString()];
@@ -116,6 +114,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
 
         private async Task<IEnumerable<AddressModel>> GetHealthAddress(ServiceRoute serviceRoute)
         {
+            _logger.LogDebug($"根据服务id：{serviceRoute.ServiceDescriptor.Id},找到如下所有地址：{string.Join(",", serviceRoute.Address.Select(i => i.ToString()))}。");
             var address = new List<AddressModel>();
             foreach (var addressModel in serviceRoute.Address)
             {
@@ -129,10 +128,10 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
             }
             if (!address.Any())
             {
-                if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.LogWarning($"根据服务id：{serviceRoute.ServiceDescriptor.Id}，找不到可用的地址。");
+                _logger.LogWarning($"根据服务id：{serviceRoute.ServiceDescriptor.Id}，找不到可用的地址。");
                 return address;
             }
+            _logger.LogInformation($"根据服务id：{serviceRoute.ServiceDescriptor.Id}，找到以下可用地址：{string.Join(",", address.Select(i => i.ToString()))}。");
             return address;
         }
 

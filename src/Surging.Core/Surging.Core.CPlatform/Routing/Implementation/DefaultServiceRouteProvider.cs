@@ -81,7 +81,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             return await SearchRouteAsync(path, httpMethod);
         }
 
-        public async Task RegisterRoutes(decimal processorTime)
+        public async Task RegisterRoutes(double processorTime)
         {
             var addess = NetUtils.GetHostAddress();
             addess.ProcessorTime = processorTime;
@@ -203,10 +203,10 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             return route;
         }
 
-        public async Task RegisterRoutes(IEnumerable<ServiceEntry> serviceEntries)
+        public async Task RegisterRoutes(IEnumerable<ServiceEntry> serviceEntries, double processorTime = 0)
         {
             var addess = NetUtils.GetHostAddress();
-            addess.ProcessorTime = Math.Round(Convert.ToDecimal(Process.GetCurrentProcess().TotalProcessorTime.TotalSeconds), 2, MidpointRounding.AwayFromZero);
+            addess.ProcessorTime = processorTime;
             RpcContext.GetContext().SetAttachment("Host", addess);
             var addressDescriptors = serviceEntries.Select(i =>
             {

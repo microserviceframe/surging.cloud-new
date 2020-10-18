@@ -16,7 +16,7 @@ namespace Surging.Core.CPlatform.Address
         public abstract EndPoint CreateEndPoint();
 
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public decimal ProcessorTime { get; set; }
+        public double ProcessorTime { get; set; }
 
         /// <summary>
         /// 重写后的标识。

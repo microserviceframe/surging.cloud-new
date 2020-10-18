@@ -47,7 +47,7 @@ namespace Surging.Core.CPlatform.Routing
 
         private void _timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            _serviceRouteProvider.RegisterRoutes(Math.Round(Convert.ToDecimal(Process.GetCurrentProcess().TotalProcessorTime.TotalSeconds), 2, MidpointRounding.AwayFromZero)).Wait();
+            _serviceRouteProvider.RegisterRoutes(Process.GetCurrentProcess().TotalProcessorTime.TotalMilliseconds).Wait();
             
 
         }
