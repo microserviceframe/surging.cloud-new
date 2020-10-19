@@ -59,7 +59,7 @@ namespace Surging.Core.CPlatform.Configurations
 
         public ProtocolPortOptions Ports { get; set; } = new  ProtocolPortOptions();
 
-        public string Token { get; set; } = "True";
+        public string Token { get; set; }
 
         public string NotRelatedAssemblyFiles { get; set; }
 

@@ -25,7 +25,7 @@ namespace Surging.Core.CPlatform
 {
     public static class ServiceHostBuilderExtensions
     {
-        public static IServiceHostBuilder UseServer(this IServiceHostBuilder hostBuilder, string ip, int port, string token = "True")
+        public static IServiceHostBuilder UseServer(this IServiceHostBuilder hostBuilder, string ip, int port, string token = null)
         {
             return hostBuilder.MapServices(async mapper =>
             {

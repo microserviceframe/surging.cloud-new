@@ -5,18 +5,15 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation
     public class ServiceTokenGenerator : IServiceTokenGenerator
     {
         public string _serviceToken;
+
+        public ServiceTokenGenerator()
+        {
+            _serviceToken = null;
+        }
+
         public string GeneratorToken(string code)
         {
-            bool enableToken;
-            if (!bool.TryParse(code, out enableToken))
-            {
-                _serviceToken = code;
-            }
-            else
-            {
-                if (enableToken) _serviceToken = Guid.NewGuid().ToString("N");
-                else _serviceToken = null;
-            }
+            _serviceToken = code;
             return _serviceToken;
         }
 

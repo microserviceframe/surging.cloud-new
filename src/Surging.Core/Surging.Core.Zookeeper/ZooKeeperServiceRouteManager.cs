@@ -136,6 +136,7 @@ namespace Surging.Core.Zookeeper
         {
             try
             {
+                var hostAddr = NetUtils.GetHostAddress();
                 if (_logger.IsEnabled(LogLevel.Information))
                     _logger.LogInformation("准备添加服务路由。");
                 var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
@@ -163,20 +164,17 @@ namespace Surging.Core.Zookeeper
                     {
                         _logger.LogDebug($"将更新节点：{nodePath}的数据。");
 
-                        var onlineDataResult = await zooKeeperClient.ZooKeeper.getDataAsync(nodePath);
-                        var onlineData = onlineDataResult.Data;
+                        var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
+                        var onlineRoute = await GetRoute(onlineData);
+                        if (onlineRoute.Address.Contains(hostAddr)) 
+                        {
+                            _logger.LogWarning($"{nodePath}服务注册中心已包含该主机路由,无需重复注册");
+                            return;
+                            
+                        }
                         if (!DataEquals(nodeData, onlineData))
                         {
-
-                            var stat = await zooKeeperClient.SetDataAsync(nodePath, nodeData);
-                            if (stat.getVersion() > onlineDataResult.Stat.getVersion())
-                            {
-                                _logger.LogInformation($"{nodePath}节点的缓存的服务路由与服务注册中心不一致,路由数据已被更新。");
-                            }
-                            else
-                            {
-                                _logger.LogInformation($"{nodePath}节点路由数据更新失败");
-                            }
+                            _logger.LogInformation($"{nodePath}节点的缓存的服务路由与服务注册中心不一致,路由数据已被更新。");
 
                         }
                     }
@@ -286,12 +284,12 @@ namespace Surging.Core.Zookeeper
                     var serviceRoute = serviceRoutes.FirstOrDefault(p => p.ServiceDescriptor.Id == route.ServiceDescriptor.Id);
                     if (serviceRoute != null)
                     {
-                        var addresses = serviceRoute.Address.Concat(route.Address).Distinct().ToList();
-                        if (!addresses.Contains(hostAddr)) 
-                        {
-                            addresses.Add(hostAddr);
-                        }
-                        route.Address = addresses;
+                        var addresses = serviceRoute.Address.Concat(route.Address).Distinct();
+                        route.Address = addresses.ToList();
+                    }
+                    if (route.Equals(serviceRoute)) 
+                    {
+                        continue;
                     }
                 }
             }
@@ -503,7 +501,7 @@ namespace Surging.Core.Zookeeper
                 return;
 
             var newRoute = await GetRoute(newData);
-            _logger.LogInformation($"接收到服务注册中心推送到的路由信息为:{_stringSerializer.Serialize(newRoute)}");
+            _logger.LogDebug($"接收到服务注册中心推送到的路由信息为:{_stringSerializer.Serialize(newRoute)}");
             if (_routes != null && _routes.Any() && newRoute != null)
             {  //得到旧的路由。
                 var oldRoute = _routes.FirstOrDefault(i => i.ServiceDescriptor.Id == newRoute.ServiceDescriptor.Id);

@@ -103,11 +103,7 @@ namespace Surging.Core.Consul
                 var serviceRoute = serviceRoutes.FirstOrDefault(p => p.ServiceDescriptor.Id == route.ServiceDescriptor.Id);
                 if (serviceRoute != null)
                 {
-                    var addresses = serviceRoute.Address.Concat(route.Address).Distinct().ToList();
-                    if (!addresses.Contains(hostAddr))
-                    {
-                        addresses.Add(hostAddr);
-                    }
+                    var addresses = serviceRoute.Address.Concat(route.Address).Distinct();
                     route.Address = addresses.ToList();
                 }
             }
@@ -211,9 +207,27 @@ namespace Surging.Core.Consul
 
         protected override async Task SetRouteAsync(ServiceRouteDescriptor route)
         {
+            var hostAddr = NetUtils.GetHostAddress();
             var clients = await _consulClientProvider.GetClients();
             foreach (var client in clients)
             {
+                var nodePath = GetServiceRouteNodePath(route.ServiceDescriptor.Id);
+                var queryResult = await client.KV.Keys(nodePath);
+                if (queryResult.Response != null) 
+                {
+                    var data = await client.GetDataAsync(nodePath);
+                    if (data != null)
+                    {
+                        var onlineRoute = await GetRoute(data);
+                        if (onlineRoute.Address.Contains(hostAddr))
+                        {
+                            _logger.LogWarning($"{nodePath}服务注册中心已包含该主机路由,无需重复注册");
+                            return;
+
+                        }
+                    }
+
+                }
                 var nodeData = _serializer.Serialize(route);
                 _logger.LogDebug($"准备设置服务路由信息：{Encoding.UTF8.GetString(nodeData)}。");
                 var keyValuePair = new KVPair($"{_configInfo.RoutePath}{route.ServiceDescriptor.Id}") { Value = nodeData };

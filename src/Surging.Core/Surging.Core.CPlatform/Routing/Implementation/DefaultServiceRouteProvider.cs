@@ -203,10 +203,10 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             return route;
         }
 
-        public async Task RegisterRoutes(IEnumerable<ServiceEntry> serviceEntries, double processorTime = 0)
+        public async Task RegisterRoutes(IEnumerable<ServiceEntry> serviceEntries)
         {
             var addess = NetUtils.GetHostAddress();
-            addess.ProcessorTime = processorTime;
+            addess.ProcessorTime = Process.GetCurrentProcess().TotalProcessorTime.TotalMilliseconds;
             RpcContext.GetContext().SetAttachment("Host", addess);
             var addressDescriptors = serviceEntries.Select(i =>
             {
