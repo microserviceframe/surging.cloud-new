@@ -174,6 +174,7 @@ namespace Surging.Core.Zookeeper
                         }
                         if (!DataEquals(nodeData, onlineData))
                         {
+                            await zooKeeperClient.SetDataAsync(nodePath, nodeData);
                             _logger.LogInformation($"{nodePath}节点的缓存的服务路由与服务注册中心不一致,路由数据已被更新。");
 
                         }
@@ -286,11 +287,7 @@ namespace Surging.Core.Zookeeper
                     {
                         var addresses = serviceRoute.Address.Concat(route.Address).Distinct();
                         route.Address = addresses.ToList();
-                    }
-                    if (route.Equals(serviceRoute)) 
-                    {
-                        continue;
-                    }
+                    }                    
                 }
             }
 
