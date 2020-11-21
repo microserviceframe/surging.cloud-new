@@ -23,7 +23,9 @@ namespace Surging.Core.Zookeeper
         private ServiceSubscriber[] _subscribers;
         private readonly ILogger<ZooKeeperServiceSubscribeManager> _logger; 
         private readonly IZookeeperClientProvider _zookeeperClientProvider;
-        private IDictionary<string, NodeMonitorWatcher> nodeWatchers = new Dictionary<string, NodeMonitorWatcher>();
+        //private IDictionary<Tuple<IZookeeperClient, string>, NodeMonitorWatcher> nodeWatchers = new Dictionary<Tuple<IZookeeperClient, string>, NodeMonitorWatcher>();
+        //private IDictionary<IZookeeperClient, ChildrenMonitorWatcher> watchers = new Dictionary<IZookeeperClient, ChildrenMonitorWatcher>();
+
         public ZooKeeperServiceSubscribeManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
             ISerializer<string> stringSerializer, IServiceSubscriberFactory serviceSubscriberFactory,
             ILogger<ZooKeeperServiceSubscribeManager> logger, IZookeeperClientProvider zookeeperClientProvider) : base(stringSerializer)
@@ -130,6 +132,8 @@ namespace Surging.Core.Zookeeper
                     var nodeData = _serializer.Serialize(serviceSubscriber);
                     //var watcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
                     //await zooKeeperClient.SubscribeDataChange(nodePath, watcher.HandleNodeDataChange);
+
+
 
                     if (!await zooKeeperClient.ExistsAsync(nodePath))
                     {

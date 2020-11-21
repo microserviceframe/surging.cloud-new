@@ -35,8 +35,9 @@ namespace Surging.Core.CPlatform.Routing
 
         Task RemoveHostAddress(string serviceId);
 
-        Task RegisterRoutes(IEnumerable<ServiceEntry> serviceEntries);
+        //Task RegisterRoutes(IEnumerable<ServiceEntry> serviceEntries);
 
         void UpdateServiceRouteCache(ServiceRoute serviceRoute);
+
     }
 }

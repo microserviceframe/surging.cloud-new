@@ -54,7 +54,7 @@ namespace Surging.Core.Consul.Configurations
             EnableChildrenMonitor = enableChildrenMonitor;
             if (!string.IsNullOrEmpty(connectionString))
             {
-                var addresses = connectionString.Split(",");
+                var addresses = connectionString.Split(";");
                 if (addresses.Length > 1)
                 {
                     Addresses = addresses.Select(p => ConvertAddressModel(p));

@@ -57,7 +57,6 @@ namespace Surging.Core.Protocol.Mqtt.Internal.Runtime.Implementation
                             _logger.LogDebug($"使用地址：'{endPoint}'进行调用。");
                         var client =await _transportClientFactory.CreateClientAsync(endPoint);
                         await client.SendAsync(invokeMessage, cancellationToken).WithCancellation(cancellationToken);
-                        await _healthCheckService.MarkSuccess(address, invokeMessage.ServiceId);
                     }
                     catch (CommunicationException)
                     {
@@ -102,7 +101,6 @@ namespace Surging.Core.Protocol.Mqtt.Internal.Runtime.Implementation
                             using (var cts = new CancellationTokenSource())
                             {
                                 await client.SendAsync(invokeMessage,cts.Token).WithCancellation(cts,requestTimeout);
-                                await _healthCheckService.MarkSuccess(address, invokeMessage.ServiceId);
                             }
                         }
                         catch (CommunicationException)

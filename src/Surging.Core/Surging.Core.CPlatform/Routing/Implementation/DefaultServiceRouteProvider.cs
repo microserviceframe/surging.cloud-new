@@ -25,7 +25,7 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             IServiceEntryManager serviceEntryManager, IServiceTokenGenerator serviceTokenGenerator)
         {
             _serviceRouteManager = serviceRouteManager;
-            serviceRouteManager.Changed += ServiceRouteManager_Removed;
+            serviceRouteManager.Changed += ServiceRouteManager_Changed;
             serviceRouteManager.Removed += ServiceRouteManager_Removed;
             serviceRouteManager.Created += ServiceRouteManager_Add;
             _serviceEntryManager = serviceEntryManager;
@@ -43,8 +43,8 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             route = await _serviceRouteManager.GetRouteByServiceIdAsync(serviceId, fromCache);
             if (route == null)
             {
-                if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.LogWarning($"根据服务id：{serviceId}，找不到相关服务信息。");
+                _logger.LogWarning($"根据服务id：{serviceId}，找不到相关服务信息。【fromCache:{fromCache}】");
+
             }
             if (route != null)
             {
@@ -129,6 +129,18 @@ namespace Surging.Core.CPlatform.Routing.Implementation
 
         }
 
+        private void ServiceRouteManager_Changed(object sender, ServiceRouteChangedEventArgs e)
+        {
+            var key = GetCacheKey(e.Route.ServiceDescriptor);
+            _concurrent.AddOrUpdate(key, e.Route, (k, v) => e.Route);
+            var httpMethods = e.Route.ServiceDescriptor.HttpMethod();
+            foreach (var httpMethod in httpMethods)
+            {
+                _serviceRoutes.AddOrUpdate(new Tuple<string, string>(e.Route.ServiceDescriptor.RoutePath, httpMethod), e.Route, (k, v) => e.Route);
+            }
+
+        }
+
         private void ServiceRouteManager_Add(object sender, ServiceRouteEventArgs e)
         {
             var key = GetCacheKey(e.Route.ServiceDescriptor);
@@ -203,33 +215,36 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             return route;
         }
 
-        public async Task RegisterRoutes(IEnumerable<ServiceEntry> serviceEntries)
-        {
-            var addess = NetUtils.GetHostAddress();
-            addess.ProcessorTime = Process.GetCurrentProcess().TotalProcessorTime.TotalMilliseconds;
-            RpcContext.GetContext().SetAttachment("Host", addess);
-            var addressDescriptors = serviceEntries.Select(i =>
-            {
-                i.Descriptor.Token = _serviceTokenGenerator.GetToken();
-                return new ServiceRoute
-                {
-                    Address = new[] { addess },
-                    ServiceDescriptor = i.Descriptor
-                };
-            }).ToList();
-            await _serviceRouteManager.SetRoutesAsync(addressDescriptors);
-        }
+       
 
         public void UpdateServiceRouteCache(ServiceRoute serviceRoute)
         {
             var key = GetCacheKey(serviceRoute.ServiceDescriptor);
-            _concurrent.AddOrUpdate(key, serviceRoute, (k, v) => serviceRoute);
-
-            var httpMethods = serviceRoute.ServiceDescriptor.HttpMethod();
-            foreach (var httpMethod in httpMethods)
+            if (serviceRoute.Address.Any()) 
             {
-                _serviceRoutes.AddOrUpdate(new Tuple<string, string>(serviceRoute.ServiceDescriptor.RoutePath, httpMethod), serviceRoute, (k, v) => serviceRoute);
+                _concurrent.AddOrUpdate(key, serviceRoute,(k,v) => 
+                {
+                    if (!serviceRoute.Equals(v)) 
+                    {
+                        return serviceRoute;
+                    }
+                    return v;
+                });
+                var httpMethods = serviceRoute.ServiceDescriptor.HttpMethod();
+                foreach (var httpMethod in httpMethods)
+                {
+                    _serviceRoutes.AddOrUpdate(new Tuple<string, string>(serviceRoute.ServiceDescriptor.RoutePath, httpMethod), serviceRoute, (k, v) =>
+                    {
+                        if (!serviceRoute.Equals(v))
+                        {
+                            return serviceRoute;
+                        }
+                        return v;
+                    });
+                }
+
             }
+           
         }
 
         #endregion

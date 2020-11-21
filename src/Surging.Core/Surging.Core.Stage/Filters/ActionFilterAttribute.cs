@@ -82,6 +82,11 @@ namespace Surging.Core.Stage.Filters
             bool isSuccess = true;
             DateTime time;
             result = HttpResultMessage<object>.Create(true,null);
+            
+            if (!filterContext.Route.ServiceDescriptor.EnableAuthorization()) 
+            {
+                return isSuccess;
+            }
             var author = filterContext.Context.Request.Headers["Authorization"];
             var model = filterContext.Message.Parameters;
             var route = filterContext.Route;
@@ -113,7 +118,9 @@ namespace Surging.Core.Stage.Filters
             }
             else
             {
+                // todo 认证 AppAppSecret
                 result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.RequestError, Message = "Request error" };
+
                 isSuccess = false;
             }
             return isSuccess;

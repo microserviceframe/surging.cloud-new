@@ -105,11 +105,17 @@ new ConcurrentDictionary<string, ServiceCache>();
                 if (hash != null)
                     foreach (var node in e.Cache.CacheEndpoint)
                     {
-              
-                         var hashNode = node as ConsistentHashNode;
-                        var addr = string.Format("{0}:{1}", hashNode.Host, hashNode.Port);
-                        hash.Remove(addr);
-                        hash.Add(hashNode, addr);
+                        try 
+                        {
+                            var hashNode = node as ConsistentHashNode;
+                            var addr = string.Format("{0}:{1}", hashNode.Host, hashNode.Port);
+                            hash.Remove(addr);
+                            hash.Add(hashNode, addr);
+                        } catch (Exception ex) 
+                        {
+                            _logger.LogError(ex.Message);
+                        }
+                        
                     }
             }
         }
@@ -126,10 +132,17 @@ new ConcurrentDictionary<string, ServiceCache>();
                 if (hash != null)
                     foreach (var node in e.Cache.CacheEndpoint)
                     {
-                        var hashNode = node as ConsistentHashNode;
-                        var addr = string.Format("{0}:{1}", hashNode.Host, hashNode.Port);
-                        hash.Remove(addr);
-                        hash.Add(hashNode, addr);
+                        try
+                        {
+                            var hashNode = node as ConsistentHashNode;
+                            var addr = string.Format("{0}:{1}", hashNode.Host, hashNode.Port);
+                            hash.Remove(addr);
+                            hash.Add(hashNode, addr);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex.Message);
+                        }
                     }
             }
         }

@@ -29,6 +29,7 @@ namespace Surging.Core.Zookeeper
         private readonly IServiceRouteManager _serviceRouteManager;
         private readonly IZookeeperClientProvider _zookeeperClientProvider;
         private IDictionary<string, NodeMonitorWatcher> nodeWatchers = new Dictionary<string, NodeMonitorWatcher>();
+        private ChildrenMonitorWatcher watcher = null;
 
         public ZookeeperServiceCommandManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
             ISerializer<string> stringSerializer, IServiceRouteManager serviceRouteManager, IServiceEntryManager serviceEntryManager,
@@ -126,11 +127,8 @@ namespace Surging.Core.Zookeeper
 
                     var nodePath = $"{path}{command.ServiceId}";
                     var nodeData = _serializer.Serialize(command);
-                    if (!nodeWatchers.ContainsKey(path))
-                    {
-                        var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                        await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-                    }
+                    var watcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                    await zooKeeperClient.SubscribeDataChange(nodePath, watcher.HandleNodeDataChange);
                     if (!await zooKeeperClient.ExistsAsync(nodePath))
                     {
                         if (_logger.IsEnabled(LogLevel.Debug))
@@ -246,11 +244,9 @@ namespace Surging.Core.Zookeeper
             if (await zooKeeperClient.ExistsAsync(path))
             {
                 var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-                if (!nodeWatchers.ContainsKey(path))
-                {
-                    var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                    await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-                }
+               
+                var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
                 result = GetServiceCommand(data);
             }
 
@@ -289,13 +285,23 @@ namespace Surging.Core.Zookeeper
             {
                 return;
             }
-            ChildrenMonitorWatcher watcher = new ChildrenMonitorWatcher(_configInfo.CommandPath,
-             async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
+            if (watcher == null) 
+            {
+                watcher = new ChildrenMonitorWatcher(_configInfo.CommandPath,
+                                async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
+               
+            }
+            
             await zooKeeperClient.SubscribeChildrenChange(_configInfo.CommandPath, watcher.HandleChildrenChange);
+
             if (await zooKeeperClient.StrictExistsAsync(_configInfo.CommandPath))
             {
                 var childrens = (await zooKeeperClient.GetChildrenAsync(_configInfo.CommandPath)).ToArray();
-                watcher.SetCurrentData(childrens);
+                
+                if (watcher != null) 
+                {
+                    watcher.SetCurrentData(childrens);
+                }
                 _serviceCommands = await GetServiceCommands(childrens);
             }
             else

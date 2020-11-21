@@ -1,4 +1,5 @@
 ﻿using ProtoBuf;
+using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Messages;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ namespace Surging.Core.Codec.ProtoBuffer.Messages
         {
             ExceptionMessage = message.ExceptionMessage;
             Result = message.Result == null ? null : new DynamicItem(message.Result);
+            StatusCode = message.StatusCode;
         }
 
         public ProtoBufferRemoteInvokeResultMessage()
@@ -30,12 +32,16 @@ namespace Surging.Core.Codec.ProtoBuffer.Messages
         [ProtoMember(2)]
         public DynamicItem Result { get; set; }
 
+        [ProtoMember(3)]
+        public StatusCode StatusCode { get; set; }
+
         public RemoteInvokeResultMessage GetRemoteInvokeResultMessage()
         {
             return new RemoteInvokeResultMessage
             {
                 ExceptionMessage = ExceptionMessage,
-                Result = Result?.Get()
+                Result = Result?.Get(),
+                StatusCode = StatusCode
             };
         }
     }

@@ -84,8 +84,8 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
 
         public async ValueTask<bool> CheckHealth(AddressModel addressModel)
         {
-            var vt = _healthCheckService.IsHealth(addressModel);
-            return vt.IsCompletedSuccessfully ? vt.Result : await vt;
+           
+            return await _healthCheckService.IsHealth(addressModel);
         }
 
         private void ServiceRouteManager_Removed(object sender, ServiceRouteEventArgs e)

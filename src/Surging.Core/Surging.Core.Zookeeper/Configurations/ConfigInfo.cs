@@ -1,4 +1,5 @@
 ﻿using Surging.Core.CPlatform.Address;
+using Surging.Core.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -72,7 +73,7 @@ namespace Surging.Core.Zookeeper.Configurations
             EnableChildrenMonitor = enableChildrenMonitor;
             if (!string.IsNullOrEmpty(connectionString))
             {
-                var addresses = connectionString.Split(";");
+                var addresses = connectionString.Split(";").Where(p=> !p.IsNullOrEmpty()) ;
                 Addresses = addresses;
             }
         }

@@ -35,8 +35,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
             var time = 0;
             T result = default(T);
             RemoteInvokeResultMessage message = null;
-            var vtCommand = _commandProvider.GetCommand(serviceId);
-            var command = vtCommand.IsCompletedSuccessfully ? vtCommand.Result : await vtCommand;
+            var command = await _commandProvider.GetCommand(serviceId);
             do
             {
                 message = await _breakeRemoteInvokeService.InvokeAsync(parameters, serviceId, _serviceKey, decodeJOject, true);
@@ -116,8 +115,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
             var time = 0;
             object result = null;
             RemoteInvokeResultMessage message = null;
-            var vtCommand = _commandProvider.GetCommand(serviceId);
-            var command = vtCommand.IsCompletedSuccessfully ? vtCommand.Result : await vtCommand;
+            var command = await _commandProvider.GetCommand(serviceId);
             do
             {
                 message = await _breakeRemoteInvokeService.InvokeAsync(parameters, serviceId, _serviceKey, decodeJOject, true);

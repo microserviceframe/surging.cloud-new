@@ -51,11 +51,7 @@ namespace Surging.Core.CPlatform.Configurations.Watch
             {
                 try
                 {
-                    var task= watch.Process();
-                    if (!task.IsCompletedSuccessfully)
-                        await task;
-                    else
-                        task.GetAwaiter().GetResult();
+                    await watch.Process();
                 }
                 catch(Exception ex)
                 { 

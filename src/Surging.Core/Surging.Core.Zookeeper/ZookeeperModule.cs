@@ -9,6 +9,7 @@ using Surging.Core.CPlatform.Runtime.Client;
 using Surging.Core.CPlatform.Runtime.Server;
 using Surging.Core.CPlatform.Serialization;
 using Surging.Core.CPlatform.Support;
+using Surging.Core.Lock.Provider;
 using Surging.Core.Zookeeper.Configurations;
 using Surging.Core.Zookeeper.Internal;
 using Surging.Core.Zookeeper.Internal.Cluster.HealthChecks;
@@ -96,7 +97,8 @@ namespace Surging.Core.Zookeeper
              provider.GetRequiredService<ISerializer<string>>(),
              provider.GetRequiredService<IServiceRouteFactory>(),
              provider.GetRequiredService<ILogger<ZooKeeperServiceRouteManager>>(),
-             provider.GetRequiredService<IZookeeperClientProvider>()));
+             provider.GetRequiredService<IZookeeperClientProvider>(),
+             provider.GetRequiredService<ILockerProvider>()));
             return this;
         }
 
@@ -106,11 +108,12 @@ namespace Surging.Core.Zookeeper
           {
               var result = new ZooKeeperMqttServiceRouteManager(
                    GetConfigInfo(configInfo),
-                 provider.GetRequiredService<ISerializer<byte[]>>(),
+                   provider.GetRequiredService<ISerializer<byte[]>>(),
                    provider.GetRequiredService<ISerializer<string>>(),
                    provider.GetRequiredService<IMqttServiceFactory>(),
                    provider.GetRequiredService<ILogger<ZooKeeperMqttServiceRouteManager>>(),
-                  provider.GetRequiredService<IZookeeperClientProvider>());
+                   provider.GetRequiredService<IZookeeperClientProvider>(),
+                   provider.GetRequiredService<ILockerProvider>());
               return result;
           });
             return this;

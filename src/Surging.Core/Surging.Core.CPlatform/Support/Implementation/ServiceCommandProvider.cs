@@ -33,8 +33,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
             var result = _serviceCommand.GetValueOrDefault(serviceId);
             if (result == null)
             {
-                var task = GetCommandAsync(serviceId);
-                return task.IsCompletedSuccessfully ? task.Result : await task;
+                return await GetCommandAsync(serviceId);
             }
             else
             {

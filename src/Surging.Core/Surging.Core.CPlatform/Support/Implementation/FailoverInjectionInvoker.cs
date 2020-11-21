@@ -22,8 +22,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
 
         public async Task Invoke(IDictionary<string, object> parameters, string serviceId, string serviceKey, bool decodeJOject)
         {
-            var vt = _serviceCommandProvider.GetCommand(serviceId);
-            var command = vt.IsCompletedSuccessfully ? vt.Result : await vt;
+            var command = await _serviceCommandProvider.GetCommand(serviceId);
             var result = await _serviceCommandProvider.Run(command.Injection, command.InjectionNamespaces);
             if (result is Boolean)
             {
@@ -38,8 +37,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
 
         public async Task<T> Invoke<T>(IDictionary<string, object> parameters, string serviceId, string serviceKey, bool decodeJOject)
         {
-            var vt = _serviceCommandProvider.GetCommand(serviceId);
-            var command = vt.IsCompletedSuccessfully ? vt.Result : await vt;
+            var command = await _serviceCommandProvider.GetCommand(serviceId);
             var injectionResult = await _serviceCommandProvider.Run(command.Injection, command.InjectionNamespaces);
             if (injectionResult is Boolean)
             {
@@ -70,8 +68,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
 
         public async Task<object> Invoke(IDictionary<string, object> parameters, Type returnType, string serviceId, string serviceKey, bool decodeJOject)
         {
-            var vt = _serviceCommandProvider.GetCommand(serviceId);
-            var command = vt.IsCompletedSuccessfully ? vt.Result : await vt;
+            var command = await _serviceCommandProvider.GetCommand(serviceId); 
             var injectionResult = await _serviceCommandProvider.Run(command.Injection, command.InjectionNamespaces);
             if (injectionResult is Boolean)
             {

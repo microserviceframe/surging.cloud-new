@@ -1,27 +1,27 @@
 ﻿using Microsoft.Extensions.Logging;
+using Surging.Core.CPlatform.Runtime.Client.HealthChecks;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Surging.Core.CPlatform.Utilities
 {
     public static class SocketCheck
     {
-        private static ILogger _logger = ServiceLocator.GetService<ILogger>();
+        private static ILogger _logger = ServiceLocator.GetService<ILogger<IHealthCheckService>>();
 
         public static bool TestConnection(EndPoint endPoint, int millisecondsTimeout = 500)
         {
-            try 
+
+            Socket socket = null;
+            try
             {
                 bool isHealth = false;
                 var timeoutObject = new ManualResetEvent(false);
                 timeoutObject.Reset();
-                var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 socket.BeginConnect(endPoint, ar => timeoutObject.Set(), socket);
                 if (timeoutObject.WaitOne(millisecondsTimeout, false))
                 {
@@ -35,16 +35,27 @@ namespace Surging.Core.CPlatform.Utilities
                 {
                     socket.Shutdown(SocketShutdown.Both);
                     socket.Close();
+
                 }
                 return isHealth;
-            } catch 
+            }
+            catch(Exception ex)
             {
+                _logger.LogError($"{endPoint}连接异常,原因：{ex.Message}");
                 return false;
+            }
+            finally 
+            {
+                if (socket != null) 
+                {
+                    socket.Dispose();
+                }
             }
         }
 
         public static bool TestConnection(string host, int port, int millisecondsTimeout = 500) 
         {
+            Socket socket = null;
             try 
             {
                 var isHealth = TestConnectionByPing(host, millisecondsTimeout);
@@ -52,7 +63,7 @@ namespace Surging.Core.CPlatform.Utilities
                 {
                     var timeoutObject = new ManualResetEvent(false);
                     timeoutObject.Reset();
-                    var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                     socket.BeginConnect(host, port, ar => timeoutObject.Set(), socket);
                     if (timeoutObject.WaitOne(millisecondsTimeout, false))
                     {
@@ -69,23 +80,33 @@ namespace Surging.Core.CPlatform.Utilities
                     }
                 }
                 return isHealth;
-            } catch 
+            }
+            catch (Exception ex)
             {
+                _logger.LogError($"{host}:{port}连接异常,原因：{ex.Message}");
                 return false;
+            }
+            finally
+            {
+                if (socket != null)
+                {
+                    socket.Dispose();
+                }
             }
 
         }
 
         public static bool TestConnection(IPAddress iPAddress, int port, int millisecondsTimeout = 50)
         {
-            try 
+            Socket socket = null;
+            try
             {
                 bool isHealth = TestConnectionByPing(iPAddress, millisecondsTimeout);
                 if (isHealth)
                 {
                     var timeoutObject = new ManualResetEvent(false);
                     timeoutObject.Reset();
-                    var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                     socket.BeginConnect(iPAddress, port, ar => timeoutObject.Set(), socket);
                     if (timeoutObject.WaitOne(millisecondsTimeout, false))
                     {
@@ -99,14 +120,23 @@ namespace Surging.Core.CPlatform.Utilities
                     {
                         socket.Shutdown(SocketShutdown.Both);
                         socket.Close();
+                        
                     }
                 }
                 return isHealth;
-            } catch 
+            }
+            catch (Exception ex)
             {
+                _logger.LogError($"{iPAddress.ToString()}:{port}连接异常,原因：{ex.Message}");
                 return false;
             }
-          
+            finally 
+            {
+                if (socket != null) 
+                {
+                    socket.Dispose();
+                }
+            }
 
         }
 

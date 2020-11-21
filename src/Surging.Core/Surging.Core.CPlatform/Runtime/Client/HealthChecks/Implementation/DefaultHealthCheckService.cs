@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Surging.Core.CPlatform.Address;
+using Surging.Core.CPlatform.Configurations;
 using Surging.Core.CPlatform.Routing;
 using Surging.Core.CPlatform.Runtime.Server;
 using Surging.Core.CPlatform.Utilities;
@@ -19,7 +20,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
     {
         private readonly ConcurrentDictionary<Tuple<string, int>, MonitorEntry> _dictionaries = new ConcurrentDictionary<Tuple<string, int>, MonitorEntry>();
 
-        private readonly ConcurrentDictionary<Tuple<string, int, string>, MonitorEntry> _timeoutDictionaries = new ConcurrentDictionary<Tuple<string, int, string>, MonitorEntry>();
 
         private readonly IServiceRouteManager _serviceRouteManager;
         private readonly IServiceEntryManager _serviceEntryManager;
@@ -29,7 +29,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         private readonly Timer _synchServiceRoutesTimer;
         private readonly ILogger<DefaultHealthCheckService> _logger;
         public event EventHandler<HealthCheckEventArgs> Removed;
-
         public event EventHandler<HealthCheckEventArgs> Changed;
 
         /// <summary>
@@ -52,13 +51,16 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
             }, null, timeSpan, timeSpan);
 
-            var synchServiceRoutesTimeSpan = GetSynchServiceRoutesTimeSpan();
-            _synchServiceRoutesTimer = new Timer(async s =>
-            {
-                await CheckServiceRegister();
+            //if (AppConfig.ServerOptions.CheckServiceRegister) 
+            //{
+            //    var synchServiceRoutesTimeSpan = GetSynchServiceRoutesTimeSpan();
+            //    _synchServiceRoutesTimer = new Timer(async s =>
+            //    {
+            //        await CheckServiceRegister();
 
-            }, null, synchServiceRoutesTimeSpan, synchServiceRoutesTimeSpan);
+            //    }, null, synchServiceRoutesTimeSpan, synchServiceRoutesTimeSpan);
 
+            //}
 
             //去除监控。
             _serviceRouteManager.Removed += (s, e) =>
@@ -85,6 +87,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                     return new Tuple<string, int>(ipAddress.Ip, ipAddress.Port);
                 });
                 await Check(_dictionaries.Where(i => keys.Contains(i.Key)).Select(i => i.Value), _timeout);
+
             };
 
         }
@@ -96,37 +99,34 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             return TimeSpan.FromSeconds(AppConfig.ServerOptions.CheckServiceRegisterIntervalInSeconds + seed);
         }
 
-        private async Task CheckServiceRegister()
-        {
-            var serviceRoutes = await _serviceRouteManager.GetRoutesAsync(true);
-            if (serviceRoutes == null)
-            {
-                _logger.LogWarning("从服务注册中心获取路由失败");
-                return;
-            }
-            foreach (var serviceRoute in serviceRoutes)
-            {
-                _serviceRouteProvider.UpdateServiceRouteCache(serviceRoute);
-            }
-            var localServiceEntries = _serviceEntryManager.GetEntries();
-            var localServiceRoutes = serviceRoutes.Where(p => localServiceEntries.Any(q => q.Descriptor.Id == p.ServiceDescriptor.Id));
-            var addess = NetUtils.GetHostAddress();
-            var registerServiceEntries = localServiceEntries.Where(e => localServiceRoutes.Any(p => !p.Address.Any(q => q.Equals(addess)) && p.ServiceDescriptor.Id == e.Descriptor.Id));
-            if (registerServiceEntries.Any())
-            {
-                _logger.LogWarning($"服务路由未注册成功,重新注册服务路由,服务条目数量为:{registerServiceEntries.Count()}");
-                try
-                {
-                    await _serviceRouteProvider.RegisterRoutes(registerServiceEntries);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"服务路由注册失败,原因:{ex.Message}");
-                }
+        //private async Task CheckServiceRegister()
+        //{
+        //    var serviceRoutes = await _serviceRouteManager.GetRoutesAsync();
+        //    if (serviceRoutes == null)
+        //    {
+        //        _logger.LogWarning("从服务注册中心获取路由失败");
+        //        return;
+        //    }
+        //    var localServiceEntries = _serviceEntryManager.GetEntries();
+        //    var localServiceRoutes = serviceRoutes.Where(p => localServiceEntries.Any(q => q.Descriptor.Id == p.ServiceDescriptor.Id));
+        //    var addess = NetUtils.GetHostAddress();
+        //    var registerServiceEntries = localServiceEntries.Where(e => localServiceRoutes.Any(p => !p.Address.Any(q => q.Equals(addess)) && p.ServiceDescriptor.Id == e.Descriptor.Id));
+        //    if (registerServiceEntries.Any())
+        //    {
+        //        _logger.LogWarning($"服务路由未注册成功,重新注册服务路由,服务条目数量为:{registerServiceEntries.Count()}");
+        //        try
+        //        {
+        //            await _serviceRouteProvider.RegisterRoutes(registerServiceEntries);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError($"服务路由注册失败,原因:{ex.Message}");
+        //        }
 
-            }
+        //    }
 
-        }
+
+        //}
 
 
         #region Implementation of IHealthCheckService
@@ -193,7 +193,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             return Task.Run(() =>
             {
                 var ipAddress = address as IpAddressModel;
-                var entry = _timeoutDictionaries.TryRemove(new Tuple<string, int, string>(ipAddress.Ip, ipAddress.Port, serviceId), out MonitorEntry value);
+               
             });
         }
 
@@ -250,32 +250,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             await _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { ipAddress });
             _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry value);
             OnRemoved(new HealthCheckEventArgs(ipAddress));
-        }
-
-        private async Task Check(MonitorEntry entry, int timeout)
-        {
-            var ipAddress = entry.Address as IpAddressModel;
-            if (SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout))
-            {
-                entry.UnhealthyTimes = 0;
-                entry.Health = true;
-            }
-            else
-            {
-                if (entry.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes)
-                {
-                    _logger.LogWarning($"服务地址{entry.Address}不健康,UnhealthyTimes={entry.UnhealthyTimes},服务将会被移除");
-                    await RemoveUnhealthyAddress(entry);
-                }
-                else
-                {
-                    entry.UnhealthyTimes++;
-                    entry.Health = false;
-                    _logger.LogWarning($"服务地址{entry.Address}不健康,UnhealthyTimes={entry.UnhealthyTimes}");
-                }
-            }
-
-
         }
 
         private bool Check(IpAddressModel ipAddress, int timeout)

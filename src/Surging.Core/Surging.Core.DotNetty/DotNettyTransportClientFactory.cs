@@ -8,6 +8,7 @@ using DotNetty.Transport.Libuv;
 using Microsoft.Extensions.Logging;
 using Surging.Core.CPlatform;
 using Surging.Core.CPlatform.Address;
+using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Messages;
 using Surging.Core.CPlatform.Runtime.Client.HealthChecks;
 using Surging.Core.CPlatform.Runtime.Server;
@@ -173,6 +174,7 @@ namespace Surging.Core.DotNetty
             public override void ChannelInactive(IChannelHandlerContext context)
             {
                 _factory._clients.TryRemove(context.Channel.GetAttribute(origEndPointKey).Get(), out var value);
+                context.CloseAsync();
             }
 
             public override void ChannelRead(IChannelHandlerContext context, object message)
@@ -182,6 +184,15 @@ namespace Surging.Core.DotNetty
                 var messageListener = context.Channel.GetAttribute(messageListenerKey).Get();
                 var messageSender = context.Channel.GetAttribute(messageSenderKey).Get();
                 messageListener.OnReceived(messageSender, transportMessage);
+            }
+
+            public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
+            {
+                if (!(exception is BusinessException) && !(exception.InnerException is BusinessException)) 
+                {
+                    _factory._clients.TryRemove(context.Channel.GetAttribute(origEndPointKey).Get(), out var value);
+                    context.CloseAsync();
+                }
             }
 
             #endregion Overrides of ChannelHandlerAdapter

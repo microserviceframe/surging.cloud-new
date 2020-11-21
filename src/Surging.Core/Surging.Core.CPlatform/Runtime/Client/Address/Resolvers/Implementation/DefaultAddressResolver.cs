@@ -80,7 +80,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
             if (serviceRoute == null)
             {
                 _logger.LogWarning($"根据服务id：{serviceId}，找不到服务路由信息。");
-                throw new CPlatformException("根据服务id：{serviceId}，找不到服务路由信息。");
+                throw new CPlatformException($"根据服务id：{serviceId}，找不到服务路由信息。");
             }
             var address = await GetHealthAddress(serviceRoute);
             if (!address.Any())
@@ -99,8 +99,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
 
             _serviceHeartbeatManager.AddWhitelist(serviceId);
            
-            var vtCommand = _commandProvider.GetCommand(serviceId);
-            var command = vtCommand.IsCompletedSuccessfully ? vtCommand.Result : await vtCommand;
+            var command = await _commandProvider.GetCommand(serviceId);
             var addressSelector = _addressSelectors[command.ShuntStrategy.ToString()];
 
             var selectAddress = await addressSelector.SelectAsync(new AddressSelectContext

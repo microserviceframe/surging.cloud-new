@@ -19,7 +19,7 @@ namespace Surging.Core.Protocol.Udp
 
         protected IByteBuffer GetByteBuffer(TransportMessage message)
         {
-            var data =  message.GetContent<byte []>(); 
+            var data =  message.GetContent<byte[]>(); 
             return Unpooled.WrappedBuffer(data);
         }
     }

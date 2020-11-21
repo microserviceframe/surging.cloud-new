@@ -26,6 +26,7 @@ namespace Surging.Core.Zookeeper
         private readonly ISerializer<string> _stringSerializer;
         private readonly IZookeeperClientProvider _zookeeperClientProvider;
         private IDictionary<string, NodeMonitorWatcher> nodeWatchers = new Dictionary<string, NodeMonitorWatcher>();
+        private ChildrenMonitorWatcher watcher = null;
         public ZookeeperServiceCacheManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
         ISerializer<string> stringSerializer, IServiceCacheFactory serviceCacheFactory,
         ILogger<ZookeeperServiceCacheManager> logger, IZookeeperClientProvider zookeeperClientProvider) : base(stringSerializer)
@@ -133,11 +134,8 @@ namespace Surging.Core.Zookeeper
                 {
                     var nodePath = $"{path}{cacheDescriptor.CacheDescriptor.Id}";
                     var nodeData = _serializer.Serialize(cacheDescriptor);
-                    if (!nodeWatchers.ContainsKey(path))
-                    {
-                        var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                        await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-                    }
+                    var watcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                    await zooKeeperClient.SubscribeDataChange(nodePath, watcher.HandleNodeDataChange);
                     if (!await zooKeeperClient.ExistsAsync(nodePath))
                     {
                         if (_logger.IsEnabled(LogLevel.Debug))
@@ -217,11 +215,8 @@ namespace Surging.Core.Zookeeper
             if(await zooKeeperClient.ExistsAsync(path))
                     {
                 var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-                if (!nodeWatchers.ContainsKey(path))
-                {
-                    var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                    await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-                }
+                var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
                 result = await GetCache(data);
             }
             return result;
@@ -266,13 +261,16 @@ namespace Surging.Core.Zookeeper
                 return;
             }
             var path = _configInfo.CachePath;
-            var watcher = new ChildrenMonitorWatcher(path,
-                   async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
+            watcher = new ChildrenMonitorWatcher(path,
+                       async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
             await zooKeeperClient.SubscribeChildrenChange(path, watcher.HandleChildrenChange);
             if (await zooKeeperClient.StrictExistsAsync(path))
             {
                 var childrens = (await zooKeeperClient.GetChildrenAsync(path)).ToArray();
-                watcher.SetCurrentData(childrens);
+                if (watcher != null) {
+                    watcher.SetCurrentData(childrens);
+                }
+                
                 _serviceCaches = await GetCaches(childrens);
             }
             else
@@ -347,7 +345,7 @@ namespace Surging.Core.Zookeeper
                 return;
 
             var newCache = await GetCache(newData);
-            if (_serviceCaches != null && _serviceCaches.Any())
+            if (_serviceCaches != null && _serviceCaches.Any() && newCache != null)
             {
                 //得到旧的缓存。
                 var oldCache = _serviceCaches.FirstOrDefault(i => i.CacheDescriptor.Id == newCache.CacheDescriptor.Id);

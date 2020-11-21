@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Consul;
 using Surging.Core.CPlatform.Address;
 using Surging.Core.CPlatform.Utilities;
 
@@ -43,8 +44,7 @@ namespace Surging.Core.Consul.Internal.Cluster.HealthChecks.Implementation
             var ipAddress = address as IpAddressModel;
             if (!_dictionary.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry monitorEntry))
             {
-                monitorEntry = new MonitorEntry(ipAddress);
-                await Check(monitorEntry.Address, _timeout);
+                monitorEntry = new MonitorEntry(ipAddress, await Check(ipAddress, _timeout));
                 _dictionary.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), monitorEntry);
             }
         }
@@ -63,25 +63,43 @@ namespace Surging.Core.Consul.Internal.Cluster.HealthChecks.Implementation
 
         private static async Task<bool> Check(AddressModel address, int timeout)
         {
-            var ipAddress = address as IpAddressModel;
-            return SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout);
+            try 
+            {
+                var ipAddress = address as IpAddressModel;
+                //return SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout);
+
+                var consul = new ConsulClient(config =>
+                {
+                    config.Address = new Uri($"http://{ipAddress.Ip}:{ipAddress.Port}");
+                }, null, h => { h.UseProxy = false; h.Proxy = null; });
+                await consul.Status.Leader();
+                return true;
+            } catch (Exception) 
+            {
+                return false;
+            }
+            
+
         }
 
         private static async Task Check(IEnumerable<MonitorEntry> entrys, int timeout)
         {
             foreach (var entry in entrys)
             {
-                var ipAddress = entry.Address as IpAddressModel;
-                if (SocketCheck.TestConnection(ipAddress.Ip, ipAddress.Port, timeout))
+                try 
                 {
-                    entry.UnhealthyTimes = 0;
+                    var ipAddress = entry.Address as IpAddressModel;
+                    var consul = new ConsulClient(config =>
+                    {
+                        config.Address = new Uri($"http://{ipAddress.Ip}:{ipAddress.Port}");
+                    }, null, h => { h.UseProxy = false; h.Proxy = null; });
+                    await consul.Status.Leader();
                     entry.Health = true;
-                }
-                else 
+                } catch (Exception) 
                 {
-                    entry.UnhealthyTimes++;
                     entry.Health = false;
                 }
+
             }
         }
 
@@ -91,7 +109,7 @@ namespace Surging.Core.Consul.Internal.Cluster.HealthChecks.Implementation
 
         protected class MonitorEntry
         {
-            public MonitorEntry(AddressModel addressModel, bool health = true)
+            public MonitorEntry(AddressModel addressModel, bool health)
             {
                 Address = addressModel;
                 Health = health;

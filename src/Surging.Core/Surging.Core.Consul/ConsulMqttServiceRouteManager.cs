@@ -31,7 +31,8 @@ namespace Surging.Core.Consul
         private MqttServiceRoute[] _routes;
         private readonly IConsulClientProvider _consulClientFactory;
         private readonly IServiceHeartbeatManager _serviceHeartbeatManager;
-
+        private IDictionary<string, NodeMonitorWatcher> nodeWatchers = new Dictionary<string, NodeMonitorWatcher>();
+        private ChildrenMonitorWatcher watcher = null;
         public ConsulMqttServiceRouteManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
        ISerializer<string> stringSerializer, IClientWatchManager manager, IMqttServiceFactory mqttServiceFactory,
        ILogger<ConsulMqttServiceRouteManager> logger,IServiceHeartbeatManager serviceHeartbeatManager,
@@ -239,8 +240,8 @@ namespace Surging.Core.Consul
             var client = await GetConsulClient();
             if (client != null) 
             {
-                var watcher = new NodeMonitorWatcher(GetConsulClient, _manager, path,
-                async (oldData, newData) => await NodeChange(oldData, newData), null);
+                 var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(GetConsulClient, _manager, path,
+                 async (oldData, newData) => await NodeChange(oldData, newData), null));
 
                 var queryResult = await client.KV.Keys(path);
                 if (queryResult.Response != null)
@@ -267,9 +268,12 @@ namespace Surging.Core.Consul
             {
                 if (_configInfo.EnableChildrenMonitor)
                 {
-                    var watcher = new ChildrenMonitorWatcher(GetConsulClient, _manager, _configInfo.MqttRoutePath,
-                    async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens),
-                   (result) => ConvertPaths(result).Result);
+                    if (watcher == null) 
+                    {
+                        watcher = new ChildrenMonitorWatcher(GetConsulClient, _manager, _configInfo.MqttRoutePath,
+                        async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens),
+                       (result) => ConvertPaths(result).Result);
+                    }
                     action = currentData => watcher.SetCurrentData(currentData);
                 }
                 if (client.KV.Keys(_configInfo.MqttRoutePath).Result.Response?.Count() > 0)

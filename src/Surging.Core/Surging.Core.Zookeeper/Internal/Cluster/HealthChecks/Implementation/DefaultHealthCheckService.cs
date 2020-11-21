@@ -4,24 +4,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Rabbit.Zookeeper;
 using Rabbit.Zookeeper.Implementation;
+using Surging.Core.CPlatform.Utilities;
 using static org.apache.zookeeper.Watcher;
 
 namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
 {
     public class DefaultHealthCheckService : IHealthCheckService
     {
-        private readonly int _timeout = 3000;
+        private readonly int _timeout = 10000;
         private readonly Timer _timer;
-        private readonly ConcurrentDictionary<string, MonitorEntry> _dictionary =
-        new ConcurrentDictionary<string, MonitorEntry>();
-
+        private readonly ConcurrentDictionary<string, MonitorEntry> _dictionary = new ConcurrentDictionary<string, MonitorEntry>();
+        private readonly ILogger<DefaultHealthCheckService> _logger;
         #region Implementation of IHealthCheckService
         public DefaultHealthCheckService()
         {
+            _logger = ServiceLocator.GetService<ILogger<DefaultHealthCheckService>>();
             var timeSpan = TimeSpan.FromSeconds(60);
-
             _timer = new Timer(async s =>
             {
                 await Check(_dictionary.ToArray().Select(i => i.Value));
@@ -93,8 +94,9 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
                 zookeeperClient = new ZookeeperClient(options);
                 return zookeeperClient.WaitForKeeperState(Event.KeeperState.SyncConnected, TimeSpan.FromMilliseconds(_timeout));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError("服务注册中心连接失败,原因:"+ ex.Message);
                 return false;
             }
             finally
@@ -115,14 +117,15 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.HealthChecks.Implementation
                 {
                     var options = new ZookeeperClientOptions(entry.Connection)
                     {
-                        ConnectionTimeout = TimeSpan.FromMilliseconds(_timeout)
+                        ConnectionTimeout = TimeSpan.FromMilliseconds(_timeout),
                     };
                     zookeeperClient = new ZookeeperClient(options);
                     entry.UnhealthyTimes = 0;
                     entry.Health = true;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.LogError("服务注册中心连接失败,原因:" + ex.Message);
                     entry.UnhealthyTimes++;
                     entry.Health = false;
                 }

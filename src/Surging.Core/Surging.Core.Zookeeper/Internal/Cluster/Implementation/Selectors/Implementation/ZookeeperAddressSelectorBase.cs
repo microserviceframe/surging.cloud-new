@@ -58,7 +58,7 @@ namespace Surging.Core.Zookeeper.Internal.Cluster.Implementation.Selectors.Imple
             }
             else
             {
-                return await SelectConnectionAsync(context);
+                return await SelectConnAsync(context);
             }
         }
 

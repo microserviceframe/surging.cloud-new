@@ -38,7 +38,7 @@ namespace Surging.Core.Stage.Filters
         public async Task OnAuthorization(AuthorizationFilterContext filterContext)
         {
             var gatewayAppConfig = AppConfig.Options.ApiGetWay;
-           
+
             if (filterContext.Route != null && filterContext.Route.ServiceDescriptor.DisableNetwork())
             {
                 var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty() ? filterContext.Route.ServiceDescriptor.RoutePath : filterContext.Route.ServiceDescriptor.GroupName();
@@ -56,7 +56,7 @@ namespace Surging.Core.Stage.Filters
                         if (token.Any() && token.Count >= 1)
                         {
                             var validateResult = _authorizationServerProvider.ValidateClientAuthentication(token);
-                            if (filterContext.Route.ServiceDescriptor.EnableAuthorization() && validateResult != ValidateResult.Success) 
+                            if (filterContext.Route.ServiceDescriptor.EnableAuthorization() && validateResult != ValidateResult.Success)
                             {
                                 if (validateResult == ValidateResult.TokenFormatError)
                                 {
@@ -64,7 +64,7 @@ namespace Surging.Core.Stage.Filters
                                     return;
                                 }
 
-                                if (validateResult == ValidateResult.SignatureError) 
+                                if (validateResult == ValidateResult.SignatureError)
                                 {
                                     filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = "token凭证不合法,请重新登录" };
                                     return;
@@ -77,10 +77,10 @@ namespace Surging.Core.Stage.Filters
                             }
 
                             var payload = _authorizationServerProvider.GetPayload(token);
-    
+
                             var claimsIdentity = new ClaimsIdentity();
-                            
-                            foreach (var item in payload) 
+
+                            foreach (var item in payload)
                             {
                                 claimsIdentity.AddClaim(new Claim(item.Key, item.Value.ToString()));
                             }
@@ -91,7 +91,7 @@ namespace Surging.Core.Stage.Filters
                                 var rpcParams = new Dictionary<string, object>() {
                                         {  "serviceId", filterContext.Route.ServiceDescriptor.Id }
                                     };
-                                var authorizationRoutePath = await _serviceRouteProvider.GetRouteByPathOrRegexPath(gatewayAppConfig.AuthorizationRoutePath,filterContext.Context.Request.Method);
+                                var authorizationRoutePath = await _serviceRouteProvider.GetRouteByPathOrRegexPath(gatewayAppConfig.AuthorizationRoutePath, filterContext.Context.Request.Method);
                                 if (authorizationRoutePath == null)
                                 {
                                     filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.RequestError, Message = "没有找到实现接口鉴权的WebApi的路由信息" };
@@ -113,29 +113,29 @@ namespace Surging.Core.Stage.Filters
                                 filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = $"请先登录系统" };
                                 return;
                             }
-                            else 
+                            else
                             {
                                 filterContext.Context.User = null;
                             }
                         }
 
                     }
-                    else 
+                    else
                     {
                         if (filterContext.Route.ServiceDescriptor.EnableAuthorization())
                         {
                             filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = $"暂不支持{filterContext.Route.ServiceDescriptor.AuthType()}类型的身份认证方式" };
                         }
                     }
-                    
+
                 }
             }
 
             if (string.Compare(filterContext.Path.ToLower(), gatewayAppConfig.TokenEndpointPath, true) == 0)
             {
                 filterContext.Context.Items.Add("path", gatewayAppConfig.AuthenticationRoutePath);
-            }           
+            }
         }
     }
 }
- 
+

@@ -65,8 +65,7 @@ namespace Surging.Core.ProxyGenerator.Implementation
         protected async Task<T> Invoke<T>(IDictionary<string, object> parameters, string serviceId)
         {
             object result = default(T);
-            var vt = _commandProvider.GetCommand(serviceId);
-            var command = vt.IsCompletedSuccessfully ? vt.Result : await vt;
+            var command = await _commandProvider.GetCommand(serviceId);
             RemoteInvokeResultMessage message = null;
             var decodeJOject = typeof(T) == UtilityType.ObjectType;
             IInvocation invocation = null;
@@ -126,8 +125,7 @@ namespace Surging.Core.ProxyGenerator.Implementation
             var message = await _breakeRemoteInvokeService.InvokeAsync(parameters, serviceId, _serviceKey, type == typeof(Task) ? false : true);
             if (message == null || !message.IsSucceedRemoteInvokeCalled())
             {
-                var vt = _commandProvider.GetCommand(serviceId);
-                var command = vt.IsCompletedSuccessfully ? vt.Result : await vt;
+                var command = await _commandProvider.GetCommand(serviceId);
                 return await CallInvokeBackFallBackRetryInvoke(parameters, serviceId, command, type, type == typeof(Task) ? false : true);
             }
             if (type == typeof(Task)) return message;
@@ -157,8 +155,7 @@ namespace Surging.Core.ProxyGenerator.Implementation
             }
             if (message == null || !message.IsSucceedRemoteInvokeCalled())
             {
-                var vt = _commandProvider.GetCommand(serviceId);
-                var command = vt.IsCompletedSuccessfully ? vt.Result : await vt;
+                var command = await _commandProvider.GetCommand(serviceId);
                 await FallBackRetryInvoke(parameters, serviceId, command);
             }
         }

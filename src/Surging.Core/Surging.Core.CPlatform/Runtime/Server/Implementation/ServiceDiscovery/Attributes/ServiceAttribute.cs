@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Surging.Core.CPlatform.Filters.Implementation;
+using System;
 
 namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes
 {
@@ -16,6 +17,7 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.
             IsWaitExecution = true;
             EnableAuthorization = true;
             IsTokenPoint = false;
+            AuthType = AuthorizationType.JWT;
         }
 
         /// <summary>
@@ -50,6 +52,8 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.
 
         public bool IsTokenPoint { get; set; } 
 
+        public AuthorizationType AuthType { get; set; }
+
         #region Overrides of DescriptorAttribute
 
         /// <summary>
@@ -66,7 +70,8 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.
                 .GroupName(Name)
                 .Date(Date)
                 .AllowPermission(AllowPermission)
-                .IsTokenPoint(IsTokenPoint);
+                .IsTokenPoint(IsTokenPoint)
+                .AuthType(AuthType);
         }
 
         #endregion Overrides of ServiceDescriptorAttribute

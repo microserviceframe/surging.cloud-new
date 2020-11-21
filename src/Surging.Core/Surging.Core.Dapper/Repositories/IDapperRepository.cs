@@ -68,6 +68,10 @@ namespace Surging.Core.Dapper.Repositories
 
         Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
 
+        Task<TEntity> LastOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
+
+        Task<TEntity> LastAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
+
         Task<TEntity> GetAsync(TPrimaryKey id, DbConnection conn, DbTransaction trans);
 
         Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);

@@ -126,6 +126,8 @@ namespace Surging.Core.DotNetty
         {
             Task.Run(async () =>
             {
+                await _channel.EventLoop.ShutdownGracefullyAsync();
+                await _channel.CloseAsync();
                 await _channel.DisconnectAsync();
             }).Wait();
         }

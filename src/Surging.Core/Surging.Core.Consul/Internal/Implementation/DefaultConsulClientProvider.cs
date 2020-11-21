@@ -73,6 +73,9 @@ namespace Surging.Core.Consul.Internal.Implementation
                   {
                       config.Address = new Uri($"http://{ipAddress.Ip}:{ipAddress.Port}");
                   }, null, h => { h.UseProxy = false; h.Proxy = null; }));
+
+                
+
             }
             return result;
         }
@@ -91,10 +94,6 @@ namespace Surging.Core.Consul.Internal.Implementation
                     }, null, h => { h.UseProxy = false; h.Proxy = null; })));
 
                 }
-                result.Add(_consulClients.GetOrAdd(ipAddress, new ConsulClient(config =>
-                {
-                    config.Address = new Uri($"http://{ipAddress.Ip}:{ipAddress.Port}");
-                }, null, h => { h.UseProxy = false; h.Proxy = null; })));
             }           
             return result;
         }

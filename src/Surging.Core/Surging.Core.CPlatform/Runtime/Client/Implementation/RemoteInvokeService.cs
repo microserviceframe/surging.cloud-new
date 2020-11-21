@@ -53,7 +53,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.Implementation
                 var client = await _transportClientFactory.CreateClientAsync(endPoint);
                 RpcContext.GetContext().SetAttachment("RemoteAddress", address.ToString());
                 var rpcResult = await client.SendAsync(invokeMessage, cancellationToken).WithCancellation(cancellationToken);
-                await _healthCheckService.MarkSuccess(address, invokeMessage.ServiceId);
                 return rpcResult;
             }
             catch (CommunicationException)
@@ -88,18 +87,16 @@ namespace Surging.Core.CPlatform.Runtime.Client.Implementation
 
             try
             {
-                var vt = ResolverAddress(context, context.Item);
-                address = vt.IsCompletedSuccessfully ? vt.Result : await vt;
+                address = await ResolverAddress(context, context.Item);
                 var endPoint = address.CreateEndPoint();
                 if (_logger.IsEnabled(LogLevel.Information))
                     _logger.LogInformation($"使用地址：'{endPoint}'进行调用。");
-                var task = _transportClientFactory.CreateClientAsync(endPoint);
-                var client = task.IsCompletedSuccessfully ? task.Result : await task;
+   
+                var client = await _transportClientFactory.CreateClientAsync(endPoint);
                 RpcContext.GetContext().SetAttachment("RemoteAddress", address.ToString());
                 using (var cts = new CancellationTokenSource())
                 {
                     var rpcResult = await client.SendAsync(invokeMessage, cts.Token).WithCancellation(cts, requestTimeout);
-                    await _healthCheckService.MarkSuccess(address, invokeMessage.ServiceId);
                     return rpcResult;
                 }
             }
