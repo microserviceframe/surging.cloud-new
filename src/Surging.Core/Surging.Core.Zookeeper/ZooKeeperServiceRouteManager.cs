@@ -8,6 +8,8 @@ using Surging.Core.CPlatform.Routing.Implementation;
 using Surging.Core.CPlatform.Runtime.Client.HealthChecks;
 using Surging.Core.CPlatform.Serialization;
 using Surging.Core.CPlatform.Utilities;
+using Surging.Core.Lock;
+using Surging.Core.Lock.Provider;
 using Surging.Core.Zookeeper.Configurations;
 using Surging.Core.Zookeeper.Internal;
 using Surging.Core.Zookeeper.WatcherProvider;
