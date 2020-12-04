@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>$(PackagePrefix).Protocol.WS</PackageId>
-    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
     <Description>ws协议组件(rpc通信通过ws协议)</Description>
   </PropertyGroup>
 

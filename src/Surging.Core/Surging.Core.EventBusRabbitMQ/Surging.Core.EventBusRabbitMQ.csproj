@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>$(PackagePrefix).EventBusRabbitMQ</PackageId>
-    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
     <Description>基于RabbitMq的消息组件(通过发布-订阅通信方式)</Description>
   </PropertyGroup>
 

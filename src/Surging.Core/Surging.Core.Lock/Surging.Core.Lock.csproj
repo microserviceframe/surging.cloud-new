@@ -2,7 +2,7 @@
 
   <PropertyGroup>
      <PackageId>$(PackagePrefix).Lock</PackageId>
-    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
     <Description>基于RedLock.net的分布式锁组件</Description>
   </PropertyGroup>
   <ItemGroup>

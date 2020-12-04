@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>$(PackagePrefix).CPlatform</PackageId>
-    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
     <Description>surging平台基础组件;1.封装rpc通信底层接口和通信模型;2.定义模块化组件协议;3.封装IOC容器；4.封装服务主机</Description>
   </PropertyGroup>
   <ItemGroup>

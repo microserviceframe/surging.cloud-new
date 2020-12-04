@@ -26,3 +26,4 @@ Surging.Core.Dapper
 Surging.Core.Validation
 Surging.Core.Stage
 Surging.Core.ElasticSearch
+Surging.Core.Lock

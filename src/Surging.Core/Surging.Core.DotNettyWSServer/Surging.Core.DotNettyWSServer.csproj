@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>$(PackagePrefix).DotNettyWSServer</PackageId>
-    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
     <Description>基于Dotnetty实现的rpc框架的通信协议组件,ws服务主机</Description>
   </PropertyGroup>
 

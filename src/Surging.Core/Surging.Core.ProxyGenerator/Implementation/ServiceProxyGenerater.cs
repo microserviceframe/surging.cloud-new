@@ -10,13 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
-#if !NET
-
 using System.Runtime.Loader;
 using Microsoft.Extensions.DependencyModel;
-
-#endif
 
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -54,11 +49,7 @@ namespace Surging.Core.ProxyGenerator.Implementation
         /// <returns>服务代理实现。</returns>
         public IEnumerable<Type> GenerateProxys(IEnumerable<Type> interfacTypes, IEnumerable<string> namespaces)
         {
-#if NET
-            var assemblys = AppDomain.CurrentDomain.GetAssemblies();
-#else
             var assemblys = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default).Select(z => Assembly.Load(new AssemblyName(z.Name))));
-#endif
             assemblys = assemblys.Where(i => i.IsDynamic == false).ToArray();
             var types = assemblys.Select(p => p.GetType());
             types = interfacTypes.Except(types);
@@ -78,12 +69,8 @@ namespace Surging.Core.ProxyGenerator.Implementation
 
             using (stream)
             {
-#if NET
-                var assembly = Assembly.Load(stream.ToArray());
-#else
                 var assembly = AssemblyLoadContext.Default.LoadFromStream(stream);
-#endif
-               return assembly.GetExportedTypes();
+                return assembly.GetExportedTypes();
             }
         }
 

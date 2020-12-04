@@ -2,7 +2,7 @@
 
   <PropertyGroup>
      <PackageId>$(PackagePrefix).Zookeeper</PackageId>
-    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
     <Description>基于Zookeeper实现的服务注册中心</Description>
   </PropertyGroup>
 

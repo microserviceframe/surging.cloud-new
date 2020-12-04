@@ -1,5 +1,4 @@
 ﻿using DotNetty.Codecs.Http;
-using DotNetty.Common.Concurrency;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
@@ -13,14 +12,13 @@ using Surging.Core.CPlatform.Routing.Template;
 using Surging.Core.CPlatform.Serialization;
 using Surging.Core.CPlatform.Transport;
 using Surging.Core.CPlatform.Transport.Codec;
-using Surging.Core.ProxyGenerator.Interceptors.Implementation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
 namespace Surging.Core.Protocol.Http
 {
