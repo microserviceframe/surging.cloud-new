@@ -91,7 +91,7 @@ namespace Surging.Core.Stage.Filters
                                 var rpcParams = new Dictionary<string, object>() {
                                         {  "serviceId", filterContext.Route.ServiceDescriptor.Id }
                                     };
-                                var authorizationRoutePath = await _serviceRouteProvider.GetRouteByPathOrRegexPath(gatewayAppConfig.AuthorizationRoutePath, filterContext.Context.Request.Method);
+                                var authorizationRoutePath = await _serviceRouteProvider.GetRouteByPathOrRegexPath(gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST.ToString());
                                 if (authorizationRoutePath == null)
                                 {
                                     filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.RequestError, Message = "没有找到实现接口鉴权的WebApi的路由信息" };
