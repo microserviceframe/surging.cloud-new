@@ -35,5 +35,11 @@ namespace Surging.Core.CPlatform.Runtime.Session
                 return null;
             }
         }
+
+        public override long? OrgId => throw new NotImplementedException();
+
+        public override bool InspectDataPermission => throw new NotImplementedException();
+
+        public override long[] DataPermissionOrgIds => throw new NotImplementedException();
     }
 }

@@ -12,6 +12,12 @@
 
         public const string Terminal = "http://sugingcloud.com/identity/claims/terminal";
 
+        public const string OrgId = "http://sugingcloud.com/identity/claims/OrgId";
+
+        public const string DataPermission = "http://sugingcloud.com/identity/claims/DataPermission";
+
+        public const string DataPermissionOrgIds = "http://sugingcloud.com/identity/claims/DataPermissionOrgIds";
+
         public const string Expired = "exp";
     }
 }
