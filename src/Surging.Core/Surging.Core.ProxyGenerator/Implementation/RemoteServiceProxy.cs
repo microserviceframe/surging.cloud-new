@@ -28,9 +28,9 @@ namespace Surging.Core.ProxyGenerator.Implementation
         }
 
        public new async Task<T> Invoke<T>(IDictionary<string, object> parameters, string serviceId)
-        {
+       {
            return await base.Invoke<T>(parameters, serviceId);
-        }
+       }
 
     }
 }

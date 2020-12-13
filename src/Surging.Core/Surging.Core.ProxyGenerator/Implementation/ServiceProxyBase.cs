@@ -12,6 +12,7 @@ using Autofac;
 using Surging.Core.CPlatform.Utilities;
 using System.Linq;
 using Surging.Core.CPlatform.Exceptions;
+using Surging.Core.CPlatform.Transport.Implementation;
 
 namespace Surging.Core.ProxyGenerator.Implementation
 {
@@ -64,6 +65,7 @@ namespace Surging.Core.ProxyGenerator.Implementation
         /// <returns>调用结果。</returns>
         protected async Task<T> Invoke<T>(IDictionary<string, object> parameters, string serviceId)
         {
+            SetAttachments(parameters);
             object result = default(T);
             var command = await _commandProvider.GetCommand(serviceId);
             RemoteInvokeResultMessage message = null;
@@ -114,22 +116,20 @@ namespace Surging.Core.ProxyGenerator.Implementation
             return (T)result;
         }
 
-
-
-        public async Task<object> CallInvoke(IInvocation invocation)
+        private void SetAttachments(IDictionary<string, object> parameters)
         {
-            var cacheInvocation = invocation as ICacheInvocation;
-            var parameters = invocation.Arguments;
-            var serviceId = invocation.ServiceId;
-            var type = invocation.ReturnType;
-            var message = await _breakeRemoteInvokeService.InvokeAsync(parameters, serviceId, _serviceKey, type == typeof(Task) ? false : true);
-            if (message == null || !message.IsSucceedRemoteInvokeCalled())
+            if (parameters.ContainsKey("Attachments")) 
             {
-                var command = await _commandProvider.GetCommand(serviceId);
-                return await CallInvokeBackFallBackRetryInvoke(parameters, serviceId, command, type, type == typeof(Task) ? false : true);
+                var attachments = parameters["Attachments"] as Dictionary<string, object>;
+                if (attachments != null) 
+                {
+                    foreach (var attachment in attachments) 
+                    {
+                        RpcContext.GetContext().SetAttachment(attachment.Key, attachment.Value);
+                    }
+                }
+                parameters.Remove("Attachments");
             }
-            if (type == typeof(Task)) return message;
-            return GetInvokeResult(message, invocation.ReturnType);
         }
 
         /// <summary>
@@ -140,6 +140,7 @@ namespace Surging.Core.ProxyGenerator.Implementation
         /// <returns>调用任务。</returns>
         protected async Task Invoke(IDictionary<string, object> parameters, string serviceId)
         {
+            SetAttachments(parameters);
             var existsInterceptor = _interceptors.Any();
             RemoteInvokeResultMessage message = null;
             if (!existsInterceptor)
@@ -158,6 +159,22 @@ namespace Surging.Core.ProxyGenerator.Implementation
                 var command = await _commandProvider.GetCommand(serviceId);
                 await FallBackRetryInvoke(parameters, serviceId, command);
             }
+        }
+
+        public async Task<object> CallInvoke(IInvocation invocation)
+        {
+            var cacheInvocation = invocation as ICacheInvocation;
+            var parameters = invocation.Arguments;
+            var serviceId = invocation.ServiceId;
+            var type = invocation.ReturnType;
+            var message = await _breakeRemoteInvokeService.InvokeAsync(parameters, serviceId, _serviceKey, type == typeof(Task) ? false : true);
+            if (message == null || !message.IsSucceedRemoteInvokeCalled())
+            {
+                var command = await _commandProvider.GetCommand(serviceId);
+                return await CallInvokeBackFallBackRetryInvoke(parameters, serviceId, command, type, type == typeof(Task) ? false : true);
+            }
+            if (type == typeof(Task)) return message;
+            return GetInvokeResult(message, invocation.ReturnType);
         }
 
         private async Task<Tuple<RemoteInvokeResultMessage, object>> Intercept(IInterceptor interceptor, IInvocation invocation)

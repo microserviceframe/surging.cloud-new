@@ -97,13 +97,15 @@ namespace Surging.Core.Stage.Filters
                                     filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.RequestError, Message = "没有找到实现接口鉴权的WebApi的路由信息" };
                                     return;
                                 }
-                                if (filterContext.Context.User.Claims != null && filterContext.Context.User.Claims.Any()) 
+                                var attachments = new Dictionary<string, object>();
+                                if (filterContext.Context.User.Claims != null && filterContext.Context.User.Claims.Any())
                                 {
                                     foreach (var claims in filterContext.Context.User.Claims)
                                     {
-                                        RpcContext.GetContext().SetAttachment(claims.Type, claims.Value);
+                                        attachments.Add(claims.Type, claims.Value);
                                     }
                                 }
+                                rpcParams.Add("Attachments", attachments);
                                 var isPermission = await _serviceProxyProvider.Invoke<bool>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
 
                                 if (!isPermission)
