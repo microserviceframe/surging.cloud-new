@@ -65,7 +65,6 @@ namespace Surging.Core.ProxyGenerator.Implementation
         /// <returns>调用结果。</returns>
         protected async Task<T> Invoke<T>(IDictionary<string, object> parameters, string serviceId)
         {
-            SetAttachments(parameters);
             object result = default(T);
             var command = await _commandProvider.GetCommand(serviceId);
             RemoteInvokeResultMessage message = null;
@@ -116,22 +115,6 @@ namespace Surging.Core.ProxyGenerator.Implementation
             return (T)result;
         }
 
-        private void SetAttachments(IDictionary<string, object> parameters)
-        {
-            if (parameters.ContainsKey("Attachments")) 
-            {
-                var attachments = parameters["Attachments"] as Dictionary<string, object>;
-                if (attachments != null) 
-                {
-                    foreach (var attachment in attachments) 
-                    {
-                        RpcContext.GetContext().SetAttachment(attachment.Key, attachment.Value);
-                    }
-                }
-                parameters.Remove("Attachments");
-            }
-        }
-
         /// <summary>
         /// 远程调用。
         /// </summary>
@@ -140,7 +123,6 @@ namespace Surging.Core.ProxyGenerator.Implementation
         /// <returns>调用任务。</returns>
         protected async Task Invoke(IDictionary<string, object> parameters, string serviceId)
         {
-            SetAttachments(parameters);
             var existsInterceptor = _interceptors.Any();
             RemoteInvokeResultMessage message = null;
             if (!existsInterceptor)

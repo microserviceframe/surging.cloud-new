@@ -100,7 +100,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
                 ServiceId = serviceId,
                 ServiceKey = serviceKey,
                 DecodeJOject = decodeJOject,
-                Attachments = RpcContext.GetContext().GetContextParameters()
+                Attachments = GetAttachments(parameters)
             };
             try
             {
@@ -162,6 +162,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
             }
         }
 
+
         private async Task ExecuteExceptionFilter(Exception ex, RemoteInvokeMessage invokeMessage, CancellationToken token)
         {
             foreach (var filter in exceptionFilters)
@@ -184,6 +185,32 @@ namespace Surging.Core.CPlatform.Support.Implementation
                 result = parameter?.ToString();
             }
             return result;
+        }
+
+        private IDictionary<string, object> GetAttachments(IDictionary<string, object> parameters)
+        {
+            var attachments = new Dictionary<string, object>();
+            if (parameters.ContainsKey("Attachments"))
+            {
+                var attachmentsFromParams = parameters["Attachments"] as Dictionary<string, object>;
+                if (attachmentsFromParams != null)
+                {
+                    foreach (var attachment in attachmentsFromParams)
+                    {
+                        attachments[attachment.Key] = attachment.Value;
+                    }
+                }
+                
+            }
+            var rpcContextParams = RpcContext.GetContext().GetContextParameters();
+            if (rpcContextParams != null)
+            {
+                foreach (var attachment in rpcContextParams)
+                {
+                    attachments[attachment.Key] = attachment.Value;
+                }
+            }
+            return attachments;
         }
     }
 }
