@@ -207,7 +207,10 @@ namespace Surging.Core.CPlatform.Support.Implementation
             {
                 foreach (var attachment in rpcContextParams)
                 {
-                    attachments[attachment.Key] = attachment.Value;
+                    if (!attachments.ContainsKey(attachment.Key)) 
+                    {
+                        attachments[attachment.Key] = attachment.Value;
+                    }
                 }
             }
             return attachments;
