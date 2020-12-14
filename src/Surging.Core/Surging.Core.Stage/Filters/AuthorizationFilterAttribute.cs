@@ -102,6 +102,7 @@ namespace Surging.Core.Stage.Filters
                                 {
                                     foreach (var claims in filterContext.Context.User.Claims)
                                     {
+                                        RpcContext.GetContext().RemoveAttachment(claims.Type);
                                         attachments.Add(claims.Type, claims.Value);
                                     }
                                 }

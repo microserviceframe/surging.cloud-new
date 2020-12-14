@@ -47,6 +47,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
                     FirstInvokeTime = DateTime.Now,
                     FinalRemoteInvokeTime = DateTime.Now
                 });
+            UpdateAttachments(parameters);
             var command = await _commandProvider.GetCommand(serviceId);
             var intervalSeconds = (DateTime.Now - serviceInvokeInfos.FinalRemoteInvokeTime).TotalSeconds;
             bool reachConcurrentRequest() => serviceInvokeInfos.ConcurrentRequests > command.MaxConcurrentRequests;
@@ -100,7 +101,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
                 ServiceId = serviceId,
                 ServiceKey = serviceKey,
                 DecodeJOject = decodeJOject,
-                Attachments = GetAttachments(parameters)
+                Attachments = RpcContext.GetContext().GetContextParameters()
             };
             try
             {
@@ -187,33 +188,21 @@ namespace Surging.Core.CPlatform.Support.Implementation
             return result;
         }
 
-        private IDictionary<string, object> GetAttachments(IDictionary<string, object> parameters)
+        private void UpdateAttachments(IDictionary<string, object> parameters)
         {
-            var attachments = new Dictionary<string, object>();
+           
             if (parameters.ContainsKey("Attachments"))
             {
-                var attachmentsFromParams = parameters["Attachments"] as Dictionary<string, object>;
-                if (attachmentsFromParams != null)
+                var attachments = parameters["Attachments"] as Dictionary<string, object>;
+                if (attachments != null)
                 {
-                    foreach (var attachment in attachmentsFromParams)
+                    foreach (var attachment in attachments)
                     {
-                        attachments[attachment.Key] = attachment.Value;
+                        RpcContext.GetContext().SetAttachment(attachment.Key, attachment.Value);
                     }
                 }
-                
+                parameters.Remove("Attachments");
             }
-            var rpcContextParams = RpcContext.GetContext().GetContextParameters();
-            if (rpcContextParams != null)
-            {
-                foreach (var attachment in rpcContextParams)
-                {
-                    if (!attachments.ContainsKey(attachment.Key)) 
-                    {
-                        attachments[attachment.Key] = attachment.Value;
-                    }
-                }
-            }
-            return attachments;
         }
     }
 }
