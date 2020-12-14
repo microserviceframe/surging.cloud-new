@@ -28,7 +28,7 @@ namespace Surging.Core.CPlatform.Runtime.Session
             get
             {
                 var userName = RpcContext.GetContext().GetAttachment(ClaimTypes.UserName);
-                if (userName != null) 
+                if (userName != null)
                 {
                     return userName.ToString();
                 }
@@ -36,10 +36,56 @@ namespace Surging.Core.CPlatform.Runtime.Session
             }
         }
 
-        public override long? OrgId => throw new NotImplementedException();
+        public override long? OrgId 
+        {
+            get
+            {
+                var orgId = RpcContext.GetContext().GetAttachment(ClaimTypes.OrgId);
+                if (orgId != null)
+                {
+                    return Convert.ToInt64(orgId);
+                }
+                return null;
+            }
+        }
 
-        public override bool InspectDataPermission => throw new NotImplementedException();
+        public override bool InspectDataPermission 
+        {
+            get
+            {
+                var inspectDataPermission = RpcContext.GetContext().GetAttachment(ClaimTypes.InspectDataPermission);
+                if (inspectDataPermission != null)
+                {
+                    return Convert.ToBoolean(inspectDataPermission);
+                }
+                return false;
+            }
+        }
 
-        public override long[] DataPermissionOrgIds => throw new NotImplementedException();
+        public override long[] DataPermissionOrgIds
+        {
+            get
+            {
+                var dataPermissionOrdIds = RpcContext.GetContext().GetAttachment(ClaimTypes.DataPermissionOrgIds);
+                if (dataPermissionOrdIds != null)
+                {
+                    return dataPermissionOrdIds as long[];
+                }
+                return null;
+            }
+        }
+
+        public override bool IsAllOrg
+        {
+            get
+            {
+                var isAllOrg = RpcContext.GetContext().GetAttachment(ClaimTypes.IsAllOrg);
+                if (isAllOrg != null)
+                {
+                    return Convert.ToBoolean(isAllOrg);
+                }
+                return false;
+            }
+        }
     }
 }
