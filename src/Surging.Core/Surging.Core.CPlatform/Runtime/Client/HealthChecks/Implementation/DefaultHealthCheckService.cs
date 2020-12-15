@@ -51,17 +51,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
             }, null, timeSpan, timeSpan);
 
-            //if (AppConfig.ServerOptions.CheckServiceRegister) 
-            //{
-            //    var synchServiceRoutesTimeSpan = GetSynchServiceRoutesTimeSpan();
-            //    _synchServiceRoutesTimer = new Timer(async s =>
-            //    {
-            //        await CheckServiceRegister();
-
-            //    }, null, synchServiceRoutesTimeSpan, synchServiceRoutesTimeSpan);
-
-            //}
-
             //去除监控。
             _serviceRouteManager.Removed += (s, e) =>
             {
@@ -98,37 +87,8 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             var seed = random.Next(1, 60);
             return TimeSpan.FromSeconds(AppConfig.ServerOptions.CheckServiceRegisterIntervalInSeconds + seed);
         }
-
-        //private async Task CheckServiceRegister()
-        //{
-        //    var serviceRoutes = await _serviceRouteManager.GetRoutesAsync();
-        //    if (serviceRoutes == null)
-        //    {
-        //        _logger.LogWarning("从服务注册中心获取路由失败");
-        //        return;
-        //    }
-        //    var localServiceEntries = _serviceEntryManager.GetEntries();
-        //    var localServiceRoutes = serviceRoutes.Where(p => localServiceEntries.Any(q => q.Descriptor.Id == p.ServiceDescriptor.Id));
-        //    var addess = NetUtils.GetHostAddress();
-        //    var registerServiceEntries = localServiceEntries.Where(e => localServiceRoutes.Any(p => !p.Address.Any(q => q.Equals(addess)) && p.ServiceDescriptor.Id == e.Descriptor.Id));
-        //    if (registerServiceEntries.Any())
-        //    {
-        //        _logger.LogWarning($"服务路由未注册成功,重新注册服务路由,服务条目数量为:{registerServiceEntries.Count()}");
-        //        try
-        //        {
-        //            await _serviceRouteProvider.RegisterRoutes(registerServiceEntries);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger.LogError($"服务路由注册失败,原因:{ex.Message}");
-        //        }
-
-        //    }
-
-
-        //}
-
-
+        
+        
         #region Implementation of IHealthCheckService
 
         /// <summary>

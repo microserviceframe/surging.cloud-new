@@ -22,21 +22,9 @@ namespace Surging.Core.CPlatform.Utilities
                 var timeoutObject = new ManualResetEvent(false);
                 timeoutObject.Reset();
                 socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                socket.BeginConnect(endPoint, ar => timeoutObject.Set(), socket);
-                if (timeoutObject.WaitOne(millisecondsTimeout, false))
-                {
-                    isHealth = true;
-                }
-                else
-                {
-                    isHealth = false;
-                }
-                if (socket.Connected)
-                {
-                    socket.Shutdown(SocketShutdown.Both);
-                    socket.Close();
-
-                }
+                var ar = socket.BeginConnect(endPoint, null,null);
+                ar.AsyncWaitHandle.WaitOne(millisecondsTimeout);
+                isHealth = socket.Connected;
                 return isHealth;
             }
             catch(Exception ex)
@@ -64,20 +52,9 @@ namespace Surging.Core.CPlatform.Utilities
                     var timeoutObject = new ManualResetEvent(false);
                     timeoutObject.Reset();
                     socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    socket.BeginConnect(host, port, ar => timeoutObject.Set(), socket);
-                    if (timeoutObject.WaitOne(millisecondsTimeout, false))
-                    {
-                        isHealth = true;
-                    }
-                    else
-                    {
-                        isHealth = false;
-                    }
-                    if (socket.Connected)
-                    {
-                        socket.Shutdown(SocketShutdown.Both);
-                        socket.Close();
-                    }
+                    var ar = socket.BeginConnect(host, port, null,null);
+                    ar.AsyncWaitHandle.WaitOne(millisecondsTimeout);
+                    isHealth = socket.Connected;
                 }
                 return isHealth;
             }
@@ -95,6 +72,8 @@ namespace Surging.Core.CPlatform.Utilities
             }
 
         }
+        
+        
 
         public static bool TestConnection(IPAddress iPAddress, int port, int millisecondsTimeout = 50)
         {
@@ -104,24 +83,10 @@ namespace Surging.Core.CPlatform.Utilities
                 bool isHealth = TestConnectionByPing(iPAddress, millisecondsTimeout);
                 if (isHealth)
                 {
-                    var timeoutObject = new ManualResetEvent(false);
-                    timeoutObject.Reset();
                     socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    socket.BeginConnect(iPAddress, port, ar => timeoutObject.Set(), socket);
-                    if (timeoutObject.WaitOne(millisecondsTimeout, false))
-                    {
-                        isHealth = true;
-                    }
-                    else
-                    {
-                        isHealth = false;
-                    }
-                    if (socket.Connected)
-                    {
-                        socket.Shutdown(SocketShutdown.Both);
-                        socket.Close();
-                        
-                    }
+                    var ar = socket.BeginConnect(iPAddress, port, null,null);
+                    ar.AsyncWaitHandle.WaitOne(millisecondsTimeout);
+                    isHealth = socket.Connected;
                 }
                 return isHealth;
             }
