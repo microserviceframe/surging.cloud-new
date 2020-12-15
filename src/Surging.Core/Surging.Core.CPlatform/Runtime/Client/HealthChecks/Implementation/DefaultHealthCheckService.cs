@@ -104,7 +104,11 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 monitorEntry = new MonitorEntry(ipAddress, Check(ipAddress, _timeout));
                 _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), monitorEntry);
             }
-            OnChanged(new HealthCheckEventArgs(address, monitorEntry.Health));
+
+            if (!monitorEntry.Health)
+            {
+                OnChanged(new HealthCheckEventArgs(address, monitorEntry.Health));
+            }
         }
 
 
@@ -122,12 +126,15 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 entry = new MonitorEntry(address, Check(ipAddress, _timeout));
                 _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), entry);
             }
-
+            if (!entry.Health)
+            {
+                OnChanged(new HealthCheckEventArgs(address, entry.Health));
+            }
             if (entry.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes)
             {
                 await RemoveUnhealthyAddress(entry);
             }
-            OnChanged(new HealthCheckEventArgs(address, entry.Health));
+
             return entry.Health;
 
         }
