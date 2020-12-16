@@ -8,6 +8,13 @@ using System.Reflection;
 
 namespace Surging.Core.Dapper.Expressions
 {
+    /// <summary>
+    ///     This class converts an Expression{Func{TEntity, bool}} into an IPredicate group that can be used with
+    ///     DapperExtension's predicate system
+    /// </summary>
+    /// <typeparam name="TEntity">The type of the entity.</typeparam>
+    /// <typeparam name="TPrimaryKey">The type of the primary key.</typeparam>
+    /// <seealso cref="System.Linq.Expressions.ExpressionVisitor" />
     internal class DapperExpressionVisitor<TEntity, TPrimaryKey> : ExpressionVisitor where TEntity : class, IEntity<TPrimaryKey>
     {
         private PredicateGroup _pg;
@@ -31,6 +38,7 @@ namespace Surging.Core.Dapper.Expressions
             _pg = new PredicateGroup { Predicates = new List<IPredicate>() };
             _currentGroup = _pg;
             Visit(Evaluator.PartialEval(exp));
+
             // the 1st expression determines root group operator
             if (Expressions.Any())
             {
@@ -108,7 +116,7 @@ namespace Surging.Core.Dapper.Expressions
 
             Visit(node.Left);
 
-            if (node.Left is MemberExpression)
+            if (node.Left is MemberExpression || node.Left is UnaryExpression)
             {
                 IFieldPredicate field = GetCurrentField();
                 field.Operator = DetermineOperator(node);

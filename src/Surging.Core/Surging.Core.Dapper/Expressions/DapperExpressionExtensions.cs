@@ -1,9 +1,10 @@
-﻿using DapperExtensions;
-using Surging.Core.Domain.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
-
+using DapperExtensions;
+using Surging.Core.CPlatform.Utilities;
+using Surging.Core.Domain.Entities;
 namespace Surging.Core.Dapper.Expressions
 {
     internal static class DapperExpressionExtensions
