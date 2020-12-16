@@ -36,6 +36,7 @@ namespace Surging.Core.KestrelHttpServer
 
         public override void Dispose()
         {
+            base.Dispose();
             (_serverMessageListener as IDisposable)?.Dispose();
         }
 

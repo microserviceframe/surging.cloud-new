@@ -29,6 +29,7 @@ namespace Surging.Core.Protocol.Udp
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public override void Dispose()
         {
+            base.Dispose();
             (_serverMessageListener as IDisposable)?.Dispose();
         }
 

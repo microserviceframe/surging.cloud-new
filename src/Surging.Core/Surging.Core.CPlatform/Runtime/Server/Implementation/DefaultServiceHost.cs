@@ -2,6 +2,10 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Surging.Core.CPlatform.Utilities;
+using Surging.Core.CPlatform.Routing;
+using Surging.Core.CPlatform.Address;
+using System.Collections.Generic;
 
 namespace Surging.Core.CPlatform.Runtime.Server.Implementation
 {
@@ -27,8 +31,10 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public override void Dispose()
         {
+            base.Dispose();
             (_serverMessageListener as IDisposable)?.Dispose();
         }
+
 
         /// <summary>
         /// 启动主机。

@@ -32,7 +32,7 @@ namespace Surging.Core.DNS
 
         public async Task SendAndFlushAsync(TransportMessage message)
         {
-            if (!_context.Channel.Active)
+            if (!_context.Channel.IsWritable)
             {
                 if (HandleChannelUnActived != null) 
                 {
@@ -47,7 +47,7 @@ namespace Surging.Core.DNS
 
         public async Task SendAsync(TransportMessage message)
         {
-            if (!_context.Channel.Active)
+            if (!_context.Channel.IsWritable)
             {
                 if (HandleChannelUnActived != null)
                 {

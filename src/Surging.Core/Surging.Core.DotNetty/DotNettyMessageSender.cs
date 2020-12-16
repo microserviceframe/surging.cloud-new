@@ -67,7 +67,7 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
-            if (!_channel.Active)
+            if(!_channel.IsWritable)
             {
                 if (HandleChannelUnActived != null)
                 {
@@ -86,7 +86,7 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(TransportMessage message)
         {
-            if (!_channel.Active)
+            if (!_channel.IsWritable)
             {
                 if (HandleChannelUnActived != null)
                 {
@@ -126,7 +126,7 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
-            if (!_context.Channel.Active)
+            if (!_context.Channel.IsWritable)
             {
                 if (HandleChannelUnActived != null)
                 {
@@ -145,7 +145,7 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(TransportMessage message)
         {
-            if (!_context.Channel.Active)
+            if (!_context.Channel.IsWritable)
             {
                 if (HandleChannelUnActived != null)
                 {

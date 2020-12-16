@@ -1,6 +1,10 @@
-﻿using Surging.Core.CPlatform.Messages;
+﻿using Surging.Core.CPlatform.Address;
+using Surging.Core.CPlatform.Messages;
+using Surging.Core.CPlatform.Routing;
 using Surging.Core.CPlatform.Transport;
 using Surging.Core.CPlatform.Transport.Implementation;
+using Surging.Core.CPlatform.Utilities;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -14,6 +18,7 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation
         #region Field
 
         private readonly IServiceExecutor _serviceExecutor;
+        protected AddressModel HosAddress { get; } = NetUtils.GetHostAddress();
 
         public IServiceExecutor ServiceExecutor { get => _serviceExecutor; }
 
@@ -37,7 +42,14 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation
         #region Implementation of IDisposable
 
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-        public abstract void Dispose();
+        public virtual void Dispose() 
+        {
+            var serviceRouteManager = ServiceLocator.GetService<IServiceRouteManager>();
+            if (serviceRouteManager != null)
+            {
+                serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { NetUtils.GetHostAddress() });
+            }
+        }
 
         #endregion Implementation of IDisposable
 

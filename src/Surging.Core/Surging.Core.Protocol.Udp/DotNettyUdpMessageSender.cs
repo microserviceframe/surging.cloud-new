@@ -50,7 +50,7 @@ namespace Surging.Core.Protocol.Udp
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
-            if (!_context.Channel.Active)
+            if (!_context.Channel.IsWritable)
             {
                 if (HandleChannelUnActived != null)
                 {
@@ -69,7 +69,7 @@ namespace Surging.Core.Protocol.Udp
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(TransportMessage message)
         {
-            if (!_context.Channel.Active)
+            if (!_context.Channel.IsWritable)
             {
                 if (HandleChannelUnActived != null)
                 {
