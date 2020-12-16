@@ -1,4 +1,6 @@
 ﻿using Surging.Core.CPlatform.Messages;
+using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Surging.Core.CPlatform.Transport
@@ -21,5 +23,7 @@ namespace Surging.Core.CPlatform.Transport
         /// <param name="message">消息内容。</param>
         /// <returns>一个任务。</returns>
         Task SendAndFlushAsync(TransportMessage message);
+
+        event EventHandler<EndPoint> HandleChannelUnActived;
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Threading.Tasks;
 using ARSoft.Tools.Net.Dns;
 using DotNetty.Buffers;
@@ -6,6 +7,7 @@ using DotNetty.Codecs.DNS;
 using DotNetty.Codecs.DNS.Messages;
 using DotNetty.Codecs.DNS.Records;
 using DotNetty.Transport.Channels;
+using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Messages;
 using Surging.Core.CPlatform.Serialization;
 using Surging.Core.CPlatform.Transport;
@@ -21,6 +23,8 @@ namespace Surging.Core.DNS
     {
         private readonly IChannelHandlerContext _context;
 
+        public event EventHandler<EndPoint> HandleChannelUnActived;
+
         public DotNettyDnsServerMessageSender(ITransportMessageEncoder transportMessageEncoder, IChannelHandlerContext context) : base(transportMessageEncoder)
         {
             _context = context;
@@ -28,13 +32,30 @@ namespace Surging.Core.DNS
 
         public async Task SendAndFlushAsync(TransportMessage message)
         {
-            var response=await  WriteResponse(message);
+            if (!_context.Channel.Active)
+            {
+                if (HandleChannelUnActived != null) 
+                {
+                    HandleChannelUnActived(this, _context.Channel.RemoteAddress);
+                }
+                throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
+            }
+            var response = await WriteResponse(message);
             await _context.WriteAndFlushAsync(response);
             //RpcContext.GetContext().ClearAttachment();
         }
 
         public async Task SendAsync(TransportMessage message)
         {
+            if (!_context.Channel.Active)
+            {
+                if (HandleChannelUnActived != null)
+                {
+                    HandleChannelUnActived(this, _context.Channel.RemoteAddress);
+                }
+                throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
+            }
+
             var response = await WriteResponse(message);
             await _context.WriteAsync(response);
         }

@@ -1,10 +1,12 @@
 ﻿using DotNetty.Buffers;
 using DotNetty.Transport.Channels;
+using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Messages;
 using Surging.Core.CPlatform.Transport;
 using Surging.Core.CPlatform.Transport.Codec;
 using Surging.Core.CPlatform.Transport.Implementation;
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Surging.Core.DotNetty
@@ -36,6 +38,8 @@ namespace Surging.Core.DotNetty
     {
         private readonly IChannel _channel;
 
+        public event EventHandler<EndPoint> HandleChannelUnActived;
+
         public DotNettyMessageClientSender(ITransportMessageEncoder transportMessageEncoder, IChannel channel) : base(transportMessageEncoder)
         {
             _channel = channel;
@@ -63,6 +67,14 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
+            if (!_channel.Active)
+            {
+                if (HandleChannelUnActived != null)
+                {
+                    HandleChannelUnActived(this, _channel.RemoteAddress);
+                }
+                throw new CommunicationException($"{_channel.RemoteAddress}服务提供者不健康,无法发送消息");
+            }
             var buffer = GetByteBuffer(message);
             await _channel.WriteAndFlushAsync(buffer);
         }
@@ -74,8 +86,17 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(TransportMessage message)
         {
+            if (!_channel.Active)
+            {
+                if (HandleChannelUnActived != null)
+                {
+                    HandleChannelUnActived(this, _channel.RemoteAddress);
+                }
+                throw new CommunicationException($"{_channel.RemoteAddress}服务提供者不健康,无法发送消息");
+            }
             var buffer = GetByteBuffer(message);
             await _channel.WriteAndFlushAsync(buffer);
+
             //RpcContext.GetContext().ClearAttachment();
         }
 
@@ -88,6 +109,8 @@ namespace Surging.Core.DotNetty
     public class DotNettyServerMessageSender : DotNettyMessageSender, IMessageSender
     {
         private readonly IChannelHandlerContext _context;
+
+        public event EventHandler<EndPoint> HandleChannelUnActived;
 
         public DotNettyServerMessageSender(ITransportMessageEncoder transportMessageEncoder, IChannelHandlerContext context) : base(transportMessageEncoder)
         {
@@ -103,6 +126,14 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
+            if (!_context.Channel.Active)
+            {
+                if (HandleChannelUnActived != null)
+                {
+                    HandleChannelUnActived(this, _context.Channel.RemoteAddress);
+                }
+                throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
+            }
             var buffer = GetByteBuffer(message);
             await _context.WriteAsync(buffer);
         }
@@ -114,6 +145,14 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(TransportMessage message)
         {
+            if (!_context.Channel.Active)
+            {
+                if (HandleChannelUnActived != null)
+                {
+                    HandleChannelUnActived(this, _context.Channel.RemoteAddress);
+                }
+                throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
+            }
             var buffer = GetByteBuffer(message);
             await _context.WriteAndFlushAsync(buffer);
             //RpcContext.GetContext().ClearAttachment();

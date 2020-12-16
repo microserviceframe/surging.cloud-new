@@ -18,10 +18,7 @@ using Surging.Core.CPlatform.Transport.Implementation;
 using Surging.Core.DotNetty.Adapter;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Surging.Core.DotNetty
@@ -95,11 +92,16 @@ namespace Surging.Core.DotNetty
                         var bootstrap = _bootstrap;
                         //异步连接返回channel
                         var channel = await bootstrap.ConnectAsync(k);
+                        if (!channel.Open) 
+                        {
+                            throw new CommunicationException($"服务提供者{channel.RemoteAddress}无法连接");
+                        }
                         var messageListener = new MessageListener();
                         //设置监听
                         channel.GetAttribute(messageListenerKey).Set(messageListener);
                         //实例化发送者
                         var messageSender = new DotNettyMessageClientSender(_transportMessageEncoder, channel);
+                        messageSender.HandleChannelUnActived += MessageSender_HandleChannelUnActived;
                         //设置channel属性
                         channel.GetAttribute(messageSenderKey).Set(messageSender);
                         channel.GetAttribute(origEndPointKey).Set(k);
@@ -118,6 +120,14 @@ namespace Surging.Core.DotNetty
                 if (ipEndPoint != null)
                     await _healthCheckService.MarkFailure(new IpAddressModel(ipEndPoint.Address.ToString(), ipEndPoint.Port));
                 throw;
+            }
+        }
+
+        private void MessageSender_HandleChannelUnActived(object sender, EndPoint e)
+        {
+            if (_clients.ContainsKey(e)) 
+            {
+                _clients.TryRemove(e, out var client);
             }
         }
 

@@ -13,7 +13,7 @@ namespace Surging.Core.CPlatform.Messages
                 || message.StatusCode == StatusCode.BusinessError
                 || message.StatusCode == StatusCode.UnAuthentication
                 || message.StatusCode == StatusCode.UnAuthorized
-                || message.StatusCode == StatusCode.DataAccessError
+ //               || message.StatusCode == StatusCode.DataAccessError
 
                 ;
         }

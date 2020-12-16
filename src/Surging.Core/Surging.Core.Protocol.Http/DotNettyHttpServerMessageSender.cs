@@ -2,12 +2,14 @@
 using DotNetty.Codecs.Http;
 using DotNetty.Common.Utilities;
 using DotNetty.Transport.Channels;
+using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Messages;
 using Surging.Core.CPlatform.Serialization;
 using Surging.Core.CPlatform.Transport;
 using Surging.Core.CPlatform.Transport.Codec;
 using Surging.Core.CPlatform.Transport.Implementation;
 using Surging.Core.DotNetty;
+using System;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,6 +23,8 @@ namespace Surging.Core.Protocol.Http
         private readonly AsciiString ServerEntity = HttpHeaderNames.Server;
         private readonly AsciiString ContentLengthEntity = HttpHeaderNames.ContentLength;
         private readonly AsciiString TypeJson = AsciiString.Cached("application/json");
+
+        public event EventHandler<System.Net.EndPoint> HandleChannelUnActived;
 
         public DotNettyHttpServerMessageSender(ITransportMessageEncoder transportMessageEncoder, IChannelHandlerContext context, ISerializer<string> serializer) : base(transportMessageEncoder)
         {
@@ -37,6 +41,14 @@ namespace Surging.Core.Protocol.Http
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
+            if (!_context.Channel.Active)
+            {
+                if (HandleChannelUnActived != null)
+                {
+                    HandleChannelUnActived(this, _context.Channel.RemoteAddress);
+                }
+                throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
+            }
             var buffer = GetByteBuffer(message, out int contentLength);
             var response = WriteResponse(_context, buffer, TypeJson, AsciiString.Cached($"{contentLength}"));
             await _context.WriteAsync(response);
@@ -49,6 +61,11 @@ namespace Surging.Core.Protocol.Http
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(TransportMessage message)
         {
+            if (!_context.Channel.Active)
+            {
+                throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
+            }
+
             var buffer = GetByteBuffer(message, out int contentLength);
             var response = WriteResponse(_context, buffer, TypeJson, AsciiString.Cached($"{ contentLength}"));
 

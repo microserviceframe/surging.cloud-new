@@ -7,8 +7,10 @@ using Surging.Core.CPlatform.Transport.Implementation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using TransportType = Surging.Core.CPlatform.Diagnostics.TransportType;
 
 namespace Surging.Core.KestrelHttpServer
 {
@@ -21,9 +23,11 @@ namespace Surging.Core.KestrelHttpServer
             _serializer = serializer;
             _context = httpContext;
         }
-        
+
+        public event EventHandler<EndPoint> HandleChannelUnActived;
+
         public async Task SendAndFlushAsync(TransportMessage message)
-        { 
+        {
             var httpMessage = message.GetContent<HttpResultMessage<Object>>();
             var actionResult= httpMessage.Data as IActionResult;
             WirteDiagnostic(message);
