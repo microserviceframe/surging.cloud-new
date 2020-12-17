@@ -142,7 +142,7 @@ namespace Surging.Core.CPlatform.Transport.Implementation
                 return new RemoteInvokeResultMessage()
                 {
                     ExceptionMessage = ex.Message,
-                    StatusCode = ex.GetGetExceptionStatusCode(),
+                    StatusCode = ex.GetExceptionStatusCode(),
                 };
             }
             finally

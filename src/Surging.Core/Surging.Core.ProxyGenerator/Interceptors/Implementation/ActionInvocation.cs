@@ -42,7 +42,7 @@ namespace Surging.Core.ProxyGenerator.Interceptors.Implementation
                 _remoteInvokeResultMessage = new RemoteInvokeResultMessage()
                 {
                     ExceptionMessage = ex.GetExceptionMessage(),
-                    StatusCode = ex.GetGetExceptionStatusCode()
+                    StatusCode = ex.GetExceptionStatusCode()
                 };
             }
         }

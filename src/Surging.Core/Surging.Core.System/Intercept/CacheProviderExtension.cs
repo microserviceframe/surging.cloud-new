@@ -1,4 +1,5 @@
 ﻿using Surging.Core.CPlatform.Cache;
+using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Serialization;
 using Surging.Core.CPlatform.Utilities;
 using System;
@@ -39,10 +40,18 @@ namespace Surging.Core.System.Intercept
                 }
                 return returnValue;
             }
-            catch
+            catch(Exception ex)
             {
-                returnValue = await getFromPersistence();
-                return returnValue;
+                if (ex is BusinessException || ex.InnerException is BusinessException)
+                {
+                    return returnValue;
+                }
+                else
+                {
+                    returnValue = await getFromPersistence();
+                    return returnValue;
+
+                }
             }
         }
 
@@ -87,10 +96,18 @@ namespace Surging.Core.System.Intercept
                 }
                 return returnValue as T;
             }
-            catch
+            catch (Exception ex)
             {
-                returnValue = await getFromPersistence();
-                return returnValue as T;
+                if (ex is BusinessException || ex.InnerException is BusinessException)
+                {
+                    return default(T);
+                }
+                else
+                {
+                    returnValue = await getFromPersistence();
+                    return returnValue as T;
+
+                }
             }
         }
 

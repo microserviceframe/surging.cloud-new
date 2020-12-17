@@ -207,8 +207,12 @@ namespace Surging.Core.System.Intercept
                             }
 
                         }, invocation.ReturnType, cacheMetadata.Time);
-                        invocation.ReturnValue = retrunValue;
-                        invocation.RemoteInvokeResultMessage = new RemoteInvokeResultMessage() { Result = retrunValue };
+
+                        if (retrunValue != default)
+                        {
+                            invocation.ReturnValue = retrunValue;
+                            invocation.RemoteInvokeResultMessage = new RemoteInvokeResultMessage() { Result = retrunValue };
+                        }
                         break;
                     }
                 default:
@@ -281,8 +285,13 @@ namespace Surging.Core.System.Intercept
                             }
 
                         }, invocation.ReturnType, attribute.Time);
-                        invocation.ReturnValue = retrunValue;
-                        invocation.RemoteInvokeResultMessage = new RemoteInvokeResultMessage() { Result = retrunValue };
+
+                        if (retrunValue != default) 
+                        {
+                            invocation.ReturnValue = retrunValue;
+                            invocation.RemoteInvokeResultMessage = new RemoteInvokeResultMessage() { Result = retrunValue };
+                        }
+
                         break;
                     }
                 default:

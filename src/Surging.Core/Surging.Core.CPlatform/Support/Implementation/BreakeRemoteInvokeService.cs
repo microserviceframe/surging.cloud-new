@@ -140,7 +140,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
                     {
                         ExceptionMessage = ex.InnerException.GetExceptionMessage(),
                         Result = null,
-                        StatusCode = ex.InnerException.GetGetExceptionStatusCode()
+                        StatusCode = ex.InnerException.GetExceptionStatusCode()
                     };
                 }
                 else 
@@ -158,7 +158,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
                 {
                     ExceptionMessage = ex.GetExceptionMessage(),
                     Result = null,
-                    StatusCode = ex.GetGetExceptionStatusCode()
+                    StatusCode = ex.GetExceptionStatusCode()
                 };
             }
         }

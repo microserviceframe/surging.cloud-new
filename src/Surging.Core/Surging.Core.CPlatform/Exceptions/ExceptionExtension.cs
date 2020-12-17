@@ -42,7 +42,7 @@ namespace Surging.Core.CPlatform.Exceptions
             return message;
         }
 
-        public static StatusCode GetGetExceptionStatusCode(this Exception exception)
+        public static StatusCode GetExceptionStatusCode(this Exception exception)
         {
             var statusCode = StatusCode.UnKnownError;
             if (exception is TimeoutException || exception.InnerException is TimeoutException) 

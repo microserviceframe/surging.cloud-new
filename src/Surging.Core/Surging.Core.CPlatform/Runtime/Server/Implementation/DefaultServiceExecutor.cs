@@ -156,7 +156,7 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation
                 if (_logger.IsEnabled(LogLevel.Error))
                     _logger.LogError(exception, "执行本地逻辑时候发生了错误。");
                 resultMessage.ExceptionMessage = exception.GetExceptionMessage();
-                resultMessage.StatusCode = exception.GetGetExceptionStatusCode();
+                resultMessage.StatusCode = exception.GetExceptionStatusCode();
             }
         }
 

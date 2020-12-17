@@ -125,7 +125,7 @@ namespace Surging.Core.KestrelHttpServer
             {
                 if (_logger.IsEnabled(LogLevel.Error))
                     _logger.LogError(ex, "执行远程调用逻辑时候发生了错误。");
-                resultMessage = new HttpResultMessage<object> { Data = null, Message = ex.GetExceptionMessage(), IsSucceed = false, StatusCode = ex.GetGetExceptionStatusCode() };
+                resultMessage = new HttpResultMessage<object> { Data = null, Message = ex.GetExceptionMessage(), IsSucceed = false, StatusCode = ex.GetExceptionStatusCode() };
             }
             return resultMessage;
         }
@@ -176,7 +176,7 @@ namespace Surging.Core.KestrelHttpServer
                 if (_logger.IsEnabled(LogLevel.Error))
                     _logger.LogError(exception, "执行本地逻辑时候发生了错误。");
                 resultMessage.Message =  exception.GetExceptionMessage();
-                resultMessage.StatusCode = exception.GetGetExceptionStatusCode();
+                resultMessage.StatusCode = exception.GetExceptionStatusCode();
             }
             return resultMessage;
         }

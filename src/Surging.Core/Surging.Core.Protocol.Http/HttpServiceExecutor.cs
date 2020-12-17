@@ -182,7 +182,7 @@ namespace Surging.Core.Protocol.Http
                 if (_logger.IsEnabled(LogLevel.Error))
                     _logger.LogError(exception, "执行本地逻辑时候发生了错误。");
                 resultMessage.Message = exception.GetExceptionMessage();
-                resultMessage.StatusCode = exception.GetGetExceptionStatusCode();
+                resultMessage.StatusCode = exception.GetExceptionStatusCode();
             }
             return resultMessage;
         }
