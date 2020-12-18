@@ -32,7 +32,7 @@ namespace Surging.ApiGateway
                 return;
             }
             var result =  ServiceResult<object>.Create(false,errorMessage: context.Exception.Message);
-            result.StatusCode = context.Exception.GetGetExceptionStatusCode();
+            result.StatusCode = context.Exception.GetExceptionStatusCode();
             context.Result = new JsonResult(result,new Newtonsoft.Json.JsonSerializerSettings() {
                 
             });
