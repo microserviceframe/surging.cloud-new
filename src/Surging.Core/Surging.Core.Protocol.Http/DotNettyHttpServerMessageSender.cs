@@ -41,7 +41,7 @@ namespace Surging.Core.Protocol.Http
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
-            if (!_context.Channel.IsWritable)
+            if (!_context.Channel.Active)
             {
                 if (HandleChannelUnActived != null)
                 {
@@ -61,7 +61,7 @@ namespace Surging.Core.Protocol.Http
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(TransportMessage message)
         {
-            if (!_context.Channel.IsWritable)
+            if (!_context.Channel.Active)
             {
                 if (HandleChannelUnActived != null)
                 {
@@ -73,8 +73,8 @@ namespace Surging.Core.Protocol.Http
             var buffer = GetByteBuffer(message, out int contentLength);
             var response = WriteResponse(_context, buffer, TypeJson, AsciiString.Cached($"{ contentLength}"));
 
-            await _context.WriteAndFlushAsync(response);
-            await _context.CloseAsync();
+            await _context.Channel.WriteAndFlushAsync(response);
+            await _context.Channel.CloseAsync();
             //RpcContext.GetContext().ClearAttachment();
         }
 

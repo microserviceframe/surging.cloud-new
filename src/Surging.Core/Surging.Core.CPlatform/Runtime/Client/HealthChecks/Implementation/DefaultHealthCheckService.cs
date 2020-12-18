@@ -22,11 +22,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
 
         private readonly IServiceRouteManager _serviceRouteManager;
-        private readonly IServiceEntryManager _serviceEntryManager;
-        private readonly IServiceRouteProvider _serviceRouteProvider;
         private readonly int _timeout = AppConfig.ServerOptions.HealthCheckTimeout;
-        private readonly Timer _serviceHealthCheckTimer;
-        private readonly Timer _synchServiceRoutesTimer;
         private readonly ILogger<DefaultHealthCheckService> _logger;
         public event EventHandler<HealthCheckEventArgs> Removed;
         public event EventHandler<HealthCheckEventArgs> Changed;
@@ -35,21 +31,10 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         /// 默认心跳检查服务(每10秒会检查一次服务状态，在构造函数中添加服务管理事件) 
         /// </summary>
         /// <param name="serviceRouteManager"></param>
-        public DefaultHealthCheckService(IServiceRouteManager serviceRouteManager, IServiceEntryManager serviceEntryManager, IServiceRouteProvider serviceRouteProvider)
+        public DefaultHealthCheckService(IServiceRouteManager serviceRouteManager)
         {
             _serviceRouteManager = serviceRouteManager;
-            _serviceEntryManager = serviceEntryManager;
-            _serviceRouteProvider = serviceRouteProvider;
             _logger = ServiceLocator.GetService<ILogger<DefaultHealthCheckService>>();
-            var timeSpan = TimeSpan.FromSeconds(AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds);
-
-            //建立计时器
-            _serviceHealthCheckTimer = new Timer(async s =>
-            {
-                //检查服务是否可用
-                await Check(_dictionaries.ToArray().Select(i => i.Value), _timeout);
-
-            }, null, timeSpan, timeSpan);
 
             //去除监控。
             _serviceRouteManager.Removed += (s, e) =>
@@ -80,14 +65,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             };
 
         }
-
-        private TimeSpan GetSynchServiceRoutesTimeSpan()
-        {
-            var random = new Random();
-            var seed = random.Next(1, 60);
-            return TimeSpan.FromSeconds(AppConfig.ServerOptions.CheckServiceRegisterIntervalInSeconds + seed);
-        }
-        
         
         #region Implementation of IHealthCheckService
 
@@ -145,23 +122,25 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         /// </summary>
         /// <param name="address">地址模型。</param>
         /// <returns>一个任务。</returns>
-        public Task MarkFailure(AddressModel address)
+        public async Task<int> MarkFailure(AddressModel address)
         {
-            return Task.Run(() =>
-            {
-                var ipAddress = address as IpAddressModel;
-                var entry = _dictionaries.GetOrAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), k => new MonitorEntry(address, Check(ipAddress, _timeout)));
-                entry.Health = false;
-                entry.UnhealthyTimes += 1;
-            });
+            var ipAddress = address as IpAddressModel;
+            var entry = _dictionaries.GetOrAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), k => new MonitorEntry(address,false));
+            entry.Health = false;
+            entry.UnhealthyTimes += 1;
+            return entry.UnhealthyTimes;
         }
-        public Task MarkSuccess(AddressModel address, string serviceId)
+
+
+        private async Task RemoveUnhealthyAddress(AddressModel address)
         {
-            return Task.Run(() =>
+            var ipAddress = address as IpAddressModel;
+            if (ipAddress != null) 
             {
-                var ipAddress = address as IpAddressModel;
-               
-            });
+                await _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { ipAddress });
+                _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry value);
+                OnRemoved(new HealthCheckEventArgs(ipAddress));
+            }            
         }
 
         protected void OnRemoved(params HealthCheckEventArgs[] args)
@@ -189,12 +168,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-            _serviceHealthCheckTimer.Dispose();
-            if (_synchServiceRoutesTimer != null)
-            {
-                _synchServiceRoutesTimer.Dispose();
-            }
-
         }
 
         #endregion Implementation of IDisposable
@@ -210,6 +183,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out value);
             }
         }
+
 
         private async Task RemoveUnhealthyAddress(MonitorEntry monitorEntry)
         {
@@ -267,8 +241,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             }
 
             public int UnhealthyTimes { get; set; }
-
-            public int TimeOutTimes { get; set; }
 
             public AddressModel Address { get; set; }
 

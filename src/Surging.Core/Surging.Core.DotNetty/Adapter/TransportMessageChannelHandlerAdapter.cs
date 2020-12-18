@@ -21,12 +21,16 @@ namespace Surging.Core.DotNetty.Adapter
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
-            var buffer = (IByteBuffer)message;
-             var data = new byte[buffer.ReadableBytes];
-             buffer.ReadBytes(data);
-             var transportMessage = _transportMessageDecoder.Decode(data);
-             context.FireChannelRead(transportMessage);
-             ReferenceCountUtil.Release(buffer); 
+            if (context.Name != "ChannelInbound" && context.Name != "HeartBeat") 
+            {
+                var buffer = (IByteBuffer)message;
+                var data = new byte[buffer.ReadableBytes];
+                buffer.ReadBytes(data);
+                var transportMessage = _transportMessageDecoder.Decode(data);
+                context.FireChannelRead(transportMessage);
+                ReferenceCountUtil.Release(buffer);
+            }
+
         }
 
         #endregion Overrides of ChannelHandlerAdapter

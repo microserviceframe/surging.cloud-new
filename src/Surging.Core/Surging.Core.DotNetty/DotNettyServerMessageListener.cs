@@ -1,5 +1,6 @@
 ﻿using DotNetty.Buffers;
 using DotNetty.Codecs;
+using DotNetty.Handlers.Timeout;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
@@ -86,8 +87,10 @@ namespace Surging.Core.DotNetty
             .ChildHandler(new ActionChannelInitializer<IChannel>(channel =>
             {
                 var pipeline = channel.Pipeline;
+                pipeline.AddLast(new IdleStateHandler(0, 10, 0));
                 pipeline.AddLast(new LengthFieldPrepender(4));
                 pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
+                pipeline.AddLast("ChannelInbound", new ChannelInboundHandlerAdapter());
                 pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
                 pipeline.AddLast(new ServerHandler(async (contenxt, message) =>
                 {

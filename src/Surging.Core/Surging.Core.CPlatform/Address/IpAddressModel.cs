@@ -30,6 +30,7 @@ namespace Surging.Core.CPlatform.Address
             Port = port;
         }
 
+
         #endregion Constructor
 
         #region Property

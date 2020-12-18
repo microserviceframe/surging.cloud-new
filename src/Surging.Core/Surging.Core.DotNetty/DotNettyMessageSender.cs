@@ -67,7 +67,7 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
-            if(!_channel.IsWritable)
+            if(!_channel.Active)
             {
                 if (HandleChannelUnActived != null)
                 {
@@ -86,7 +86,7 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(TransportMessage message)
         {
-            if (!_channel.IsWritable)
+            if (!_channel.Active)
             {
                 if (HandleChannelUnActived != null)
                 {
@@ -126,7 +126,7 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
-            if (!_context.Channel.IsWritable)
+            if (!_context.Channel.Active)
             {
                 if (HandleChannelUnActived != null)
                 {
@@ -145,7 +145,7 @@ namespace Surging.Core.DotNetty
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(TransportMessage message)
         {
-            if (!_context.Channel.IsWritable)
+            if (!_context.Channel.Active)
             {
                 if (HandleChannelUnActived != null)
                 {
@@ -154,7 +154,7 @@ namespace Surging.Core.DotNetty
                 throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
             }
             var buffer = GetByteBuffer(message);
-            await _context.WriteAndFlushAsync(buffer);
+            await _context.Channel.WriteAndFlushAsync(buffer);
             //RpcContext.GetContext().ClearAttachment();
         }
 

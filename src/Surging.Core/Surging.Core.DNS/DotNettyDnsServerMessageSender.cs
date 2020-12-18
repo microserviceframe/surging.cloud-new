@@ -32,7 +32,7 @@ namespace Surging.Core.DNS
 
         public async Task SendAndFlushAsync(TransportMessage message)
         {
-            if (!_context.Channel.IsWritable)
+            if (!_context.Channel.Active)
             {
                 if (HandleChannelUnActived != null) 
                 {
@@ -41,13 +41,13 @@ namespace Surging.Core.DNS
                 throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
             }
             var response = await WriteResponse(message);
-            await _context.WriteAndFlushAsync(response);
+            await _context.Channel.WriteAndFlushAsync(response);
             //RpcContext.GetContext().ClearAttachment();
         }
 
         public async Task SendAsync(TransportMessage message)
         {
-            if (!_context.Channel.IsWritable)
+            if (!_context.Channel.Active)
             {
                 if (HandleChannelUnActived != null)
                 {

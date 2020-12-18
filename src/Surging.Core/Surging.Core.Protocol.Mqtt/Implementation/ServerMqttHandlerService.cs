@@ -115,10 +115,10 @@ namespace Surging.Core.Protocol.Mqtt.Implementation
 
         }
 
-        public async Task  PingReq(IChannelHandlerContext context, PingReqPacket packet)
+        public async Task PingReq(IChannelHandlerContext context, PingReqPacket packet)
         {
             var channel = context.Channel;
-            if (channel.Open && channel.Active && channel.IsWritable)
+            if (channel.Open && channel.Active)
             {
                 if (_logger.IsEnabled(LogLevel.Information))
                     _logger.LogInformation("收到来自：【" + context.Channel.RemoteAddress.ToString() + "】心跳");

@@ -92,11 +92,9 @@ namespace Surging.Core.CPlatform.Utilities
             var mappingPort = AppConfig.ServerOptions.MappingPort;
             if (mappingPort == 0)
                 mappingPort = port;
-            _host = new IpAddressModel
+            _host = new IpAddressModel(mappingIp, mappingPort)
             {
                 HttpPort = ports.HttpPort,
-                Ip = mappingIp,
-                Port = mappingPort,
                 MqttPort = ports.MQTTPort,
                 WanIp = AppConfig.ServerOptions.WanIp,
                 WsPort = ports.WSPort

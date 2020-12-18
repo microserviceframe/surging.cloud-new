@@ -26,13 +26,11 @@ namespace Surging.Core.CPlatform.Configurations
 
         public int DisconnTimeInterval { get; set; } = 60;
 
-        public int HealthCheckWatchIntervalInSeconds { get; set; } = 30;
+        public int HealthCheckWatchIntervalInSeconds { get; set; } = 10;
 
         public int CheckServiceRegisterIntervalInSeconds { get; set; } = 480;
 
         public int AllowServerUnhealthyTimes { get; set; } = 5;
-
-        public int AllowServerTimeOutTimes { get; set; } = 4;
 
         public bool Libuv { get; set; } = false;
 
@@ -71,7 +69,7 @@ namespace Surging.Core.CPlatform.Configurations
 
         public bool ForceDisplayStackTrace { get; set; }
 
-        public int HealthCheckTimeout { get; set; } = 5000;
+        public int HealthCheckTimeout { get; set; } = 2000;
 
         private string _hostName;
         public string HostName {

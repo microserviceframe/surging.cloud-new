@@ -1,6 +1,7 @@
 ﻿using DotNetty.Buffers;
 using DotNetty.Codecs;
 using DotNetty.Common.Utilities;
+using DotNetty.Handlers.Timeout;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
@@ -62,8 +63,10 @@ namespace Surging.Core.DotNetty
             _bootstrap.Handler(new ActionChannelInitializer<ISocketChannel>(c =>
             {
                 var pipeline = c.Pipeline;
+                pipeline.AddLast(new IdleStateHandler(10, 0, 0));
                 pipeline.AddLast(new LengthFieldPrepender(4));
                 pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
+                pipeline.AddLast("HeartBeat", new HeartBeatHandler(_healthCheckService));
                 pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
                 pipeline.AddLast(new DefaultChannelHandler(this));
             }));
@@ -92,7 +95,7 @@ namespace Surging.Core.DotNetty
                         var bootstrap = _bootstrap;
                         //异步连接返回channel
                         var channel = await bootstrap.ConnectAsync(k);
-                        if (!channel.Open) 
+                        if (!channel.Open)
                         {
                             throw new CommunicationException($"服务提供者{channel.RemoteAddress}无法连接");
                         }
@@ -125,7 +128,7 @@ namespace Surging.Core.DotNetty
 
         private void MessageSender_HandleChannelUnActived(object sender, EndPoint e)
         {
-            if (_clients.ContainsKey(e)) 
+            if (_clients.ContainsKey(e))
             {
                 _clients.TryRemove(e, out var client);
             }
@@ -149,7 +152,7 @@ namespace Surging.Core.DotNetty
         private static Bootstrap GetBootstrap()
         {
             IEventLoopGroup group;
-            
+
             var bootstrap = new Bootstrap();
             if (AppConfig.ServerOptions.Libuv)
             {
@@ -198,7 +201,7 @@ namespace Surging.Core.DotNetty
 
             public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
             {
-                if (!(exception is BusinessException) && !(exception.InnerException is BusinessException)) 
+                if (!(exception is BusinessException) && !(exception.InnerException is BusinessException))
                 {
                     _factory._clients.TryRemove(context.Channel.GetAttribute(origEndPointKey).Get(), out var value);
                     context.CloseAsync();
