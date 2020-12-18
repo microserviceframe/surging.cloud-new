@@ -63,12 +63,12 @@ namespace Surging.Core.DotNetty
             _bootstrap.Handler(new ActionChannelInitializer<ISocketChannel>(c =>
             {
                 var pipeline = c.Pipeline;
-                pipeline.AddLast(new IdleStateHandler(10, 0, 0));
+                pipeline.AddLast(new IdleStateHandler(AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds, 0, 0));
                 pipeline.AddLast(new LengthFieldPrepender(4));
                 pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
-                pipeline.AddLast("HeartBeat", new HeartBeatHandler(_healthCheckService));
-                pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
-                pipeline.AddLast(new DefaultChannelHandler(this));
+                pipeline.AddLast(DotNettyConstants.HeartBeatName, new HeartBeatHandler(_healthCheckService));
+                pipeline.AddLast(DotNettyConstants.TransportMessageAdapterName, new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
+                pipeline.AddLast(DotNettyConstants.ClientChannelHandler, new DefaultChannelHandler(this));
             }));
         }
 

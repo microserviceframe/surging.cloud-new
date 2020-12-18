@@ -8,8 +8,6 @@ namespace Surging.Core.DotNetty.Adapter
 {
     public class ChannelInboundHandlerAdapter : ChannelHandlerAdapter
     {
-        private const string HeartBeatPacket = "hearteat";
-
         public ChannelInboundHandlerAdapter() 
         {
         
@@ -21,10 +19,16 @@ namespace Surging.Core.DotNetty.Adapter
                 var @event = (IdleStateEvent)evt;
                 if (@event.State == IdleState.WriterIdle)
                 {
-                    await context.Channel.WriteAndFlushAsync(Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(HeartBeatPacket)));
+                    await context.Channel.WriteAndFlushAsync(Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(DotNettyConstants.HeartBeatPacket)));
                 }
 
             }
+            else
+            {
+                base.UserEventTriggered(context, evt);
+            }
         }
+
+        
     }
 }

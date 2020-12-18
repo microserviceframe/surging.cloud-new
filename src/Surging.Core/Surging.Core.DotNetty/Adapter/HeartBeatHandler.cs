@@ -1,4 +1,5 @@
 ﻿using DotNetty.Buffers;
+using DotNetty.Common.Utilities;
 using DotNetty.Handlers.Timeout;
 using DotNetty.Transport.Channels;
 using Surging.Core.CPlatform;
@@ -23,24 +24,26 @@ namespace Surging.Core.DotNetty.Adapter
         {
             if (evt is IdleStateEvent)
             {
-                var @event = (IdleStateEvent) evt;
+                var @event = (IdleStateEvent)evt;
                 if (@event.State == IdleState.ReaderIdle)
                 {
 
                     var providerServerEndpoint = context.Channel.RemoteAddress as IPEndPoint;
-                    var providerServerAddress = new IpAddressModel(providerServerEndpoint.Address.ToString(), providerServerEndpoint.Port);
-                    Console.WriteLine("当前服务地址为:" + context.Channel.LocalAddress.ToString());
+                    var providerServerAddress = new IpAddressModel(providerServerEndpoint.Address.MapToIPv4().ToString(), providerServerEndpoint.Port);
                     var unHealthTimes = await _healthCheckService.MarkFailure(providerServerAddress);
                     if (unHealthTimes > AppConfig.ServerOptions.AllowServerUnhealthyTimes)
                     {
                         await context.Channel.CloseAsync();
                     }
                 }
-                             
+
+            }
+            else 
+            {
+                base.UserEventTriggered(context, evt);
             }
                 
         }
-
-
+   
     }
 }

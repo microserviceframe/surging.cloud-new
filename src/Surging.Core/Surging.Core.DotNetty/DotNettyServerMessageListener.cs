@@ -90,8 +90,8 @@ namespace Surging.Core.DotNetty
                 pipeline.AddLast(new IdleStateHandler(0, 10, 0));
                 pipeline.AddLast(new LengthFieldPrepender(4));
                 pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
-                pipeline.AddLast("ChannelInbound", new ChannelInboundHandlerAdapter());
-                pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
+                pipeline.AddLast(new ChannelInboundHandlerAdapter());
+                pipeline.AddLast(DotNettyConstants.TransportMessageAdapterName, new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
                 pipeline.AddLast(new ServerHandler(async (contenxt, message) =>
                 {
                     var sender = new DotNettyServerMessageSender(_transportMessageEncoder, contenxt);

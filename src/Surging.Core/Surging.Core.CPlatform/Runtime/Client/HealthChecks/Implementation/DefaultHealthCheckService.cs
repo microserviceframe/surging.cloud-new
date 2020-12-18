@@ -82,10 +82,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), monitorEntry);
             }
 
-            if (!monitorEntry.Health)
-            {
-                OnChanged(new HealthCheckEventArgs(address, monitorEntry.Health));
-            }
+            OnChanged(new HealthCheckEventArgs(address, monitorEntry.Health));
         }
 
 
@@ -103,10 +100,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
                 entry = new MonitorEntry(address, Check(ipAddress, _timeout));
                 _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), entry);
             }
-            if (!entry.Health)
-            {
-                OnChanged(new HealthCheckEventArgs(address, entry.Health));
-            }
+            OnChanged(new HealthCheckEventArgs(address, entry.Health));
             if (entry.UnhealthyTimes >= AppConfig.ServerOptions.AllowServerUnhealthyTimes)
             {
                 await RemoveUnhealthyAddress(entry);
@@ -128,20 +122,13 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             var entry = _dictionaries.GetOrAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), k => new MonitorEntry(address,false));
             entry.Health = false;
             entry.UnhealthyTimes += 1;
+            if (entry.UnhealthyTimes > AppConfig.ServerOptions.AllowServerUnhealthyTimes)
+            {
+                await RemoveUnhealthyAddress(entry);
+            }
             return entry.UnhealthyTimes;
         }
 
-
-        private async Task RemoveUnhealthyAddress(AddressModel address)
-        {
-            var ipAddress = address as IpAddressModel;
-            if (ipAddress != null) 
-            {
-                await _serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { ipAddress });
-                _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry value);
-                OnRemoved(new HealthCheckEventArgs(ipAddress));
-            }            
-        }
 
         protected void OnRemoved(params HealthCheckEventArgs[] args)
         {
