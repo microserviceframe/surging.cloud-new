@@ -12,51 +12,17 @@ namespace Surging.Core.CPlatform.Utilities
     {
         private static ILogger _logger = ServiceLocator.GetService<ILogger<IHealthCheckService>>();
 
-        public static bool TestConnection(EndPoint endPoint, int millisecondsTimeout = 500)
+        public static bool TestConnection(string host, int port, int millisecondsTimeout = 500)
         {
-
             Socket socket = null;
             try
             {
-                bool isHealth = false;
                 var timeoutObject = new ManualResetEvent(false);
                 timeoutObject.Reset();
                 socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                var ar = socket.BeginConnect(endPoint, null,null);
+                var ar = socket.BeginConnect(host, port, null, null);
                 ar.AsyncWaitHandle.WaitOne(millisecondsTimeout);
-                isHealth = socket.Connected;
-                return isHealth;
-            }
-            catch(Exception ex)
-            {
-                _logger.LogError($"{endPoint}连接异常,原因：{ex.Message}");
-                return false;
-            }
-            finally 
-            {
-                if (socket != null) 
-                {
-                    socket.Dispose();
-                }
-            }
-        }
-
-        public static bool TestConnection(string host, int port, int millisecondsTimeout = 500) 
-        {
-            Socket socket = null;
-            try 
-            {
-                var isHealth = TestConnectionByPing(host, millisecondsTimeout);
-                if (isHealth)
-                {
-                    var timeoutObject = new ManualResetEvent(false);
-                    timeoutObject.Reset();
-                    socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    var ar = socket.BeginConnect(host, port, null,null);
-                    ar.AsyncWaitHandle.WaitOne(millisecondsTimeout);
-                    isHealth = socket.Connected;
-                }
-                return isHealth;
+                return socket.Connected;
             }
             catch (Exception ex)
             {
@@ -72,32 +38,27 @@ namespace Surging.Core.CPlatform.Utilities
             }
 
         }
-        
-        
+
+
 
         public static bool TestConnection(IPAddress iPAddress, int port, int millisecondsTimeout = 50)
         {
             Socket socket = null;
             try
             {
-                bool isHealth = TestConnectionByPing(iPAddress, millisecondsTimeout);
-                if (isHealth)
-                {
-                    socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    var ar = socket.BeginConnect(iPAddress, port, null,null);
-                    ar.AsyncWaitHandle.WaitOne(millisecondsTimeout);
-                    isHealth = socket.Connected;
-                }
-                return isHealth;
+                socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                var ar = socket.BeginConnect(iPAddress, port, null, null);
+                ar.AsyncWaitHandle.WaitOne(millisecondsTimeout);
+                return socket.Connected;
             }
             catch (Exception ex)
             {
                 _logger.LogError($"{iPAddress.ToString()}:{port}连接异常,原因：{ex.Message}");
                 return false;
             }
-            finally 
+            finally
             {
-                if (socket != null) 
+                if (socket != null)
                 {
                     socket.Dispose();
                 }
@@ -105,20 +66,7 @@ namespace Surging.Core.CPlatform.Utilities
 
         }
 
-        private static bool TestConnectionByPing(string ip, int millisecondsTimeout = 50) 
-        {
-            var ping = new Ping();
-            var pingStatus = ping.Send(ip, millisecondsTimeout).Status;
-            return pingStatus == IPStatus.Success;
 
-        }
-
-        private static bool TestConnectionByPing(IPAddress iPAddress, int millisecondsTimeout = 50)
-        {
-            var ping = new Ping();
-            var pingStatus = ping.Send(iPAddress, millisecondsTimeout).Status;
-            return pingStatus == IPStatus.Success;
-        }
 
     }
 }
