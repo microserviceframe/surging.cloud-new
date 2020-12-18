@@ -114,7 +114,7 @@ namespace Surging.Core.DotNetty
                     }
                     )).Value;//返回实例
             }
-            catch
+            catch (Exception ex)
             {
                 //移除
                 _clients.TryRemove(key, out var value);
@@ -124,6 +124,7 @@ namespace Surging.Core.DotNetty
                     await _healthCheckService.MarkFailure(new IpAddressModel(ipEndPoint.Address.ToString(), ipEndPoint.Port));
                 throw;
             }
+            
         }
 
         private void MessageSender_HandleChannelUnActived(object sender, EndPoint e)
@@ -166,8 +167,10 @@ namespace Surging.Core.DotNetty
             }
             bootstrap
                 .Channel<TcpSocketChannel>()
+                .Option(ChannelOption.ConnectTimeout, TimeSpan.FromMilliseconds(AppConfig.ServerOptions.ConnectTimeout))
                 .Option(ChannelOption.TcpNodelay, true)
                 .Option(ChannelOption.Allocator, PooledByteBufferAllocator.Default)
+                
                 .Group(group);
 
             return bootstrap;

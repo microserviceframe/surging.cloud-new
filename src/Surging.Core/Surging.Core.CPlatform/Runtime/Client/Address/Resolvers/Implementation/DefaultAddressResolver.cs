@@ -117,7 +117,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
             var address = new List<AddressModel>();
             foreach (var addressModel in serviceRoute.Address)
             {
-                await _healthCheckService.Monitor(addressModel);
                 var isHealth = await _healthCheckService.IsHealth(addressModel);
                 if (!isHealth)
                 {
