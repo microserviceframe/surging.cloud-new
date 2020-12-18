@@ -55,13 +55,16 @@ namespace Surging.Core.CPlatform.Runtime.Client.Implementation
                 var rpcResult = await client.SendAsync(invokeMessage, cancellationToken).WithCancellation(cancellationToken);
                 return rpcResult;
             }
-            catch (CommunicationException)
+            catch (CommunicationException ex)
             {
+                if (address != null)
+                {
+                    _logger.LogError($"使用地址：'{address.ToString()}'调用服务{context.InvokeMessage.ServiceId}通信错误,原因:{ex.Message}");
+                }
                 if (address != null)
                 {
                     await _healthCheckService.MarkFailure(address);
                 }
-
                 throw;
             }
             catch (TimeoutException ex)

@@ -22,7 +22,6 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
 
         private readonly IServiceRouteManager _serviceRouteManager;
-        private readonly int _timeout = AppConfig.ServerOptions.ConnectTimeout;
         private readonly ILogger<DefaultHealthCheckService> _logger;
         public event EventHandler<HealthCheckEventArgs> Removed;
         public event EventHandler<HealthCheckEventArgs> Changed;
@@ -91,7 +90,9 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             entry.UnhealthyTimes += 1;
             if (entry.UnhealthyTimes > AppConfig.ServerOptions.AllowServerUnhealthyTimes)
             {
+                _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port),out MonitorEntry monitor);
                 await RemoveUnhealthyAddress(entry);
+
             }
             return entry.UnhealthyTimes;
         }

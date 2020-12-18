@@ -34,7 +34,7 @@ namespace Surging.Core.Protocol.Udp
     {
         private readonly IChannelHandlerContext _context;
 
-        public event EventHandler<EndPoint> HandleChannelUnActived;
+        public event EventHandler<EndPoint> OnChannelUnActived;
 
         public DotNettyUdpServerMessageSender(ITransportMessageEncoder transportMessageEncoder, IChannelHandlerContext context) : base(transportMessageEncoder)
         {
@@ -52,9 +52,9 @@ namespace Surging.Core.Protocol.Udp
         {
             if (!_context.Channel.Active)
             {
-                if (HandleChannelUnActived != null)
+                if (OnChannelUnActived != null)
                 {
-                    HandleChannelUnActived(this, _context.Channel.RemoteAddress);
+                    OnChannelUnActived(this, _context.Channel.RemoteAddress);
                 }
                 throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
             }
@@ -71,9 +71,9 @@ namespace Surging.Core.Protocol.Udp
         {
             if (!_context.Channel.Active)
             {
-                if (HandleChannelUnActived != null)
+                if (OnChannelUnActived != null)
                 {
-                    HandleChannelUnActived(this, _context.Channel.RemoteAddress);
+                    OnChannelUnActived(this, _context.Channel.RemoteAddress);
                 }
                 throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
             }

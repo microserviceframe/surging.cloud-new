@@ -14,10 +14,12 @@ namespace Surging.Core.DotNetty.Adapter
     public class HeartBeatHandler : ChannelHandlerAdapter
     {
         private IHealthCheckService _healthCheckService;
+        private DotNettyTransportClientFactory _transportClientFactory;
 
-        public HeartBeatHandler(IHealthCheckService healthCheckService)
+        public HeartBeatHandler(IHealthCheckService healthCheckService, DotNettyTransportClientFactory transportClientFactory)
         {
             _healthCheckService = healthCheckService;
+            _transportClientFactory = transportClientFactory;
         }
 
         public async override void UserEventTriggered(IChannelHandlerContext context, object evt)
@@ -34,6 +36,7 @@ namespace Surging.Core.DotNetty.Adapter
                     if (unHealthTimes > AppConfig.ServerOptions.AllowServerUnhealthyTimes)
                     {
                         await context.Channel.CloseAsync();
+                        _transportClientFactory.RemoveClient(providerServerEndpoint);
                     }
                 }
 

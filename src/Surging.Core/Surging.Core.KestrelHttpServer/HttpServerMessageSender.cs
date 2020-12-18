@@ -24,7 +24,7 @@ namespace Surging.Core.KestrelHttpServer
             _context = httpContext;
         }
 
-        public event EventHandler<EndPoint> HandleChannelUnActived;
+        public event EventHandler<EndPoint> OnChannelUnActived;
 
         public async Task SendAndFlushAsync(TransportMessage message)
         {

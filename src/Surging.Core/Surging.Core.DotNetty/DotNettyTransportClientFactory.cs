@@ -66,7 +66,7 @@ namespace Surging.Core.DotNetty
                 pipeline.AddLast(new IdleStateHandler(AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds, 0, 0));
                 pipeline.AddLast(new LengthFieldPrepender(4));
                 pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
-                pipeline.AddLast(DotNettyConstants.HeartBeatName, new HeartBeatHandler(_healthCheckService));
+                pipeline.AddLast(DotNettyConstants.HeartBeatName, new HeartBeatHandler(_healthCheckService,this));
                 pipeline.AddLast(DotNettyConstants.TransportMessageAdapterName, new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
                 pipeline.AddLast(DotNettyConstants.ClientChannelHandler, new DefaultChannelHandler(this));
             }));
@@ -95,16 +95,12 @@ namespace Surging.Core.DotNetty
                         var bootstrap = _bootstrap;
                         //异步连接返回channel
                         var channel = await bootstrap.ConnectAsync(k);
-                        if (!channel.Open)
-                        {
-                            throw new CommunicationException($"服务提供者{channel.RemoteAddress}无法连接");
-                        }
                         var messageListener = new MessageListener();
                         //设置监听
                         channel.GetAttribute(messageListenerKey).Set(messageListener);
                         //实例化发送者
                         var messageSender = new DotNettyMessageClientSender(_transportMessageEncoder, channel);
-                        messageSender.HandleChannelUnActived += MessageSender_HandleChannelUnActived;
+                        messageSender.OnChannelUnActived += HandleChannelUnActived;
                         //设置channel属性
                         channel.GetAttribute(messageSenderKey).Set(messageSender);
                         channel.GetAttribute(origEndPointKey).Set(k);
@@ -119,15 +115,28 @@ namespace Surging.Core.DotNetty
                 //移除
                 _clients.TryRemove(key, out var value);
                 var ipEndPoint = endPoint as IPEndPoint;
-                //标记这个地址是失败的请求
-                if (ipEndPoint != null)
-                    await _healthCheckService.MarkFailure(new IpAddressModel(ipEndPoint.Address.ToString(), ipEndPoint.Port));
-                throw;
+                if (ipEndPoint == null)
+                {
+                    throw ex;
+                }
+                else
+                {
+                    throw new CommunicationException($"服务提供者{ipEndPoint.Address}:{ipEndPoint.Port}无法连接",ex);
+                }
+
             }
             
         }
 
-        private void MessageSender_HandleChannelUnActived(object sender, EndPoint e)
+        private void HandleChannelUnActived(object sender, EndPoint e)
+        {
+            if (_clients.ContainsKey(e))
+            {
+                _clients.TryRemove(e, out var client);
+            }
+        }
+
+        internal void RemoveClient(EndPoint e)
         {
             if (_clients.ContainsKey(e))
             {

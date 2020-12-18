@@ -24,7 +24,7 @@ namespace Surging.Core.Protocol.Http
         private readonly AsciiString ContentLengthEntity = HttpHeaderNames.ContentLength;
         private readonly AsciiString TypeJson = AsciiString.Cached("application/json");
 
-        public event EventHandler<System.Net.EndPoint> HandleChannelUnActived;
+        public event EventHandler<System.Net.EndPoint> OnChannelUnActived;
 
         public DotNettyHttpServerMessageSender(ITransportMessageEncoder transportMessageEncoder, IChannelHandlerContext context, ISerializer<string> serializer) : base(transportMessageEncoder)
         {
@@ -43,9 +43,9 @@ namespace Surging.Core.Protocol.Http
         {
             if (!_context.Channel.Active)
             {
-                if (HandleChannelUnActived != null)
+                if (OnChannelUnActived != null)
                 {
-                    HandleChannelUnActived(this, _context.Channel.RemoteAddress);
+                    OnChannelUnActived(this, _context.Channel.RemoteAddress);
                 }
                 throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
             }
@@ -63,9 +63,9 @@ namespace Surging.Core.Protocol.Http
         {
             if (!_context.Channel.Active)
             {
-                if (HandleChannelUnActived != null)
+                if (OnChannelUnActived != null)
                 {
-                    HandleChannelUnActived(this, _context.Channel.RemoteAddress);
+                    OnChannelUnActived(this, _context.Channel.RemoteAddress);
                 }
                 throw new CommunicationException($"{_context.Channel.RemoteAddress}服务提供者不健康,无法发送消息");
             }

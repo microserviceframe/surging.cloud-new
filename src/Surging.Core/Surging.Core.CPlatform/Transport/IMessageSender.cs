@@ -24,6 +24,6 @@ namespace Surging.Core.CPlatform.Transport
         /// <returns>一个任务。</returns>
         Task SendAndFlushAsync(TransportMessage message);
 
-        event EventHandler<EndPoint> HandleChannelUnActived;
+        event EventHandler<EndPoint> OnChannelUnActived;
     }
 }
