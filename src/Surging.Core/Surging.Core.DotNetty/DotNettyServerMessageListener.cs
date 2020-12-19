@@ -107,9 +107,10 @@ namespace Surging.Core.DotNetty
                 }
                     
             }
-            catch
+            catch(Exception ex)
             {
-                _logger.LogError($"服务主机{AppConfig.ServerOptions.HostName}启动失败，监听地址：{endPoint}。 ");
+                _logger.LogError($"服务主机{AppConfig.ServerOptions.HostName}启动失败，原因：{ex.Message},监听地址：{endPoint}。 ");
+                throw ex;
             }
         }
 
