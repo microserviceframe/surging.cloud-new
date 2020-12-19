@@ -270,4 +270,5 @@ _site/
 .mysql/
 **/logs/
 **/log.*
+*.DS_Store
 
