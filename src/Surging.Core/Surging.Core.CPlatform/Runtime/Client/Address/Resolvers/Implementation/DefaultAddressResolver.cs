@@ -9,6 +9,7 @@ using Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation.Sel
 using Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
 using Surging.Core.CPlatform.Runtime.Client.HealthChecks;
 using Surging.Core.CPlatform.Support;
+using Surging.Core.CPlatform.Transport.Implementation;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -76,22 +77,13 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.LogDebug($"准备为服务id：{serviceId}，解析可用地址。");
 
-            var serviceRoute = await _serviceRouteProvider.Locate(serviceId);
-            if (serviceRoute == null)
+            var isFailoverInvoke = IsFailoverInvoke();
+            var serviceRoute = await _serviceRouteProvider.Locate(serviceId, !isFailoverInvoke);
+            if (serviceRoute == null) 
             {
-                _logger.LogWarning($"根据服务id：{serviceId}，找不到服务路由信息。");
-                throw new CPlatformException($"根据服务id：{serviceId}，找不到服务路由信息。");
+                throw new CPlatformException($"根据服务id：{serviceId}，找不到相关服务信息。【fromCache:{!isFailoverInvoke}】");
             }
             var address = await GetHealthAddress(serviceRoute);
-            if (!address.Any())
-            {
-                serviceRoute = await _serviceRouteProvider.Locate(serviceId, false);
-                if (serviceRoute == null) 
-                {
-                    throw new CPlatformException($"根据服务id：{serviceId},找不到服务路由信息【fromCache=false】。");
-                }
-                address = await GetHealthAddress(serviceRoute);
-            }
             if (!address.Any()) 
             {
                 throw new CPlatformException($"根据服务id：{serviceId},找不到可用的服务提供者的地址");
@@ -109,6 +101,16 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
                 Item = item
             });
             return selectAddress;
+        }
+
+        private bool IsFailoverInvoke()
+        {
+            var isFailoverAttachmentValue = RpcContext.GetContext().GetAttachment("isFailoverCall");
+            if (isFailoverAttachmentValue == null) 
+            {
+                return false;
+            }
+            return Convert.ToBoolean(isFailoverAttachmentValue);
         }
 
         private async Task<IEnumerable<AddressModel>> GetHealthAddress(ServiceRoute serviceRoute)

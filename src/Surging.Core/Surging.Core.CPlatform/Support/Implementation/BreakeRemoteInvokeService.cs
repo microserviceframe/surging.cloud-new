@@ -39,7 +39,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
                 exceptionFilters = serviceProvider.GetInstances<IEnumerable<IExceptionFilter>>();
         }
 
-        public async Task<RemoteInvokeResultMessage> InvokeAsync(IDictionary<string, object> parameters, string serviceId, string serviceKey, bool decodeJOject,bool isFailoverCall = false)
+        public async Task<RemoteInvokeResultMessage> InvokeAsync(IDictionary<string, object> parameters, string serviceId, string serviceKey, bool decodeJOject,bool isFailoverInvoke = false)
         {
             var serviceInvokeInfos = _serviceInvokeListenInfo.GetOrAdd(serviceId,
                 new ServiceInvokeListenInfo()
@@ -48,6 +48,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
                     FinalRemoteInvokeTime = DateTime.Now
                 });
             UpdateAttachments(parameters);
+            RpcContext.GetContext().SetAttachment("isFailoverInvoke", isFailoverInvoke);
             var command = await _commandProvider.GetCommand(serviceId);
             var intervalSeconds = (DateTime.Now - serviceInvokeInfos.FinalRemoteInvokeTime).TotalSeconds;
             bool reachConcurrentRequest() => serviceInvokeInfos.ConcurrentRequests > command.MaxConcurrentRequests;
@@ -69,7 +70,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
             {
                 if (reachConcurrentRequest() || reachRequestVolumeThreshold() || reachErrorThresholdPercentage())
                 {
-                    if (intervalSeconds * 1000 > command.BreakeSleepWindowInMilliseconds || isFailoverCall)
+                    if (intervalSeconds * 1000 > command.BreakeSleepWindowInMilliseconds || isFailoverInvoke)
                     {
                         return await MonitorRemoteInvokeAsync(parameters, serviceId, serviceKey, decodeJOject, command.ExecutionTimeoutInMilliseconds, item);
                     }
