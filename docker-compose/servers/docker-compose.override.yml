@@ -13,6 +13,8 @@ services:
       EventBusPort: ${RABBITMQ_PORT:-5672}
       Environment: ${ENVIRONMENT:-Development}
       ForceDisplayStackTrace: ${FORCED_DISPLAY_STACKTRACE:-false}
+      DbType: ${TEST_DB_TYPE:-Mysql}
+      ConnectionString: ${TEST_DB_CONN}
       SwaggerTitle: "surging.sample.server"
       SwaggerDes: "server api docs"
       SupportName: "liuhongliang"
