@@ -63,10 +63,13 @@ namespace Surging.Core.DotNetty
             _bootstrap.Handler(new ActionChannelInitializer<ISocketChannel>(c =>
             {
                 var pipeline = c.Pipeline;
-                pipeline.AddLast(new IdleStateHandler(AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds, 0, 0));
                 pipeline.AddLast(new LengthFieldPrepender(4));
                 pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
-                pipeline.AddLast(DotNettyConstants.HeartBeatName, new HeartBeatHandler(_healthCheckService,this));
+                if (AppConfig.ServerOptions.EnableHealthCheck) 
+                {
+                    pipeline.AddLast(new IdleStateHandler(AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds, 0, 0));
+                    pipeline.AddLast(DotNettyConstants.HeartBeatName, new HeartBeatHandler(_healthCheckService, this));
+                }              
                 pipeline.AddLast(DotNettyConstants.TransportMessageAdapterName, new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
                 pipeline.AddLast(DotNettyConstants.ClientChannelHandler, new DefaultChannelHandler(this));
             }));
@@ -191,15 +194,19 @@ namespace Surging.Core.DotNetty
 
             public DefaultChannelHandler(DotNettyTransportClientFactory factory)
             {
-                this._factory = factory;
+                _factory = factory;
             }
 
             #region Overrides of ChannelHandlerAdapter
 
-            public override void ChannelInactive(IChannelHandlerContext context)
+            public async override void ChannelInactive(IChannelHandlerContext context)
             {
-                _factory._clients.TryRemove(context.Channel.GetAttribute(origEndPointKey).Get(), out var value);
-                context.CloseAsync();
+                var providerServerEndpoint = context.Channel.RemoteAddress as IPEndPoint;
+                _factory.RemoveClient(providerServerEndpoint);
+                _factory.RemoveClient(context.Channel.GetAttribute(origEndPointKey).Get());
+                await context.CloseAsync();
+
+
             }
 
             public override void ChannelRead(IChannelHandlerContext context, object message)
@@ -211,12 +218,14 @@ namespace Surging.Core.DotNetty
                 messageListener.OnReceived(messageSender, transportMessage);
             }
 
-            public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
+            public async override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
             {
                 if (!(exception is BusinessException) && !(exception.InnerException is BusinessException))
                 {
-                    _factory._clients.TryRemove(context.Channel.GetAttribute(origEndPointKey).Get(), out var value);
-                    context.CloseAsync();
+                    var providerServerEndpoint = context.Channel.RemoteAddress as IPEndPoint;
+                    _factory.RemoveClient(providerServerEndpoint);
+                    _factory.RemoveClient(context.Channel.GetAttribute(origEndPointKey).Get());
+                    await context.CloseAsync();
                 }
             }
 

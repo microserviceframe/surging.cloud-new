@@ -26,6 +26,8 @@ namespace Surging.Core.CPlatform.Configurations
 
         public int HealthCheckWatchIntervalInSeconds { get; set; } = 15;
 
+        public bool EnableHealthCheck { get; set; } = true;
+
         public int AllowServerUnhealthyTimes { get; set; } = 5;
 
         public bool Libuv { get; set; } = false;

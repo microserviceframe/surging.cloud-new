@@ -13,6 +13,7 @@
     "DisconnTimeInterval": 1000,
     "ExecutionTimeoutInMilliseconds": 18000,
     "HealthCheckTimeout": 100,
+    "EnableHealthCheck": "${EnableHealthCheck}|true",
     "BreakeSleepWindowInMilliseconds": 5000,
     "Protocol": "${Protocol}|None", //Http、Tcp、None
     "RootPath": "${RootPath}|./userapp",
