@@ -3,6 +3,7 @@ using Surging.Core.Common;
 using Surging.Core.CPlatform;
 using Surging.Core.CPlatform.EventBus.Events;
 using Surging.Core.CPlatform.EventBus.Implementation;
+using Surging.Core.CPlatform.Exceptions;
 using Surging.Core.CPlatform.Ioc;
 using Surging.Core.CPlatform.Runtime.Session;
 using Surging.Core.CPlatform.Transport.Implementation;
@@ -111,10 +112,12 @@ namespace Surging.Modules.Common.Domain
                 IDictionary<string, object> payload = new Dictionary<string,object>();
                 payload.Add(ClaimTypes.UserId, 1);
                 payload.Add(ClaimTypes.UserName, "admin");
+                payload.Add(ClaimTypes.OrgId, 2);
+                payload.Add(ClaimTypes.DataPermissionOrgIds, new long[] { 2,4});
 
                 return Task.FromResult(payload);
             }
-            return Task.FromResult<IDictionary<string, object>>(null);
+            throw new AuthException("用户名账号不正确");
         }
 
         public Task<IdentityUser> Save(IdentityUser requestData)

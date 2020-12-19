@@ -49,19 +49,6 @@ namespace Surging.Core.CPlatform.Runtime.Session
             }
         }
 
-        public override bool InspectDataPermission 
-        {
-            get
-            {
-                var inspectDataPermission = RpcContext.GetContext().GetAttachment(ClaimTypes.InspectDataPermission);
-                if (inspectDataPermission != null)
-                {
-                    return Convert.ToBoolean(inspectDataPermission);
-                }
-                return false;
-            }
-        }
-
         public override long[] DataPermissionOrgIds
         {
             get

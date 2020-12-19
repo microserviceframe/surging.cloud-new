@@ -23,6 +23,8 @@ namespace Surging.Core.Dapper
             builder.Services.RegisterGeneric(typeof(ModificationAuditDapperActionFilter<,>)).Named(typeof(ModificationAuditDapperActionFilter<,>).Name, typeof(IAuditActionFilter<,>)).InstancePerDependency();
             builder.Services.RegisterGeneric(typeof(DeletionAuditDapperActionFilter<,>)).Named(typeof(DeletionAuditDapperActionFilter<,>).Name, typeof(IAuditActionFilter<,>)).InstancePerDependency();
             builder.Services.RegisterType<SoftDeleteQueryFilter>().As<ISoftDeleteQueryFilter>().AsSelf().InstancePerDependency();
+            builder.Services.RegisterType<OrgQueryFilter>().As<IOrgQueryFilter>().AsSelf().InstancePerDependency();
+            
             DapperExtensions.DapperExtensions.DefaultMapper = typeof(ClassMapper<>);
 
             var dbSettingSection = AppConfig.GetSection("dbSetting");

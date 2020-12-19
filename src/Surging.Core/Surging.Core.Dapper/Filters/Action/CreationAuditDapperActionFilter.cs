@@ -48,10 +48,6 @@ namespace Surging.Core.Dapper.Filters.Action
             {
                 ((IOrgAudited)entity).OrgId = _loginUser.OrgId;
             }
-            if (typeof(IElasticSearch).IsAssignableFrom(typeof(TEntity)))
-            {
-
-            }
         }
     }
 }

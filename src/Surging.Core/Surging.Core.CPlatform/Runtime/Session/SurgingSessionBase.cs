@@ -6,7 +6,6 @@
         public abstract string UserName { get; }
         public abstract long? OrgId { get; }
         public abstract bool IsAllOrg { get; }
-        public abstract bool InspectDataPermission { get; }
         public abstract long[] DataPermissionOrgIds { get; }
 
         

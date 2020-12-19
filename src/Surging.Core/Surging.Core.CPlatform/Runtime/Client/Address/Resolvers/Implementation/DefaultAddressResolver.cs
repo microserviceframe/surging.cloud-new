@@ -105,7 +105,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation
 
         private bool IsFailoverInvoke()
         {
-            var isFailoverAttachmentValue = RpcContext.GetContext().GetAttachment("isFailoverCall");
+            var isFailoverAttachmentValue = RpcContext.GetContext().GetAttachment("isFailoverInvoke");
             if (isFailoverAttachmentValue == null) 
             {
                 return false;

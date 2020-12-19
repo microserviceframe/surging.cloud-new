@@ -18,9 +18,11 @@ using System.Threading.Tasks;
 
 namespace Surging.Core.Dapper.Repositories
 {
-    public class DapperRepository<TEntity, TPrimaryKey> : DapperRepositoryBase, IDapperRepository<TEntity, TPrimaryKey> where TEntity : class, IEntity<TPrimaryKey>
+    public class DapperRepository<TEntity, TPrimaryKey> : DapperRepositoryBase, IDapperRepository<TEntity, TPrimaryKey>
+        where TEntity : class, IEntity<TPrimaryKey>
     {
         private readonly ISoftDeleteQueryFilter _softDeleteQueryFilter;
+        private readonly IOrgQueryFilter _orgQueryFilter;
         private readonly IAuditActionFilter<TEntity, TPrimaryKey> _creationActionFilter;
         private readonly IAuditActionFilter<TEntity, TPrimaryKey> _modificationActionFilter;
         private readonly IAuditActionFilter<TEntity, TPrimaryKey> _deletionAuditDapperActionFilter;
@@ -30,14 +32,23 @@ namespace Surging.Core.Dapper.Repositories
         private readonly IElasticFilter<TEntity, TPrimaryKey> _deletionElasitcFilter;
 
         private readonly ILogger<DapperRepository<TEntity, TPrimaryKey>> _logger;
+
         public DapperRepository(ISoftDeleteQueryFilter softDeleteQueryFilter,
+            IOrgQueryFilter orgQueryFilter,
             ILogger<DapperRepository<TEntity, TPrimaryKey>> logger)
         {
             _softDeleteQueryFilter = softDeleteQueryFilter;
+            _orgQueryFilter = orgQueryFilter;
             _logger = logger;
-            _creationActionFilter = ServiceLocator.GetService<IAuditActionFilter<TEntity, TPrimaryKey>>(typeof(CreationAuditDapperActionFilter<TEntity, TPrimaryKey>).Name);
-            _modificationActionFilter = ServiceLocator.GetService<IAuditActionFilter<TEntity, TPrimaryKey>>(typeof(ModificationAuditDapperActionFilter<TEntity, TPrimaryKey>).Name);
-            _deletionAuditDapperActionFilter = ServiceLocator.GetService<IAuditActionFilter<TEntity, TPrimaryKey>>(typeof(DeletionAuditDapperActionFilter<TEntity, TPrimaryKey>).Name);
+            _creationActionFilter =
+                ServiceLocator.GetService<IAuditActionFilter<TEntity, TPrimaryKey>>(
+                    typeof(CreationAuditDapperActionFilter<TEntity, TPrimaryKey>).Name);
+            _modificationActionFilter =
+                ServiceLocator.GetService<IAuditActionFilter<TEntity, TPrimaryKey>>(
+                    typeof(ModificationAuditDapperActionFilter<TEntity, TPrimaryKey>).Name);
+            _deletionAuditDapperActionFilter =
+                ServiceLocator.GetService<IAuditActionFilter<TEntity, TPrimaryKey>>(
+                    typeof(DeletionAuditDapperActionFilter<TEntity, TPrimaryKey>).Name);
         }
 
         public async Task InsertAsync(TEntity entity)
@@ -46,15 +57,15 @@ namespace Surging.Core.Dapper.Repositories
             {
                 using (var conn = GetDbConnection())
                 {
-                    if (conn.State != System.Data.ConnectionState.Open) 
+                    if (conn.State != System.Data.ConnectionState.Open)
                     {
                         conn.Open();
                     }
+
                     _creationActionFilter.ExecuteFilter(entity);
 
                     conn.Insert<TEntity>(entity);
                 }
-
             }
             catch (Exception ex)
             {
@@ -68,7 +79,6 @@ namespace Surging.Core.Dapper.Repositories
         }
 
 
-
         public async Task<TPrimaryKey> InsertAndGetIdAsync(TEntity entity)
         {
             try
@@ -79,6 +89,7 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     _creationActionFilter.ExecuteFilter(entity);
                     conn.Insert(entity);
                     return entity.Id;
@@ -128,7 +139,6 @@ namespace Surging.Core.Dapper.Repositories
 
                 throw new DataAccessException(ex.Message, ex);
             }
-
         }
 
         public async Task<TPrimaryKey> InsertOrUpdateAndGetIdAsync(TEntity entity)
@@ -177,6 +187,7 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     if (entity is ISoftDelete)
                     {
                         _deletionAuditDapperActionFilter.ExecuteFilter(entity);
@@ -186,7 +197,6 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Delete(entity);
                     }
-
                 }
             }
             catch (Exception ex)
@@ -198,7 +208,6 @@ namespace Surging.Core.Dapper.Repositories
 
                 throw new DataAccessException(ex.Message, ex);
             }
-
         }
 
         public async Task DeleteAsync(Expression<Func<TEntity, bool>> predicate)
@@ -210,18 +219,19 @@ namespace Surging.Core.Dapper.Repositories
                 {
                     conn.Open();
                 }
+
                 using (var trans = conn.BeginTransaction())
                 {
                     foreach (TEntity entity in items)
                     {
                         await DeleteAsync(entity, conn, trans);
                     }
+
                     trans.Commit();
                 }
+
                 conn.Close();
             }
-
-
         }
 
         public async Task UpdateAsync(TEntity entity)
@@ -234,9 +244,9 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     _modificationActionFilter.ExecuteFilter(entity);
                     conn.Update(entity);
-
                 }
             }
             catch (Exception ex)
@@ -260,7 +270,10 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var result = conn.GetList<TEntity>(pg).FirstOrDefault();
                     return result;
@@ -287,7 +300,9 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var result = conn.GetList<TEntity>(pg).First();
                     return result;
@@ -315,7 +330,9 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var result = conn.GetList<TEntity>(pg).Single();
                     return result;
@@ -343,7 +360,9 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var result = conn.GetList<TEntity>(pg).SingleOrDefault();
                     return result;
@@ -376,7 +395,9 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     var predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
+                    predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var list = conn.GetList<TEntity>(pg);
                     return list;
@@ -403,7 +424,9 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var list = conn.GetList<TEntity>(pg);
                     return list;
@@ -450,7 +473,6 @@ namespace Surging.Core.Dapper.Repositories
 
                 throw new DataAccessException(ex.Message, ex);
             }
-
         }
 
         public async Task<IEnumerable<TAny>> Query<TAny>(string query, object parameters = null) where TAny : class
@@ -468,6 +490,7 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     var result = await conn.QueryAsync<TAny>(query, parameters);
                     return result;
                 }
@@ -489,7 +512,7 @@ namespace Surging.Core.Dapper.Repositories
             try
             {
                 _creationActionFilter.ExecuteFilter(entity);
-                conn.Insert<TEntity>(entity, trans);                               
+                conn.Insert<TEntity>(entity, trans);
             }
             catch (Exception ex)
             {
@@ -500,7 +523,6 @@ namespace Surging.Core.Dapper.Repositories
 
                 throw new DataAccessException(ex.Message, ex);
             }
-
         }
 
         public Task<TPrimaryKey> InsertAndGetIdAsync(TEntity entity, DbConnection conn, DbTransaction trans)
@@ -509,7 +531,7 @@ namespace Surging.Core.Dapper.Repositories
             {
                 _creationActionFilter.ExecuteFilter(entity);
                 conn.Insert<TEntity>(entity, trans);
-                
+
                 return Task.FromResult(entity.Id);
             }
             catch (Exception ex)
@@ -521,7 +543,6 @@ namespace Surging.Core.Dapper.Repositories
 
                 throw new DataAccessException(ex.Message, ex);
             }
-
         }
 
         public async Task InsertOrUpdateAsync(TEntity entity, DbConnection conn, DbTransaction trans)
@@ -535,7 +556,7 @@ namespace Surging.Core.Dapper.Repositories
                 }
                 else
                 {
-                    var existEntity = await SingleOrDefaultAsync(CreateEqualityExpressionForId(entity.Id),conn,trans);
+                    var existEntity = await SingleOrDefaultAsync(CreateEqualityExpressionForId(entity.Id), conn, trans);
                     if (existEntity == null)
                     {
                         _creationActionFilter.ExecuteFilter(entity);
@@ -557,13 +578,11 @@ namespace Surging.Core.Dapper.Repositories
 
                 throw new DataAccessException(ex.Message, ex);
             }
-
-
         }
 
-        public async Task<TPrimaryKey> InsertOrUpdateAndGetIdAsync(TEntity entity, DbConnection conn, DbTransaction trans)
+        public async Task<TPrimaryKey> InsertOrUpdateAndGetIdAsync(TEntity entity, DbConnection conn,
+            DbTransaction trans)
         {
-
             try
             {
                 if (entity.Id == null)
@@ -586,7 +605,6 @@ namespace Surging.Core.Dapper.Repositories
                         return entity.Id;
                     }
                 }
-
             }
             catch (Exception ex)
             {
@@ -605,9 +623,8 @@ namespace Surging.Core.Dapper.Repositories
             {
                 _modificationActionFilter.ExecuteFilter(entity);
                 conn.Update(entity, trans);
-                
-                return Task.CompletedTask;
 
+                return Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -618,15 +635,12 @@ namespace Surging.Core.Dapper.Repositories
 
                 throw new DataAccessException(ex.Message, ex);
             }
-
-
         }
 
         public Task DeleteAsync(TEntity entity, DbConnection conn, DbTransaction trans)
         {
             try
             {
-
                 if (entity is ISoftDelete)
                 {
                     _deletionAuditDapperActionFilter.ExecuteFilter(entity);
@@ -636,8 +650,8 @@ namespace Surging.Core.Dapper.Repositories
                 {
                     conn.Delete(entity, trans);
                 }
-                return Task.CompletedTask;
 
+                return Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -648,7 +662,6 @@ namespace Surging.Core.Dapper.Repositories
 
                 throw new DataAccessException(ex.Message, ex);
             }
-
         }
 
         public async Task DeleteAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans)
@@ -658,7 +671,6 @@ namespace Surging.Core.Dapper.Repositories
             {
                 await DeleteAsync(entity, conn, trans);
             }
-
         }
 
         protected static Expression<Func<TEntity, bool>> CreateEqualityExpressionForId(TPrimaryKey id)
@@ -683,7 +695,9 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     var predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
+                    predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var count = conn.Count<TEntity>(pg);
                     return count;
@@ -710,7 +724,9 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var count = conn.Count<TEntity>(pg);
                     return count;
@@ -727,7 +743,8 @@ namespace Surging.Core.Dapper.Repositories
             }
         }
 
-        public Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(Expression<Func<TEntity, bool>> predicate, int index, int count, IDictionary<string, SortType> sortProps)
+        public Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(Expression<Func<TEntity, bool>> predicate, int index,
+            int count, IDictionary<string, SortType> sortProps)
         {
             try
             {
@@ -745,7 +762,9 @@ namespace Surging.Core.Dapper.Repositories
                                 Ascending = sortProp.Value == SortType.Asc ? true : false
                             };
                             sorts.Add(sort);
-                        };
+                        }
+
+                        ;
                     }
                     else
                     {
@@ -757,8 +776,10 @@ namespace Surging.Core.Dapper.Repositories
                     }
 
                     predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var pageList = conn.GetPage<TEntity>(pg, sorts, index - 1, count).ToList();
+                   
                     var totalCount = conn.Count<TEntity>(pg);
                     return Task.FromResult(new Tuple<IEnumerable<TEntity>, int>(pageList, totalCount));
                 }
@@ -772,15 +793,16 @@ namespace Surging.Core.Dapper.Repositories
 
                 throw new DataAccessException(ex.Message, ex);
             }
-
         }
 
-        public Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(Expression<Func<TEntity, bool>> predicate, int index, int count)
+        public Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(Expression<Func<TEntity, bool>> predicate, int index,
+            int count)
         {
             return GetPageAsync(predicate, index, count, null);
         }
 
-        public Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(int index, int count, IDictionary<string, SortType> sortProps)
+        public Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(int index, int count,
+            IDictionary<string, SortType> sortProps)
         {
             try
             {
@@ -798,7 +820,9 @@ namespace Surging.Core.Dapper.Repositories
                                 Ascending = sortProp.Value == SortType.Asc ? true : false
                             };
                             sorts.Add(sort);
-                        };
+                        }
+
+                        ;
                     }
                     else
                     {
@@ -809,7 +833,9 @@ namespace Surging.Core.Dapper.Repositories
                         };
                         sorts.Add(sort);
                     }
+
                     var predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
+                    predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var pageList = conn.GetPage<TEntity>(pg, sorts, index - 1, count).ToList();
                     var totalCount = conn.Count<TEntity>(pg);
@@ -825,7 +851,6 @@ namespace Surging.Core.Dapper.Repositories
 
                 throw new DataAccessException(ex.Message, ex);
             }
-
         }
 
         public Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(int index, int count)
@@ -837,8 +862,8 @@ namespace Surging.Core.Dapper.Repositories
         {
             try
             {
-
                 var predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
+                predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                 var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                 var count = conn.Count<TEntity>(pg, transaction: trans);
                 return Task.FromResult(count);
@@ -854,53 +879,63 @@ namespace Surging.Core.Dapper.Repositories
             }
         }
 
-        public Task<TEntity> SingleAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans)
+        public Task<TEntity> SingleAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
+            DbTransaction trans)
         {
             predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
             var result = conn.GetList<TEntity>(pg, transaction: trans).Single();
             return Task.FromResult(result);
         }
 
-        public Task<TEntity> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans)
+        public Task<TEntity> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
+            DbTransaction trans)
         {
             predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
             var result = conn.GetList<TEntity>(pg, transaction: trans).SingleOrDefault();
             return Task.FromResult(result);
         }
 
-        public Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans)
+        public Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
+            DbTransaction trans)
         {
             predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
             var result = conn.GetList<TEntity>(pg, transaction: trans).FirstOrDefault();
             return Task.FromResult(result);
         }
 
 
-
-        public Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans)
+        public Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
+            DbTransaction trans)
         {
             predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
             var result = conn.GetList<TEntity>(pg, transaction: trans).First();
             return Task.FromResult(result);
         }
 
-        public Task<TEntity> LastOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans)
+        public Task<TEntity> LastOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
+            DbTransaction trans)
         {
             predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
             var result = conn.GetList<TEntity>(pg, transaction: trans).LastOrDefault();
             return Task.FromResult(result);
         }
 
 
-
-        public Task<TEntity> LastAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans)
+        public Task<TEntity> LastAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
+            DbTransaction trans)
         {
             predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
             var result = conn.GetList<TEntity>(pg, transaction: trans).Last();
             return Task.FromResult(result);
@@ -911,9 +946,11 @@ namespace Surging.Core.Dapper.Repositories
             return SingleAsync(CreateEqualityExpressionForId(id), conn, trans);
         }
 
-        public Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans)
+        public Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
+            DbTransaction trans)
         {
             predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
             var list = conn.GetList<TEntity>(pg, transaction: trans);
             return Task.FromResult(list);
@@ -922,6 +959,7 @@ namespace Surging.Core.Dapper.Repositories
         public Task<IEnumerable<TEntity>> GetAllAsync(DbConnection conn, DbTransaction trans)
         {
             var predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
+             predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
             var list = conn.GetList<TEntity>(pg, transaction: trans);
             return Task.FromResult(list);
@@ -937,6 +975,7 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                     var list = conn.GetList<TEntity>(pg);
                     return list;
@@ -963,6 +1002,7 @@ namespace Surging.Core.Dapper.Repositories
                     {
                         conn.Open();
                     }
+
                     var list = conn.GetList<TEntity>();
                     return list;
                 }
@@ -978,9 +1018,9 @@ namespace Surging.Core.Dapper.Repositories
             }
         }
 
-        public async Task<IEnumerable<TEntity>> GetAllIncludeSoftDeleteAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans)
+        public async Task<IEnumerable<TEntity>> GetAllIncludeSoftDeleteAsync(Expression<Func<TEntity, bool>> predicate,
+            DbConnection conn, DbTransaction trans)
         {
-
             var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
             var list = conn.GetList<TEntity>(pg, transaction: trans);
             return list;
