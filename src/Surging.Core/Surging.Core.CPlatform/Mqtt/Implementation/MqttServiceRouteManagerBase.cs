@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Surging.Core.CPlatform.Utilities;
 
 namespace Surging.Core.CPlatform.Mqtt.Implementation
 {
@@ -71,15 +72,23 @@ namespace Surging.Core.CPlatform.Mqtt.Implementation
             if (routes == null)
                 throw new ArgumentNullException(nameof(routes));
 
-            var descriptors = routes.Where(route => route != null).Select(route => new MqttServiceDescriptor
+            var descriptors = routes.Where(route => route != null).Select(route =>
             {
-                AddressDescriptors = route.MqttEndpoint?.Select(address => new MqttEndpointDescriptor
+                var descriptor = new MqttServiceDescriptor
                 {
-                    Type = address.GetType().FullName,
-                    Value = _serializer.Serialize(address)
-                }) ?? Enumerable.Empty<MqttEndpointDescriptor>(),
-                 MqttDescriptor = route.MqttDescriptor
+                    AddressDescriptors = route.MqttEndpoint?.Select(address => new MqttEndpointDescriptor
+                    {
+                        Type = address.GetType().FullName,
+                        Value = _serializer.Serialize(address)
+                    }) ?? Enumerable.Empty<MqttEndpointDescriptor>(),
+                    MqttDescriptor = route.MqttDescriptor
+                };
+                descriptor.MqttDescriptor.TimeStamp = DateTimeConverter.DateTimeToUnixTimestamp(DateTime.Now);
+                return descriptor;
+
             });
+            
+            
             return SetRoutesAsync(descriptors);
         }
         protected abstract Task SetRoutesAsync(IEnumerable<MqttServiceDescriptor> descriptors);

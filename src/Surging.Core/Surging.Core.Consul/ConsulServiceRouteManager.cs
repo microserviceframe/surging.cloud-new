@@ -348,16 +348,18 @@ namespace Surging.Core.Consul
             var client = await GetConsulClient();
             if (client != null)
             {
-                var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(GetConsulClient, _manager, path,
-                            async (oldData, newData) => await NodeChange(oldData, newData), null));
+                if (!nodeWatchers.ContainsKey(path))
+                {
+                    var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(GetConsulClient, _manager, path,
+                        async (oldData, newData) => await NodeChange(oldData, newData), null));
 
+                }
                 var queryResult = await client.KV.Keys(path);
                 if (queryResult.Response != null)
                 {
                     var data = (await client.GetDataAsync(path));
                     if (data != null)
                     {
-                        watcher.SetCurrentData(data);
                         result = await GetRoute(data);
                     }
                 }

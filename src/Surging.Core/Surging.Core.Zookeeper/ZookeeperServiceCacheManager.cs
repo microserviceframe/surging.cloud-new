@@ -264,7 +264,7 @@ namespace Surging.Core.Zookeeper
             watcher = new ChildrenMonitorWatcher(path,
                        async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
             await zooKeeperClient.SubscribeChildrenChange(path, watcher.HandleChildrenChange);
-            if (await zooKeeperClient.StrictExistsAsync(path))
+            if (await zooKeeperClient.ExistsAsync(path))
             {
                 var childrens = (await zooKeeperClient.GetChildrenAsync(path)).ToArray();
                 if (watcher != null) {

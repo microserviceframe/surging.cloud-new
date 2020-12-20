@@ -17,7 +17,7 @@ using static Surging.Core.CPlatform.Utilities.FastInvoke;
 namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Implementation
 {
     /// <summary>
-    /// Clr·şÎñÌõÄ¿¹¤³§¡£
+    /// ClræœåŠ¡æ¡ç›®å·¥å‚ã€‚
     /// </summary>
     public class ClrServiceEntryFactory : IClrServiceEntryFactory
     {
@@ -40,11 +40,11 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.
         #region Implementation of IClrServiceEntryFactory
 
         /// <summary>
-        /// ´´½¨·şÎñÌõÄ¿¡£
+        /// åˆ›å»ºæœåŠ¡æ¡ç›®ã€‚
         /// </summary>
-        /// <param name="service">·şÎñÀàĞÍ¡£</param>
-        /// <param name="serviceImplementation">·şÎñÊµÏÖÀàĞÍ¡£</param>
-        /// <returns>·şÎñÌõÄ¿¼¯ºÏ¡£</returns>
+        /// <param name="service">æœåŠ¡ç±»å‹ã€‚</param>
+        /// <param name="serviceImplementation">æœåŠ¡å®ç°ç±»å‹ã€‚</param>
+        /// <returns>æœåŠ¡æ¡ç›®é›†åˆã€‚</returns>
         public IEnumerable<ServiceEntry> CreateServiceEntry(Type service)
         {
             var routeTemplate = service.GetCustomAttribute<ServiceBundleAttribute>();
@@ -148,7 +148,7 @@ namespace Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.
                             var parameter = _typeConvertibleService.Convert(value, parameterType);
                             list.Add(parameter);
                         }
-                        //¼ÓÈëÊÇ·ñÓĞÄ¬ÈÏÖµµÄÅĞ¶Ï£¬ÓĞÄ¬ÈÏÖµ£¬²¢ÇÒÓÃ»§Ã»´«£¬È¡Ä¬ÈÏÖµ
+                        //åŠ å…¥æ˜¯å¦æœ‰é»˜è®¤å€¼çš„åˆ¤æ–­ï¼Œæœ‰é»˜è®¤å€¼ï¼Œå¹¶ä¸”ç”¨æˆ·æ²¡ä¼ ï¼Œå–é»˜è®¤å€¼
                         else if (parameterInfo.HasDefaultValue && !parameters.ContainsKey(parameterInfo.Name))
                         {
                             list.Add(parameterInfo.DefaultValue);

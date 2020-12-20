@@ -127,8 +127,12 @@ namespace Surging.Core.Zookeeper
 
                     var nodePath = $"{path}{command.ServiceId}";
                     var nodeData = _serializer.Serialize(command);
-                    var watcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                    await zooKeeperClient.SubscribeDataChange(nodePath, watcher.HandleNodeDataChange);
+                    if (!nodeWatchers.ContainsKey(nodePath))
+                    {
+                        var watcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                        await zooKeeperClient.SubscribeDataChange(nodePath, watcher.HandleNodeDataChange);
+                    }
+                   
                     if (!await zooKeeperClient.ExistsAsync(nodePath))
                     {
                         if (_logger.IsEnabled(LogLevel.Debug))
@@ -244,9 +248,13 @@ namespace Surging.Core.Zookeeper
             if (await zooKeeperClient.ExistsAsync(path))
             {
                 var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-               
-                var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
+
+                if (!nodeWatchers.ContainsKey(path))
+                {
+                    var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                    await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
+                }
+            
                 result = GetServiceCommand(data);
             }
 
@@ -294,7 +302,7 @@ namespace Surging.Core.Zookeeper
             
             await zooKeeperClient.SubscribeChildrenChange(_configInfo.CommandPath, watcher.HandleChildrenChange);
 
-            if (await zooKeeperClient.StrictExistsAsync(_configInfo.CommandPath))
+            if (await zooKeeperClient.ExistsAsync(_configInfo.CommandPath))
             {
                 var childrens = (await zooKeeperClient.GetChildrenAsync(_configInfo.CommandPath)).ToArray();
                 

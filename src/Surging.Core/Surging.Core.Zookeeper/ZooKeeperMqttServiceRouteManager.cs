@@ -126,9 +126,12 @@ namespace Surging.Core.Zookeeper
                     using (var locker = await _lockerProvider.CreateLockAsync(nodePath)) 
                     {
                         await locker.Lock(async ()=> {
-                            var nodeWathcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                            await zooKeeperClient.SubscribeDataChange(nodePath, nodeWathcher.HandleNodeDataChange);
-
+                            if (!nodeWatchers.ContainsKey(nodePath))
+                            {
+                                var nodeWathcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                                await zooKeeperClient.SubscribeDataChange(nodePath, nodeWathcher.HandleNodeDataChange);
+                            }
+                           
                             if (!await zooKeeperClient.ExistsAsync(nodePath))
                             {
                                 if (_logger.IsEnabled(LogLevel.Debug))
@@ -282,10 +285,12 @@ namespace Surging.Core.Zookeeper
                     if (await zooKeeperClient.ExistsAsync(path))
                     {
                         var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-                        var watcherKey = new Tuple<IZookeeperClient, string>(zooKeeperClient, path);
-                        var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                        await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-
+                        if (!nodeWatchers.ContainsKey(path))
+                        {
+                            var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                            await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
+                        }
+                        
                         return await GetRoute(data);
                     }
                     return null;
@@ -332,7 +337,7 @@ namespace Surging.Core.Zookeeper
             await zooKeeperClient.SubscribeChildrenChange(_configInfo.MqttRoutePath, watcher.HandleChildrenChange);
 
 
-            if (await zooKeeperClient.StrictExistsAsync(_configInfo.MqttRoutePath))
+            if (await zooKeeperClient.ExistsAsync(_configInfo.MqttRoutePath))
             {
                 var childrens = await zooKeeperClient.GetChildrenAsync(_configInfo.MqttRoutePath);
                 _routes = await GetRoutes(childrens);

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Surging.Core.CPlatform.Utilities;
 
 namespace Surging.Core.CPlatform.Routing.Implementation
 {
@@ -74,13 +75,18 @@ namespace Surging.Core.CPlatform.Routing.Implementation
             if (routes == null)
                 throw new ArgumentNullException(nameof(routes));
 
-            var descriptors = routes.Where(route => route != null).Select(route => new ServiceRouteDescriptor
+            var descriptors = routes.Where(route => route != null).Select(route =>
             {
-                AddressDescriptors = route.Address?.Select(address => new ServiceAddressDescriptor
+               var descriptor =  new ServiceRouteDescriptor
                 {
-                    Value = _serializer.Serialize(address)
-                }) ?? Enumerable.Empty<ServiceAddressDescriptor>(),
-                ServiceDescriptor = route.ServiceDescriptor
+                    AddressDescriptors = route.Address?.Select(address => new ServiceAddressDescriptor
+                    {
+                        Value = _serializer.Serialize(address)
+                    }) ?? Enumerable.Empty<ServiceAddressDescriptor>(),
+                    ServiceDescriptor = route.ServiceDescriptor
+                };
+               descriptor.ServiceDescriptor.TimeStamp = DateTimeConverter.DateTimeToUnixTimestamp(DateTime.Now);
+               return descriptor;
             });
 
             return SetRoutesAsync(descriptors);

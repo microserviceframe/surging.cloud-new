@@ -36,6 +36,8 @@ namespace Surging.Core.CPlatform.Mqtt
         /// </summary>
         public IDictionary<string, object> Metadatas { get; set; }
 
+        public long TimeStamp { get; set; }
+
         /// <summary>
         /// 获取一个元数据。
         /// </summary>

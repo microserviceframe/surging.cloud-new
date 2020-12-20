@@ -223,6 +223,11 @@ namespace Surging.Core.CPlatform
         public string Token { get; set; }
 
         /// <summary>
+        /// 时间戳
+        /// </summary>
+        public long TimeStamp { get; set; }
+
+        /// <summary>
         /// 路由
         /// </summary>
         public string RoutePath { get; set; }

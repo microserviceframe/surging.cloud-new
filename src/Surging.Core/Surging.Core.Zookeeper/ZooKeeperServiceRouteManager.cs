@@ -142,7 +142,6 @@ namespace Surging.Core.Zookeeper
         {
             try
             {
-                var hostAddr = NetUtils.GetHostAddress();
                 if (_logger.IsEnabled(LogLevel.Information))
                     _logger.LogInformation($"准备添加{route.ServiceDescriptor.Id}服务路由。");
                 var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
@@ -156,9 +155,10 @@ namespace Surging.Core.Zookeeper
                     var nodePath = $"{path}{route.ServiceDescriptor.Id}";
                     var nodeData = _serializer.Serialize(route);
                     _logger.LogDebug($"服务路由内容为：{Encoding.UTF8.GetString(nodeData)}。");
-
-                    var watcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                    await zooKeeperClient.SubscribeDataChange(nodePath, watcher.HandleNodeDataChange);
+                    if (!nodeWatchers.ContainsKey(nodePath))
+                    {   var watcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                        await zooKeeperClient.SubscribeDataChange(nodePath, watcher.HandleNodeDataChange);
+                    }
                     if (!await zooKeeperClient.ExistsAsync(nodePath))
                     {
                         _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
@@ -167,7 +167,6 @@ namespace Surging.Core.Zookeeper
                     else
                     {
                         var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
-                        var onlineRoute = await GetRoute(onlineData);
                         if (!DataEquals(nodeData, onlineData))
                         {
                             await zooKeeperClient.SetDataAsync(nodePath, nodeData);
@@ -401,11 +400,14 @@ namespace Surging.Core.Zookeeper
                 return null;
             }
             _logger.LogDebug($"准备从节点：{path}中获取路由信息。");
-            if (await zooKeeperClient.StrictExistsAsync(path))
+            if (await zooKeeperClient.ExistsAsync(path))
             {
                 var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-                var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
+                if (!nodeWatchers.ContainsKey(path))
+                {
+                    var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                    await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
+                }
                 var route = await GetRoute(data);
                 if (route != null)
                 {
@@ -482,7 +484,7 @@ namespace Surging.Core.Zookeeper
                
                 await zooKeeperClient.SubscribeChildrenChange(_configInfo.RoutePath, watcher.HandleChildrenChange);
 
-                if (await zooKeeperClient.StrictExistsAsync(_configInfo.RoutePath))
+                if (await zooKeeperClient.ExistsAsync(_configInfo.RoutePath))
                 {
                     var childrens = (await zooKeeperClient.GetChildrenAsync(_configInfo.RoutePath)).ToArray();
                     if (watcher != null)
