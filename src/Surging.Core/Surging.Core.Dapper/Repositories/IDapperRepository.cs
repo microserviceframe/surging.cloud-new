@@ -40,63 +40,65 @@ namespace Surging.Core.Dapper.Repositories
 
         Task DeleteAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
 
-        Task<int> GetCountAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<int> GetCountAsync(Expression<Func<TEntity, bool>> predicate, bool dataPermission = true);
 
-        Task<int> GetCountAsync();
+        Task<int> GetCountAsync(bool dataPermission = true);
 
-        Task<int> GetCountAsync(DbConnection conn, DbTransaction trans);
+        Task<int> GetCountAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<TEntity> SingleAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<int> GetCountAsync(DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<TEntity> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<TEntity> SingleAsync(Expression<Func<TEntity, bool>> predicate, bool dataPermission = true);
 
-        Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<TEntity> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, bool dataPermission = true);
 
-        Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, bool dataPermission = true);
 
-        Task<TEntity> GetAsync(TPrimaryKey id);
+        Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> predicate, bool dataPermission = true);
 
-        Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<TEntity> GetAsync(TPrimaryKey id, bool dataPermission = true);
 
-        Task<IEnumerable<TEntity>> GetAllAsync();
+        Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate, bool dataPermission = true);
 
-        Task<TEntity> SingleAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
+        Task<IEnumerable<TEntity>> GetAllAsync(bool dataPermission = true);
 
-        Task<TEntity> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
+        Task<TEntity> SingleAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
+        Task<TEntity> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
+        Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<TEntity> LastOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
+        Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<TEntity> LastAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
+        Task<TEntity> LastOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<TEntity> GetAsync(TPrimaryKey id, DbConnection conn, DbTransaction trans);
+        Task<TEntity> LastAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
+        Task<TEntity> GetAsync(TPrimaryKey id, DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<IEnumerable<TEntity>> GetAllAsync(DbConnection conn, DbTransaction trans);
+        Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<IEnumerable<TEntity>> GetAllIncludeSoftDeleteAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<IEnumerable<TEntity>> GetAllAsync(DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
-        Task<IEnumerable<TEntity>> GetAllIncludeSoftDeleteAsync();
+        Task<IEnumerable<TEntity>> GetAllIncludeSoftDeleteAsync(Expression<Func<TEntity, bool>> predicate, bool dataPermission = true);
 
-        Task<IEnumerable<TEntity>> GetAllIncludeSoftDeleteAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans);
+        Task<IEnumerable<TEntity>> GetAllIncludeSoftDeleteAsync(bool dataPermission = true);
 
-        Task<IEnumerable<TEntity>> GetAllIncludeSoftDeleteAsync(DbConnection conn, DbTransaction trans);
+        Task<IEnumerable<TEntity>> GetAllIncludeSoftDeleteAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn, DbTransaction trans, bool dataPermission = true);
+
+        Task<IEnumerable<TEntity>> GetAllIncludeSoftDeleteAsync(DbConnection conn, DbTransaction trans, bool dataPermission = true);
 
         Task<IEnumerable<TEntity>> QueryAsync(string query, object parameters = null);
 
         Task<IEnumerable<TAny>> Query<TAny>(string query, object parameters = null) where TAny : class;
 
 
-        Task<Tuple<IEnumerable<TEntity>,int>> GetPageAsync(Expression<Func<TEntity, bool>> predicate, int index, int count, IDictionary<string, SortType> sortProps);
+        Task<Tuple<IEnumerable<TEntity>,int>> GetPageAsync(Expression<Func<TEntity, bool>> predicate, int index, int count, IDictionary<string, SortType> sortProps, bool dataPermission = true);
 
-        Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(Expression<Func<TEntity, bool>> predicate, int index, int count);
+        Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(Expression<Func<TEntity, bool>> predicate, int index, int count, bool dataPermission = true);
 
-        Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(int index, int count, IDictionary<string, SortType> sortProps);
+        Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(int index, int count, IDictionary<string, SortType> sortProps, bool dataPermission = true);
 
-        Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(int index, int count);
+        Task<Tuple<IEnumerable<TEntity>, int>> GetPageAsync(int index, int count, bool dataPermission = true);
     }
 }

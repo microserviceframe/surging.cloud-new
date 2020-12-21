@@ -46,7 +46,7 @@ namespace Surging.Core.Dapper.Filters.Action
 
             if (typeof(IOrgAudited).IsAssignableFrom(entity.GetType()) && _loginUser != null)
             {
-                ((IOrgAudited)entity).OrgId = _loginUser.OrgId;
+                ((IOrgAudited)entity).OrgId ??= _loginUser.OrgId;
             }
         }
     }

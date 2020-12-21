@@ -9,11 +9,13 @@ using Surging.Core.KestrelHttpServer.Filters.Implementation;
 using System.Threading.Tasks;
 using Autofac;
 using System;
+using System.Collections.Concurrent;
 using Surging.Core.ProxyGenerator;
 using System.Collections.Generic;
 using Surging.Core.CPlatform.Routing;
 using System.Linq;
 using System.Security.Claims;
+using Surging.Core.CPlatform.Exceptions;
 using SurgingClaimTypes = Surging.Core.CPlatform.ClaimTypes;
 using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 using Surging.Core.CPlatform.Runtime;
@@ -84,8 +86,7 @@ namespace Surging.Core.Stage.Filters
                             {
                                 claimsIdentity.AddClaim(new Claim(item.Key, item.Value.ToString()));
                             }
-                            filterContext.Context.User = new ClaimsPrincipal(claimsIdentity);
-
+                            
                             if (!gatewayAppConfig.AuthorizationRoutePath.IsNullOrEmpty() && filterContext.Route.ServiceDescriptor.EnableAuthorization())
                             {
                                 var rpcParams = new Dictionary<string, object>() {
@@ -98,24 +99,40 @@ namespace Surging.Core.Stage.Filters
                                     return;
                                 }
                                 var attachments = new Dictionary<string, object>();
-                                if (filterContext.Context.User.Claims != null && filterContext.Context.User.Claims.Any())
+                                foreach (var kv in payload)
                                 {
-                                    foreach (var claims in filterContext.Context.User.Claims)
-                                    {
-                                        RpcContext.GetContext().RemoveAttachment(claims.Type);
-                                        attachments.Add(claims.Type, claims.Value);
-                                    }
+                                    attachments.TryAdd(kv.Key,kv.Value);
                                 }
-                                rpcParams.Add("Attachments", attachments);
-                                var isPermission = await _serviceProxyProvider.Invoke<bool>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
 
+                                rpcParams["Attachments"] = attachments;
+                                var checkPermissionResult = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
+                                
+                                if (checkPermissionResult == null || !checkPermissionResult.ContainsKey("IsPermission"))
+                                {
+                                    //throw new AuthException("接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key");
+                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key" };
+                                    return;
+                                }
+
+                                var isPermission = Convert.ToBoolean(checkPermissionResult["IsPermission"]);
                                 if (!isPermission)
                                 {
                                     var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty() ? filterContext.Route.ServiceDescriptor.RoutePath : filterContext.Route.ServiceDescriptor.GroupName();
-                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.RequestError, Message = $"没有请求{actionName}的权限" };
+                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"没有请求{actionName}的权限" };
                                     return;
                                 }
+                                foreach (var kv in checkPermissionResult)
+                                {
+                                    if (kv.Key == "IsPermission")
+                                    {
+                                        continue;
+                                    }
+                                    claimsIdentity.AddClaim(new Claim(kv.Key,kv.Value.ToString()));
+                                }
+                                
                             }
+                            
+                            filterContext.Context.User = new ClaimsPrincipal(claimsIdentity);
                         }
                         else
                         {
