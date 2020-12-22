@@ -26,11 +26,7 @@ namespace Surging.Core.Dapper.Repositories
         private readonly IAuditActionFilter<TEntity, TPrimaryKey> _creationActionFilter;
         private readonly IAuditActionFilter<TEntity, TPrimaryKey> _modificationActionFilter;
         private readonly IAuditActionFilter<TEntity, TPrimaryKey> _deletionAuditDapperActionFilter;
-
-        private readonly IElasticFilter<TEntity, TPrimaryKey> _creationElasitcFilter;
-        private readonly IElasticFilter<TEntity, TPrimaryKey> _modificationElasitcFilter;
-        private readonly IElasticFilter<TEntity, TPrimaryKey> _deletionElasitcFilter;
-
+        
         private readonly ILogger<DapperRepository<TEntity, TPrimaryKey>> _logger;
 
         public DapperRepository(ISoftDeleteQueryFilter softDeleteQueryFilter,
