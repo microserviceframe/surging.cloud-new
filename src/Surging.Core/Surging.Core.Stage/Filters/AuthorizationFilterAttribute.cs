@@ -104,19 +104,16 @@ namespace Surging.Core.Stage.Filters
                                     attachments.TryAdd(kv.Key,kv.Value);
                                 }
                                 rpcParams.Add("attachments", attachments);
-                                var isPermission = await _serviceProxyProvider.Invoke<bool>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
-
-                                rpcParams["Attachments"] = attachments;
                                 var checkPermissionResult = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
                                 
-                                if (checkPermissionResult == null || !checkPermissionResult.ContainsKey("IsPermission"))
+                                if (checkPermissionResult == null || !checkPermissionResult.ContainsKey("isPermission"))
                                 {
                                     //throw new AuthException("接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key");
                                     filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key" };
                                     return;
                                 }
 
-                                var isPermission = Convert.ToBoolean(checkPermissionResult["IsPermission"]);
+                                var isPermission = Convert.ToBoolean(checkPermissionResult["isPermission"]);
                                 if (!isPermission)
                                 {
                                     var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty() ? filterContext.Route.ServiceDescriptor.RoutePath : filterContext.Route.ServiceDescriptor.GroupName();
@@ -125,7 +122,7 @@ namespace Surging.Core.Stage.Filters
                                 }
                                 foreach (var kv in checkPermissionResult)
                                 {
-                                    if (kv.Key == "IsPermission")
+                                    if (kv.Key == "isPermission")
                                     {
                                         continue;
                                     }
