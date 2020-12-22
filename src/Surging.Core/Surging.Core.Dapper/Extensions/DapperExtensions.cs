@@ -113,8 +113,8 @@ namespace Surging.Core.Dapper.Extensions
 
             return sql;
         }
-
-        public static async Task<long> QueryDataPermissionPageAsync<T>(this DbConnection connection,
+        
+        public static async Task<long> QueryDataPermissionCountAsync<T>(this DbConnection connection,
             string sql,
             IDictionary<string, object> sqlParams,
             string orgIdFieldName = "OrgId",
