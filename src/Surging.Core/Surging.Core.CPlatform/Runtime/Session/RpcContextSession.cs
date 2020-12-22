@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Surging.Core.CPlatform.Transport.Implementation;
 using System;
+using Surging.Core.CPlatform.Serialization;
+using Surging.Core.CPlatform.Utilities;
 
 namespace Surging.Core.CPlatform.Runtime.Session
 {
@@ -56,7 +58,12 @@ namespace Surging.Core.CPlatform.Runtime.Session
                 var dataPermissionOrdIds = RpcContext.GetContext().GetAttachment(ClaimTypes.DataPermissionOrgIds);
                 if (dataPermissionOrdIds != null)
                 {
-                    return dataPermissionOrdIds as long[];
+                    if (dataPermissionOrdIds is long[])
+                    {
+                        return (long[])dataPermissionOrdIds;
+                    }
+                    var serializer = ServiceLocator.GetService<ISerializer<object>>();
+                    return serializer.Deserialize<object, long[]>(dataPermissionOrdIds);
                 }
                 return null;
             }
