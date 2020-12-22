@@ -108,7 +108,6 @@ namespace Surging.Core.Stage.Filters
                                 
                                 if (checkPermissionResult == null || !checkPermissionResult.ContainsKey("isPermission"))
                                 {
-                                    //throw new AuthException("接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key");
                                     filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key" };
                                     return;
                                 }
@@ -126,6 +125,12 @@ namespace Surging.Core.Stage.Filters
                                     {
                                         continue;
                                     }
+
+                                    if (kv.Value == null)
+                                    {
+                                        continue;
+                                    }
+
                                     claimsIdentity.AddClaim(new Claim(kv.Key,kv.Value.ToString()));
                                 }
                                 
