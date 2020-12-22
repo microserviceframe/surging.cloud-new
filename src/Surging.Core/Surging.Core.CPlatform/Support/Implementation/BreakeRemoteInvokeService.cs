@@ -192,9 +192,9 @@ namespace Surging.Core.CPlatform.Support.Implementation
         private void UpdateAttachments(IDictionary<string, object> parameters)
         {
            
-            if (parameters.ContainsKey("Attachments"))
+            if (parameters.ContainsKey("attachments"))
             {
-                var attachments = parameters["Attachments"] as Dictionary<string, object>;
+                var attachments = parameters["attachments"] as Dictionary<string, object>;
                 if (attachments != null)
                 {
                     foreach (var attachment in attachments)
@@ -202,7 +202,7 @@ namespace Surging.Core.CPlatform.Support.Implementation
                         RpcContext.GetContext().SetAttachment(attachment.Key, attachment.Value);
                     }
                 }
-                parameters.Remove("Attachments");
+                parameters.Remove("attachments");
             }
         }
     }

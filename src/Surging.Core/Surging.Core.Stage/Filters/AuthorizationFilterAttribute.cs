@@ -103,6 +103,8 @@ namespace Surging.Core.Stage.Filters
                                 {
                                     attachments.TryAdd(kv.Key,kv.Value);
                                 }
+                                rpcParams.Add("attachments", attachments);
+                                var isPermission = await _serviceProxyProvider.Invoke<bool>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
 
                                 rpcParams["Attachments"] = attachments;
                                 var checkPermissionResult = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
