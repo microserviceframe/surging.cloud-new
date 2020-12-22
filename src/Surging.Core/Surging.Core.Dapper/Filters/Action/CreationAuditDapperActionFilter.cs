@@ -1,11 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using Surging.Core.CPlatform.Runtime.Session;
-using Surging.Core.CPlatform.Utilities;
 using Surging.Core.Domain.Entities;
 using Surging.Core.Domain.Entities.Auditing;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Linq;
+using Surging.Core.CPlatform.Exceptions;
 
 namespace Surging.Core.Dapper.Filters.Action
 {
@@ -46,7 +44,20 @@ namespace Surging.Core.Dapper.Filters.Action
 
             if (typeof(IOrgAudited).IsAssignableFrom(entity.GetType()) && _loginUser != null)
             {
-                ((IOrgAudited)entity).OrgId ??= _loginUser.OrgId;
+                if (((IOrgAudited) entity).OrgId.HasValue)
+                {
+                    if (!_loginUser.IsAllOrg && (_loginUser.DataPermissionOrgIds == null 
+                                                 || !_loginUser.OrgId.HasValue 
+                                                 || !_loginUser.DataPermissionOrgIds.Contains(_loginUser.OrgId.Value)))
+                    {
+                        throw new BusinessException("您没有插入数据的权限");
+                    }
+                }
+                else
+                {
+                    ((IOrgAudited)entity).OrgId = _loginUser.OrgId;
+                }
+                
             }
         }
     }

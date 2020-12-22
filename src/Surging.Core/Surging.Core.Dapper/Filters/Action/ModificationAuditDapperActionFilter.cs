@@ -1,9 +1,8 @@
-﻿using Nest;
-using Surging.Core.CPlatform.Runtime.Session;
-using Surging.Core.Domain.Entities;
+﻿using Surging.Core.Domain.Entities;
 using Surging.Core.Domain.Entities.Auditing;
-using Surging.Core.ElasticSearch;
 using System;
+using System.Linq;
+using Surging.Core.CPlatform.Exceptions;
 
 namespace Surging.Core.Dapper.Filters.Action
 {
@@ -23,10 +22,23 @@ namespace Surging.Core.Dapper.Filters.Action
                 record.LastModificationTime = DateTime.Now;
 
             }
-            //if (typeof(IElasticSearch).IsAssignableFrom(typeof(TEntity)))
-            //{
-            //    ((IElasticSearch)entity).Version = ((IElasticSearch)entity).Version + 1;
-            //}
+            if (typeof(IOrgAudited).IsAssignableFrom(entity.GetType()) && _loginUser != null)
+            {
+                if (((IOrgAudited) entity).OrgId.HasValue)
+                {
+                    if (!_loginUser.IsAllOrg && (_loginUser.DataPermissionOrgIds == null 
+                                                 || !_loginUser.OrgId.HasValue 
+                                                 || !_loginUser.DataPermissionOrgIds.Contains(_loginUser.OrgId.Value)))
+                    {
+                        throw new BusinessException("您没有插入数据的权限");
+                    }
+                }
+                else
+                {
+                    ((IOrgAudited)entity).OrgId = _loginUser.OrgId;
+                }
+                
+            }
         }
     }
 }
