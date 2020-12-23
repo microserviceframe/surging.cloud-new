@@ -113,7 +113,7 @@ namespace Surging.Core.Dapper.Repositories
                 }
                 else
                 {
-                    var existEntity = await SingleOrDefaultAsync(CreateEqualityExpressionForId(entity.Id));
+                    var existEntity = await SingleOrDefaultAsync(CreateEqualityExpressionForId(entity.Id),false);
                     if (existEntity == null)
                     {
                         _creationActionFilter.ExecuteFilter(entity);
@@ -389,7 +389,7 @@ namespace Surging.Core.Dapper.Repositories
 
         public Task<TEntity> GetAsync(TPrimaryKey id,bool dataPermission)
         {
-            return SingleAsync(CreateEqualityExpressionForId(id));
+            return SingleAsync(CreateEqualityExpressionForId(id),dataPermission);
         }
 
 
@@ -570,7 +570,7 @@ namespace Surging.Core.Dapper.Repositories
                 }
                 else
                 {
-                    var existEntity = await SingleOrDefaultAsync(CreateEqualityExpressionForId(entity.Id), conn, trans);
+                    var existEntity = await SingleOrDefaultAsync(CreateEqualityExpressionForId(entity.Id), conn, trans,false);
                     if (existEntity == null)
                     {
                         _creationActionFilter.ExecuteFilter(entity);
@@ -1011,7 +1011,7 @@ namespace Surging.Core.Dapper.Repositories
 
         public Task<TEntity> GetAsync(TPrimaryKey id, DbConnection conn, DbTransaction trans, bool dataPermission = true)
         {
-            return SingleAsync(CreateEqualityExpressionForId(id), conn, trans);
+            return SingleAsync(CreateEqualityExpressionForId(id), conn, trans,dataPermission);
         }
 
         public Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
