@@ -30,7 +30,7 @@ namespace Surging.Core.Dapper.Filters.Action
                                                  || !_loginUser.OrgId.HasValue 
                                                  || !_loginUser.DataPermissionOrgIds.Contains(_loginUser.OrgId.Value)))
                     {
-                        throw new BusinessException("您没有插入数据的权限");
+                        throw new BusinessException("您没有更新数据的权限");
                     }
                 }
                 else
