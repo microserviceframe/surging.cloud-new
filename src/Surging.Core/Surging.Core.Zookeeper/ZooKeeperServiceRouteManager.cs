@@ -120,22 +120,31 @@ namespace Surging.Core.Zookeeper
         {
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.LogInformation("准备添加服务路由。");
-            var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
-            foreach (var zooKeeperClient in zooKeeperClients)
+            using (var locker = await _lockerProvider.CreateLockAsync($"set_routes_async"))
             {
-                await CreateSubdirectory(zooKeeperClient, _configInfo.RoutePath);
-
-                var path = _configInfo.RoutePath;
-                if (!path.EndsWith("/"))
-                    path += "/";
-
-                routes = routes.ToArray();
-                foreach (var serviceRoute in routes)
+                await locker.Lock(async () =>
                 {
-                    await SetRouteAsync(serviceRoute);
-                }
+                    var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
+                    foreach (var zooKeeperClient in zooKeeperClients)
+                    {
+                        await CreateSubdirectory(zooKeeperClient, _configInfo.RoutePath);
 
+                        var path = _configInfo.RoutePath;
+                        if (!path.EndsWith("/"))
+                            path += "/";
+
+                        routes = routes.ToArray();
+                        foreach (var serviceRoute in routes)
+                        {
+                            await SetRouteAsync(serviceRoute);
+                        }
+
+                    }               
+                    
+                });
             }
+
+
         }
 
         protected override async Task SetRouteAsync(ServiceRouteDescriptor route)
@@ -190,7 +199,7 @@ namespace Surging.Core.Zookeeper
         {
             using (var locker = await _lockerProvider.CreateLockAsync($"remove_unhealth_address"))
             {
-                if (locker.IsAcquired) 
+                await locker.Lock(async () =>
                 {
                     await EnterRoutes(true);
                     var routes = _routes.Where(route => route.Address.Any(p => address.Any(q => q.Equals(p))));
@@ -198,7 +207,8 @@ namespace Surging.Core.Zookeeper
                     {
                         await RemveAddressAsync(address, route);
                     }
-                }
+                    
+                });
             }
 
             
