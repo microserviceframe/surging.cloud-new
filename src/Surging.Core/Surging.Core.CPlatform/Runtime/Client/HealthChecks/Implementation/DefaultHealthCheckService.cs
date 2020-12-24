@@ -97,6 +97,18 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             });
         }
 
+        public Task MarkHealth(IpAddressModel address)
+        {
+            return Task.Run(() =>
+            {
+                var ipAddress = address as IpAddressModel;
+                var entry = _dictionaries.GetOrAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), k => new MonitorEntry(address,true));
+                entry.Health = true;
+                entry.UnhealthyTimes = 0;
+                OnChanged(new HealthCheckEventArgs(address, true));
+            });
+        }
+
         public bool IsListener { get; set; }
 
 

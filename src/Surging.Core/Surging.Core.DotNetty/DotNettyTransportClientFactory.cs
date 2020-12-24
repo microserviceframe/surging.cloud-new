@@ -218,12 +218,20 @@ namespace Surging.Core.DotNetty
 
             public async override void ChannelInactive(IChannelHandlerContext context)
             {
-                await RemoveClient(context);
+                await RemoveServiceProvider(context);
+                base.ChannelInactive(context);
+            }
+
+            public async override void ChannelActive(IChannelHandlerContext context)
+            {
+                await MarkServiceProviderHealth(context);
+                base.ChannelActive(context);
             }
 
             public async override Task CloseAsync(IChannelHandlerContext context)
             {
-                await RemoveClient(context);
+                await RemoveServiceProvider(context);
+                await base.CloseAsync(context);
             }
 
             public override void ChannelRead(IChannelHandlerContext context, object message)
@@ -238,13 +246,13 @@ namespace Surging.Core.DotNetty
             {
                 if (!exception.IsBusinessException())
                 {
-                    await RemoveClient(context);
+                    await RemoveServiceProvider(context);
                 }
             }
 
             #endregion Overrides of ChannelHandlerAdapter
             
-            private async Task RemoveClient(IChannelHandlerContext context)
+            private async Task RemoveServiceProvider(IChannelHandlerContext context)
             {
                 var providerServerEndpoint = context.Channel.RemoteAddress as IPEndPoint;
                 var providerServerAddress = new IpAddressModel(providerServerEndpoint.Address.MapToIPv4().ToString(),
@@ -257,8 +265,14 @@ namespace Surging.Core.DotNetty
                     await context.CloseAsync();
                     
                 }
-
-                
+            }
+            
+            private async Task MarkServiceProviderHealth(IChannelHandlerContext context)
+            {
+                var providerServerEndpoint = context.Channel.RemoteAddress as IPEndPoint;
+                var providerServerAddress = new IpAddressModel(providerServerEndpoint.Address.MapToIPv4().ToString(),
+                    providerServerEndpoint.Port);
+                await _healthCheckService.MarkHealth(providerServerAddress);
             }
         }
     }
