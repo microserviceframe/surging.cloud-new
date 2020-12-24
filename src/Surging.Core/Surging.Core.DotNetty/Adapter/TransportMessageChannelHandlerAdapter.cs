@@ -28,7 +28,7 @@ namespace Surging.Core.DotNetty.Adapter
             {
                 var transportMessage = _transportMessageDecoder.Decode(data);
                 context.FireChannelRead(transportMessage);
-            }           
+            }
             ReferenceCountUtil.Release(buffer);
             //ReferenceCountUtil.Release(buffer);
 

@@ -43,7 +43,7 @@ namespace Surging.Core.CPlatform.Cache
         /// <returns>缓存描述符。</returns>
         public static int ConnectTimeout(this CacheDescriptor descriptor)
         {
-            return descriptor.GetMetadata<int>("ConnectTimeout", 60);
+            return descriptor.GetMetadata<int>("RpcConnectTimeout", 60);
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace Surging.Core.CPlatform.Cache
         /// <returns>缓存描述符。</returns>
         public static CacheDescriptor ConnectTimeout(this CacheDescriptor descriptor, int connectTimeout)
         {
-            descriptor.Metadatas["ConnectTimeout"] = connectTimeout;
+            descriptor.Metadatas["RpcConnectTimeout"] = connectTimeout;
             return descriptor;
         }
 

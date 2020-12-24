@@ -293,7 +293,6 @@ namespace Surging.Core.Zookeeper
         {
             var hostAddr = NetUtils.GetHostAddress();
             var serviceRoutes = await GetRoutes(routes.Select(p => p.ServiceDescriptor.Id));
-            var healthCheckService = ServiceLocator.GetService<IHealthCheckService>();
             await RemoveExceptRoutesAsync(routes, hostAddr);
             if (serviceRoutes.Any())
             {
@@ -342,7 +341,6 @@ namespace Surging.Core.Zookeeper
                             try
                             {
                                 removeRoute.Address = removeRoute.Address.Where(p => !p.Equals(hostAddr)).ToList();
-                                var nodePath = $"{path}{removeRouteId}";
                                 await SetRouteAsync(removeRoute);
                             }
                             catch (NoNodeException ex)

@@ -104,11 +104,7 @@ namespace Surging.Core.CPlatform
             {
                 var routeProvider = mapper.Resolve<IServiceRouteProvider>();
                 await routeProvider.RegisterRoutes(Process.GetCurrentProcess().TotalProcessorTime.TotalMilliseconds);
-                if (AppConfig.ServerOptions.EnableRouteWatch)
-                {
-                    new ServiceRouteCompensator(mapper.Resolve<ILogger<ServiceRouteCompensator>>(), routeProvider);
-                }
-               
+
             }
         }
 

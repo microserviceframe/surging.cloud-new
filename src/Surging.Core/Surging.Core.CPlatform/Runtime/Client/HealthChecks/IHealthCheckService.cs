@@ -26,10 +26,13 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks
         /// <param name="address">地址模型。</param>
         /// <returns>一个任务。</returns>
         Task<int> MarkFailure(AddressModel address);
-    
+        
 
+        bool IsListener { get; set; }
+        
         event EventHandler<HealthCheckEventArgs> Removed;
 
         event EventHandler<HealthCheckEventArgs> Changed;
+       
     }
 }

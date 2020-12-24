@@ -45,7 +45,7 @@ namespace Surging.Core.CPlatform.Exceptions
         public static StatusCode GetExceptionStatusCode(this Exception exception)
         {
             var statusCode = StatusCode.UnKnownError;
-            if (exception is TimeoutException || exception.InnerException is TimeoutException) 
+            if (exception is TimeoutException) 
             {
                 return StatusCode.CommunicationError;
             }
@@ -56,14 +56,21 @@ namespace Surging.Core.CPlatform.Exceptions
             }
             if (exception.InnerException != null)
             {
-                if (exception.InnerException is CPlatformException)
-                {
-                    statusCode = ((CPlatformException)exception.InnerException).ExceptionCode;
-                    return statusCode;
-                }
+                return exception.InnerException.GetExceptionStatusCode();
             }
             return statusCode;
 
+        }
+
+        public static bool IsBusinessException(this Exception exception)
+        {
+            var statusCode = exception.GetExceptionStatusCode();
+            return statusCode == StatusCode.Success
+                   || statusCode == StatusCode.ValidateError
+                   || statusCode == StatusCode.UserFriendly
+                   || statusCode == StatusCode.BusinessError
+                   || statusCode == StatusCode.UnAuthentication
+                   || statusCode == StatusCode.UnAuthorized;
         }
     }
 }

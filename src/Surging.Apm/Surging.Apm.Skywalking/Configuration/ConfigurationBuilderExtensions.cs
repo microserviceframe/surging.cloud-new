@@ -44,7 +44,7 @@ namespace Surging.Apm.Skywalking.Configuration
                 {"SkyWalking:Transport:gRPC:Servers", "localhost:11800"},
                 {"SkyWalking:Transport:gRPC:Timeout", "10000"},
                 {"SkyWalking:Transport:gRPC:ReportTimeout", "600000"},
-                {"SkyWalking:Transport:gRPC:ConnectTimeout", "10000"}
+                {"SkyWalking:Transport:gRPC:RpcConnectTimeout", "10000"}
             };
             return builder.AddInMemoryCollection(defaultConfig);
         }

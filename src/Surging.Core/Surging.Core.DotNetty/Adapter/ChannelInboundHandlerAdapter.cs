@@ -1,8 +1,5 @@
-﻿using DotNetty.Buffers;
-using DotNetty.Handlers.Timeout;
+﻿using DotNetty.Handlers.Timeout;
 using DotNetty.Transport.Channels;
-using System;
-using System.Text;
 
 namespace Surging.Core.DotNetty.Adapter
 {
@@ -14,12 +11,11 @@ namespace Surging.Core.DotNetty.Adapter
         }
         public async override void UserEventTriggered(IChannelHandlerContext context, object evt) 
         {
-            if (evt is IdleStateEvent)
+            if (evt is IdleStateEvent @event)
             {
-                var @event = (IdleStateEvent)evt;
-                if (@event.State == IdleState.WriterIdle)
+                if (@event.State == IdleState.ReaderIdle)
                 {
-                    await context.Channel.WriteAndFlushAsync(Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(DotNettyConstants.HeartBeatPacket)));
+                    await context.Channel.CloseAsync();
                 }
 
             }

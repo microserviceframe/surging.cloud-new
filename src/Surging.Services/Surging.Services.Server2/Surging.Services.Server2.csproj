@@ -53,6 +53,9 @@
     <None Include="..\..\Shared\configs\cacheSettings.json" Link="configs\cacheSettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\..\Shared\configs\cacheSettings.local.json" Link="configs\cacheSettings.local.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>    
     <None Include="..\..\Shared\configs\consul.json" Link="configs\consul.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

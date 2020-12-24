@@ -24,22 +24,14 @@ namespace Surging.Core.DotNetty.Adapter
 
         public async override void UserEventTriggered(IChannelHandlerContext context, object evt)
         {
-            if (evt is IdleStateEvent)
+            if (evt is IdleStateEvent @event)
             {
-                var @event = (IdleStateEvent)evt;
-                if (@event.State == IdleState.ReaderIdle)
+                if (@event.State == IdleState.WriterIdle)
                 {
-
-                    var providerServerEndpoint = context.Channel.RemoteAddress as IPEndPoint;
-                    var providerServerAddress = new IpAddressModel(providerServerEndpoint.Address.MapToIPv4().ToString(), providerServerEndpoint.Port);
-                    var unHealthTimes = await _healthCheckService.MarkFailure(providerServerAddress);
-                    if (unHealthTimes > AppConfig.ServerOptions.AllowServerUnhealthyTimes)
-                    {
-                        await context.Channel.CloseAsync();
-                        _transportClientFactory.RemoveClient(providerServerEndpoint);
-                    }
+                    await context.Channel.WriteAndFlushAsync(
+                        Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(DotNettyConstants.HeartBeatPacket)));
+                    
                 }
-
             }
             else 
             {

@@ -14,6 +14,8 @@ using Surging.Core.DotNetty.Adapter;
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Surging.Core.CPlatform.Runtime.Client.HealthChecks;
+using Surging.Core.CPlatform.Utilities;
 
 namespace Surging.Core.DotNetty
 {
@@ -87,10 +89,15 @@ namespace Surging.Core.DotNetty
             .ChildHandler(new ActionChannelInitializer<IChannel>(channel =>
             {
                 var pipeline = channel.Pipeline;
-                pipeline.AddLast(new IdleStateHandler(0, 10, 0));
+               
                 pipeline.AddLast(new LengthFieldPrepender(4));
                 pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
-                pipeline.AddLast(new ChannelInboundHandlerAdapter());
+                if (AppConfig.ServerOptions.EnableHealthCheck)
+                {
+                    pipeline.AddLast(new IdleStateHandler(AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds * 2, 0, 0));
+                    pipeline.AddLast(new ChannelInboundHandlerAdapter());
+                    
+                }
                 pipeline.AddLast(DotNettyConstants.TransportMessageAdapterName, new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
                 pipeline.AddLast(new ServerHandler(async (contenxt, message) =>
                 {
@@ -161,7 +168,7 @@ namespace Surging.Core.DotNetty
                     _readAction(context, transportMessage);
                 });
             }
-
+            
             public override void ChannelReadComplete(IChannelHandlerContext context)
             {
                 context.Flush();

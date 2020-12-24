@@ -20,6 +20,7 @@ using Surging.Core.DotNetty.Adapter;
 using System;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Surging.Core.DotNetty
@@ -36,23 +37,34 @@ namespace Surging.Core.DotNetty
         private readonly ILogger<DotNettyTransportClientFactory> _logger;
         private readonly IServiceExecutor _serviceExecutor;
         private readonly IHealthCheckService _healthCheckService;
-        private readonly ConcurrentDictionary<EndPoint, Lazy<Task<ITransportClient>>> _clients = new ConcurrentDictionary<EndPoint, Lazy<Task<ITransportClient>>>();
+
+        private readonly ConcurrentDictionary<EndPoint, Lazy<Task<ITransportClient>>> _clients =
+            new ConcurrentDictionary<EndPoint, Lazy<Task<ITransportClient>>>();
+
         private readonly Bootstrap _bootstrap;
 
-        private static readonly AttributeKey<IMessageSender> messageSenderKey = AttributeKey<IMessageSender>.ValueOf(typeof(DotNettyTransportClientFactory), nameof(IMessageSender));
-        private static readonly AttributeKey<IMessageListener> messageListenerKey = AttributeKey<IMessageListener>.ValueOf(typeof(DotNettyTransportClientFactory), nameof(IMessageListener));
-        private static readonly AttributeKey<EndPoint> origEndPointKey = AttributeKey<EndPoint>.ValueOf(typeof(DotNettyTransportClientFactory), nameof(EndPoint));
+        private static readonly AttributeKey<IMessageSender> messageSenderKey =
+            AttributeKey<IMessageSender>.ValueOf(typeof(DotNettyTransportClientFactory), nameof(IMessageSender));
+
+        private static readonly AttributeKey<IMessageListener> messageListenerKey =
+            AttributeKey<IMessageListener>.ValueOf(typeof(DotNettyTransportClientFactory), nameof(IMessageListener));
+
+        private static readonly AttributeKey<EndPoint> origEndPointKey =
+            AttributeKey<EndPoint>.ValueOf(typeof(DotNettyTransportClientFactory), nameof(EndPoint));
 
         #endregion Field
 
         #region Constructor
 
-        public DotNettyTransportClientFactory(ITransportMessageCodecFactory codecFactory, IHealthCheckService healthCheckService, ILogger<DotNettyTransportClientFactory> logger)
+        public DotNettyTransportClientFactory(ITransportMessageCodecFactory codecFactory,
+            IHealthCheckService healthCheckService, ILogger<DotNettyTransportClientFactory> logger)
             : this(codecFactory, healthCheckService, logger, null)
         {
         }
 
-        public DotNettyTransportClientFactory(ITransportMessageCodecFactory codecFactory, IHealthCheckService healthCheckService, ILogger<DotNettyTransportClientFactory> logger, IServiceExecutor serviceExecutor)
+        public DotNettyTransportClientFactory(ITransportMessageCodecFactory codecFactory,
+            IHealthCheckService healthCheckService, ILogger<DotNettyTransportClientFactory> logger,
+            IServiceExecutor serviceExecutor)
         {
             _transportMessageEncoder = codecFactory.GetEncoder();
             _transportMessageDecoder = codecFactory.GetDecoder();
@@ -65,13 +77,16 @@ namespace Surging.Core.DotNetty
                 var pipeline = c.Pipeline;
                 pipeline.AddLast(new LengthFieldPrepender(4));
                 pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
-                if (AppConfig.ServerOptions.EnableHealthCheck) 
+                if (AppConfig.ServerOptions.EnableHealthCheck)
                 {
-                    pipeline.AddLast(new IdleStateHandler(AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds, 0, 0));
+                    pipeline.AddLast(new IdleStateHandler(0, AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds, 0));
                     pipeline.AddLast(DotNettyConstants.HeartBeatName, new HeartBeatHandler(_healthCheckService, this));
-                }              
-                pipeline.AddLast(DotNettyConstants.TransportMessageAdapterName, new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
-                pipeline.AddLast(DotNettyConstants.ClientChannelHandler, new DefaultChannelHandler(this));
+                }
+
+                pipeline.AddLast(DotNettyConstants.TransportMessageAdapterName,
+                    new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
+                pipeline.AddLast(DotNettyConstants.ClientChannelHandler,
+                    new DefaultChannelHandler(this, healthCheckService));
             }));
         }
 
@@ -93,25 +108,25 @@ namespace Surging.Core.DotNetty
             {
                 return await _clients.GetOrAdd(key
                     , k => new Lazy<Task<ITransportClient>>(async () =>
-                    {
-                        //客户端对象
-                        var bootstrap = _bootstrap;
-                        //异步连接返回channel
-                        var channel = await bootstrap.ConnectAsync(k);
-                        var messageListener = new MessageListener();
-                        //设置监听
-                        channel.GetAttribute(messageListenerKey).Set(messageListener);
-                        //实例化发送者
-                        var messageSender = new DotNettyMessageClientSender(_transportMessageEncoder, channel);
-                        messageSender.OnChannelUnActived += HandleChannelUnActived;
-                        //设置channel属性
-                        channel.GetAttribute(messageSenderKey).Set(messageSender);
-                        channel.GetAttribute(origEndPointKey).Set(k);
-                        //创建客户端
-                        var client = new TransportClient(messageSender, messageListener, _logger, _serviceExecutor);
-                        return client;
-                    }
-                    )).Value;//返回实例
+                        {
+                            //客户端对象
+                            var bootstrap = _bootstrap;
+                            //异步连接返回channel
+                            var channel = await bootstrap.ConnectAsync(k);
+                            var messageListener = new MessageListener();
+                            //设置监听
+                            channel.GetAttribute(messageListenerKey).Set(messageListener);
+                            //实例化发送者
+                            var messageSender = new DotNettyMessageClientSender(_transportMessageEncoder, channel);
+                            messageSender.OnChannelUnActived += HandleChannelUnActived;
+                            //设置channel属性
+                            channel.GetAttribute(messageSenderKey).Set(messageSender);
+                            channel.GetAttribute(origEndPointKey).Set(k);
+                            //创建客户端
+                            var client = new TransportClient(messageSender, messageListener, _logger, _serviceExecutor);
+                            return client;
+                        }
+                    )).Value; //返回实例
             }
             catch (Exception ex)
             {
@@ -124,11 +139,9 @@ namespace Surging.Core.DotNetty
                 }
                 else
                 {
-                    throw new CommunicationException($"服务提供者{ipEndPoint.Address}:{ipEndPoint.Port}无法连接",ex);
+                    throw new CommunicationException($"服务提供者{ipEndPoint.Address}:{ipEndPoint.Port}无法连接", ex);
                 }
-
             }
-            
         }
 
         private void HandleChannelUnActived(object sender, EndPoint e)
@@ -177,12 +190,13 @@ namespace Surging.Core.DotNetty
                 group = new MultithreadEventLoopGroup();
                 bootstrap.Channel<TcpServerSocketChannel>();
             }
+
             bootstrap
                 .Channel<TcpSocketChannel>()
-                .Option(ChannelOption.ConnectTimeout, TimeSpan.FromMilliseconds(AppConfig.ServerOptions.ConnectTimeout))
+                .Option(ChannelOption.ConnectTimeout, TimeSpan.FromMilliseconds(AppConfig.ServerOptions.RpcConnectTimeout))
                 .Option(ChannelOption.TcpNodelay, true)
                 .Option(ChannelOption.Allocator, PooledByteBufferAllocator.Default)
-                
+               // .Option(ChannelOption.SoKeepalive,true)
                 .Group(group);
 
             return bootstrap;
@@ -191,28 +205,30 @@ namespace Surging.Core.DotNetty
         protected class DefaultChannelHandler : ChannelHandlerAdapter
         {
             private readonly DotNettyTransportClientFactory _factory;
+            private readonly IHealthCheckService _healthCheckService;
 
-            public DefaultChannelHandler(DotNettyTransportClientFactory factory)
+            public DefaultChannelHandler(DotNettyTransportClientFactory factory,
+                IHealthCheckService healthCheckService)
             {
                 _factory = factory;
+                _healthCheckService = healthCheckService;
             }
 
             #region Overrides of ChannelHandlerAdapter
 
             public async override void ChannelInactive(IChannelHandlerContext context)
             {
-                var providerServerEndpoint = context.Channel.RemoteAddress as IPEndPoint;
-                _factory.RemoveClient(providerServerEndpoint);
-                _factory.RemoveClient(context.Channel.GetAttribute(origEndPointKey).Get());
-                await context.CloseAsync();
+                await RemoveClient(context);
+            }
 
-
+            public async override Task CloseAsync(IChannelHandlerContext context)
+            {
+                await RemoveClient(context);
             }
 
             public override void ChannelRead(IChannelHandlerContext context, object message)
             {
                 var transportMessage = message as TransportMessage;
-
                 var messageListener = context.Channel.GetAttribute(messageListenerKey).Get();
                 var messageSender = context.Channel.GetAttribute(messageSenderKey).Get();
                 messageListener.OnReceived(messageSender, transportMessage);
@@ -220,16 +236,30 @@ namespace Surging.Core.DotNetty
 
             public async override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
             {
-                if (!(exception is BusinessException) && !(exception.InnerException is BusinessException))
+                if (!exception.IsBusinessException())
                 {
-                    var providerServerEndpoint = context.Channel.RemoteAddress as IPEndPoint;
-                    _factory.RemoveClient(providerServerEndpoint);
-                    _factory.RemoveClient(context.Channel.GetAttribute(origEndPointKey).Get());
-                    await context.CloseAsync();
+                    await RemoveClient(context);
                 }
             }
 
             #endregion Overrides of ChannelHandlerAdapter
+            
+            private async Task RemoveClient(IChannelHandlerContext context)
+            {
+                var providerServerEndpoint = context.Channel.RemoteAddress as IPEndPoint;
+                var providerServerAddress = new IpAddressModel(providerServerEndpoint.Address.MapToIPv4().ToString(),
+                    providerServerEndpoint.Port);
+                _factory.RemoveClient(providerServerEndpoint);
+                _factory.RemoveClient(context.Channel.GetAttribute(origEndPointKey).Get());
+                await _healthCheckService.MarkFailure(providerServerAddress);
+                if (context.Channel.Open || context.Channel.Active)
+                {
+                    await context.CloseAsync();
+                    
+                }
+
+                
+            }
         }
     }
 }

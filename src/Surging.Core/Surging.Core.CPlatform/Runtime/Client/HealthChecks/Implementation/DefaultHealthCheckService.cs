@@ -23,6 +23,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
 
         private readonly IServiceRouteManager _serviceRouteManager;
         private readonly ILogger<DefaultHealthCheckService> _logger;
+
         public event EventHandler<HealthCheckEventArgs> Removed;
         public event EventHandler<HealthCheckEventArgs> Changed;
 
@@ -51,6 +52,7 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
             {
                 Remove(e.Route.Address);
             };
+            IsListener = false;
 
         }
         
@@ -64,17 +66,38 @@ namespace Surging.Core.CPlatform.Runtime.Client.HealthChecks.Implementation
         /// <returns>健康返回true，否则返回false。</returns>
         public async Task<bool> IsHealth(AddressModel address)
         {
-            var ipAddress = address as IpAddressModel;
-            MonitorEntry entry;
-            if (!_dictionaries.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out entry))
+            return await Task.Run(() =>
             {
-                entry = new MonitorEntry(address, true);
-                _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), entry);
-            }
-            OnChanged(new HealthCheckEventArgs(address, entry.Health));
-            return entry.Health;
+                var ipAddress = address as IpAddressModel;
+                MonitorEntry entry;
+                if (!_dictionaries.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out entry))
+                {
+                    entry = new MonitorEntry(address, true);
+                    _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), entry);
+                }
+
+                OnChanged(new HealthCheckEventArgs(address, entry.Health));
+                return entry.Health;
+
+            });
 
         }
+
+        public Task RemoveHealthMonitor(AddressModel address)
+        {
+            return Task.Run(() =>
+            {
+                var ipAddress = address as IpAddressModel;
+                if (_dictionaries.ContainsKey(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port)))
+                {
+                    _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry entry);
+                    OnChanged(new HealthCheckEventArgs(address, false));
+                }
+                
+            });
+        }
+
+        public bool IsListener { get; set; }
 
 
         /// <summary>

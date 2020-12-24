@@ -21,9 +21,7 @@ namespace Surging.Core.CPlatform.Configurations
         public bool IsModulePerLifetimeScope { get; set; }
 
         public int WatchInterval { get; set; } = 20;
-
-        public int ServiceRouteWatchIntervalInMinutes { get; set; } = 5;
-
+        
         public int HealthCheckWatchIntervalInSeconds { get; set; } = 15;
 
         public bool EnableHealthCheck { get; set; } = true;
@@ -33,8 +31,6 @@ namespace Surging.Core.CPlatform.Configurations
         public bool Libuv { get; set; } = false;
 
         public int SoBacklog { get; set; } = 8192;
-
-        public bool EnableRouteWatch { get; set; } = false;
 
         public IPEndPoint IpEndpoint { get; set; }
 
@@ -65,7 +61,7 @@ namespace Surging.Core.CPlatform.Configurations
 
         public bool ForceDisplayStackTrace { get; set; }
 
-        public int ConnectTimeout { get; set; } = 500;
+        public int RpcConnectTimeout { get; set; } = 500;
 
         private string _hostName;
         public string HostName {
@@ -86,9 +82,7 @@ namespace Surging.Core.CPlatform.Configurations
             }
             set { _hostName = value; }
         }
-
-        public bool IsGateway { get; set; } = false;
-
+        
         public int ProjectSegment { get; set; } = 3;
        
     }

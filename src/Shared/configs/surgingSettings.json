@@ -1,26 +1,26 @@
 {
   "Surging": {
-    "Ip": "${Surging_Server_IP}|0.0.0.0",
+    "Ip": "${HostIp}|0.0.0.0",
     "WatchInterval": 30,
-    "Port": "${Surging_Server_Port}|100",
-    "MappingIp": "${Mapping_ip}",
-    "MappingPort": "${Mapping_Port}",
+    "Port": "${RpcPort}|100",
     "Token": "true",
     "WanIp": "${WanIp}|0.0.0.0",
-    "Libuv": true,
+    "Libuv": "${Libuv}|true",
     "SoBacklog": 100,
-    "MaxConcurrentRequests": 500,
+    "MaxConcurrentRequests": "${MaxConcurrentRequests}|100",
     "DisconnTimeInterval": 1000,
-    "ExecutionTimeoutInMilliseconds": 18000,
-    "HealthCheckTimeout": 100,
+    "ExecutionTimeoutInMilliseconds": "${ExecutionTimeoutInMilliseconds}|3000",
     "EnableHealthCheck": "${EnableHealthCheck}|true",
-    "BreakeSleepWindowInMilliseconds": 5000,
+    "ConnectTimeout":"${ConnectTimeout}|500",
+    "BreakeSleepWindowInMilliseconds": "${BreakeSleepWindowInMilliseconds}|10000",
     "Protocol": "${Protocol}|None", //Http、Tcp、None
     "RootPath": "${RootPath}|./userapp",
     "WebRootPath": "${WebRootPath}|./userapp/wwwroot",
     "IsModulePerLifetimeScope": false,
     "ReloadOnChange": false,
     "RequestCacheEnabled": true,
+    "EnableRouteWatch": "${EnableRouteWatch}|false",
+    "ForceDisplayStackTrace": "${ForceDisplayStackTrace}|false",
     "Ports": {
       "HttpPort": "${HttpPort}|8080",
       "WSPort": "${WSPort}|96",
@@ -39,7 +39,7 @@
     ]
   }, //如果引用多个同类型的组件，需要配置Packages，如果是自定义按需引用，无需配置Packages
   "Lock": {
-    "LockRedisConnection": "hero.redis1:6379"
+    "LockRedisConnection": "${LockRedisConnection}|hero.redis1:6379"
   },
   "DbSetting": {
     "DbType": "${DbType}|MySql", //MySql SqlServer, Oracle, Postgres
