@@ -72,8 +72,6 @@ namespace Surging.Core.Protocol.Http
 
         public async Task StartAsync(EndPoint endPoint)
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.LogDebug($"准备启动服务主机，监听地址：{endPoint}。");
             var serverCompletion = new TaskCompletionSource();
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();//Default eventLoopCount is Environment.ProcessorCount * 2
@@ -100,11 +98,11 @@ namespace Surging.Core.Protocol.Http
             try
             {
                 _channel = await bootstrap.BindAsync(endPoint);
-                _logger.LogInformation($"服务主机(Http协议){AppConfig.ServerOptions.HostName}启动成功，RPC服务地址：{endPoint}。");
+                _logger.LogInformation($"Rpc服务主机(Http协议){AppConfig.ServerOptions.HostName}启动成功,RPC服务地址:{endPoint}。");
             }
             catch(Exception ex)
             {
-                _logger.LogError($"服务主机(Http协议){AppConfig.ServerOptions.HostName}启动失败，原因：{ex.Message},RPC服务地址：{endPoint}。 ");
+                _logger.LogError($"Rpc服务主机(Http协议){AppConfig.ServerOptions.HostName}启动失败,原因:{ex.Message},RPC服务地址：{endPoint}。 ");
                 throw ex;
             }
 

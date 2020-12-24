@@ -62,9 +62,6 @@ namespace Surging.Core.DotNetty
 
         public async Task StartAsync(EndPoint endPoint)
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.LogDebug($"准备启动服务主机{AppConfig.ServerOptions.HostName}，监听地址：{endPoint}。");
-
             IEventLoopGroup bossGroup = new MultithreadEventLoopGroup(1);
             IEventLoopGroup workerGroup = new MultithreadEventLoopGroup();//Default eventLoopCount is Environment.ProcessorCount * 2
             var bootstrap = new ServerBootstrap();
@@ -108,12 +105,12 @@ namespace Surging.Core.DotNetty
             try
             {
                 _channel = await bootstrap.BindAsync(endPoint);
-                _logger.LogInformation($"服务主机{AppConfig.ServerOptions.HostName}启动成功，RPC服务地址：{endPoint}。");
+                _logger.LogInformation($"Rpc服务主机(Tcp协议){AppConfig.ServerOptions.HostName}启动成功,RPC服务地址：{endPoint}.");
                     
             }
             catch(Exception ex)
             {
-                _logger.LogError($"服务主机{AppConfig.ServerOptions.HostName}启动失败，原因：{ex.Message},RPC服务地址：{endPoint}。 ");
+                _logger.LogError($"Rpc服务主机(Tcp协议){AppConfig.ServerOptions.HostName}启动失败,原因：{ex.Message},RPC服务地址：{endPoint}.");
                 throw ex;
             }
         }

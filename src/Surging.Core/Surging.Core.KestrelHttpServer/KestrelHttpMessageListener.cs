@@ -89,21 +89,42 @@ namespace Surging.Core.KestrelHttpServer
                 _host = hostBuilder.Build();
                 _lifetime.ServiceEngineStarted.Register(async () =>
                 {
-                    if (_moduleProvider.Modules.Any(p=> p.ModuleName == "SwaggerModule" && p.ModuleName == "StageModule"))
+                    if (_moduleProvider.Modules.Any(p=> p.ModuleName == "SwaggerModule" && p.Enable))
                     {
-                        
-                        _logger.LogInformation($"Kestrel主机即将启动,Swagger文档地址为:http://{address}:{port}/swagger/index.html");
+                        var httpProtocol = GetHttpProtocol();
+                        _logger.LogInformation($"Kestrel主机将启动,Swagger文档地址为:{httpProtocol}://{address}:{port}/swagger/index.html");
                     }
+                    else
+                    {
+                        _logger.LogInformation($"Kestrel主机即将启动");
+                    }
+
                     await _host.RunAsync();
                 });
 
             }
             catch(Exception ex)
             {
-                _logger.LogError($"Kestrel服务主机启动失败，监听地址：{address}:{port}。 ");
+                _logger.LogError($"Kestrel服务主机启动失败，监听地址：{address}:{port}. ");
                 throw ex;
             }
 
+        }
+
+        private string GetHttpProtocol()
+        {
+            var httpProtocol = "http";
+            if (_moduleProvider.Modules.Any(p => p.ModuleName == "StageModule"))
+            {
+                var stageModule = _moduleProvider.Modules.First(p => p.ModuleName == "StageModule" && p.Enable);
+                var enableHttpsObj = stageModule.GetType().GetProperty("EnableHttps").GetValue(stageModule);
+                if (enableHttpsObj != null)
+                {
+                    httpProtocol = Convert.ToBoolean(enableHttpsObj) ? "https" : "http";
+                }
+            }
+
+            return httpProtocol;
         }
 
         public void ConfigureHost(WebHostBuilderContext context, KestrelServerOptions options,IPAddress ipAddress)
