@@ -30,7 +30,8 @@ namespace Surging.Core.Stage
         }
 
         public override void RegisterBuilder(WebHostContext context)
-        {  
+        {
+            EnableHttps = context.EnableHttps;
             _listener.Listen(context);
         }
 
@@ -112,5 +113,7 @@ namespace Surging.Core.Stage
             
             builder.RegisterType<WebServerListener>().As<IWebServerListener>().SingleInstance(); 
         }
+
+        public bool EnableHttps { get; private set; }
     }
 }

@@ -15,6 +15,7 @@ namespace Surging.Core.KestrelHttpServer
             WebHostBuilderContext = Check.NotNull(context, nameof(context));
             KestrelOptions = Check.NotNull(options, nameof(options));
             Address = ipAddress;
+            EnableHttps = false;
         }
 
         public WebHostBuilderContext WebHostBuilderContext { get; }
@@ -22,6 +23,8 @@ namespace Surging.Core.KestrelHttpServer
         public KestrelServerOptions KestrelOptions { get; }
 
         public IPAddress Address { get; }
+
+        public bool EnableHttps { get; set; }
 
     }
 }

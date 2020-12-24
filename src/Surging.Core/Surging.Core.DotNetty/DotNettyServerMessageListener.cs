@@ -108,15 +108,12 @@ namespace Surging.Core.DotNetty
             try
             {
                 _channel = await bootstrap.BindAsync(endPoint);
-                if (_logger.IsEnabled(LogLevel.Information)) 
-                {
-                    _logger.LogInformation($"服务主机{AppConfig.ServerOptions.HostName}启动成功，监听地址：{endPoint}。");
-                }
+                _logger.LogInformation($"服务主机{AppConfig.ServerOptions.HostName}启动成功，RPC服务地址：{endPoint}。");
                     
             }
             catch(Exception ex)
             {
-                _logger.LogError($"服务主机{AppConfig.ServerOptions.HostName}启动失败，原因：{ex.Message},监听地址：{endPoint}。 ");
+                _logger.LogError($"服务主机{AppConfig.ServerOptions.HostName}启动失败，原因：{ex.Message},RPC服务地址：{endPoint}。 ");
                 throw ex;
             }
         }

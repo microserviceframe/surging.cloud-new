@@ -110,6 +110,7 @@ namespace Surging.Core.Stage.Internal.Implementation
             context.KestrelOptions.Limits.MaxRequestHeadersTotalSize = AppConfig.Options.MaxRequestHeadersTotalSize;
             context.KestrelOptions.Limits.MaxRequestLineSize = AppConfig.Options.MaxRequestLineSize;
             context.KestrelOptions.Limits.MaxResponseBufferSize = AppConfig.Options.MaxResponseBufferSize;
+            context.EnableHttps = AppConfig.Options.EnableHttps;
         }
     }
 }

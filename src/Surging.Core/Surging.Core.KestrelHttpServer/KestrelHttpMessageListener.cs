@@ -67,10 +67,12 @@ namespace Surging.Core.KestrelHttpServer
                       options.Limits.MaxRequestBodySize = null;
                       options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(30);
                       if (port != null && port > 0)
+                      {
                           options.Listen(address, port.Value, listenOptions =>
                           {
                               listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
                           });
+                      }
                       ConfigureHost(context, options, address);
 
                   })
@@ -87,13 +89,19 @@ namespace Surging.Core.KestrelHttpServer
                 _host = hostBuilder.Build();
                 _lifetime.ServiceEngineStarted.Register(async () =>
                 {
+                    if (_moduleProvider.Modules.Any(p=> p.ModuleName == "SwaggerModule" && p.ModuleName == "StageModule"))
+                    {
+                        
+                        _logger.LogInformation($"Kestrel主机即将启动,Swagger文档地址为:http://{address}:{port}/swagger/index.html");
+                    }
                     await _host.RunAsync();
                 });
 
             }
-            catch
+            catch(Exception ex)
             {
-                _logger.LogError($"http服务主机启动失败，监听地址：{address}:{port}。 ");
+                _logger.LogError($"Kestrel服务主机启动失败，监听地址：{address}:{port}。 ");
+                throw ex;
             }
 
         }
