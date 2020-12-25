@@ -5,11 +5,11 @@ services:
     image: surging/surging.sample.server:${TAG:-latest}
     build:
       context: ../..
-      dockerfile: src/Surging.Services/Surging.Services.Server/Dockerfile
+      dockerfile: Surging.Services/Surging.Services.Server/Dockerfile
       args:
-        host_workdir: src/Surging.Services/Surging.Services.Server
+        host_workdir: Surging.Services/Surging.Services.Server
         host_name: Surging.Services.Server.dll
-        sln_name:  src/Surging.sln
+        sln_name: Surging.Cloud.sln
     volumes:
       - ${LOG_DIR:-/var/logs}/auth:/app/logs
     networks:
@@ -19,11 +19,11 @@ services:
     image: surging/surging.sample.gateway:${TAG:-latest}
     build:
       context: ../..
-      dockerfile: src/Surging.Services/Surging.Services.GateWay/Dockerfile
+      dockerfile: Surging.Services/Surging.Services.GateWay/Dockerfile
       args:
-        host_workdir: src/Surging.Services/Surging.Services.GateWay
+        host_workdir: Surging.Services/Surging.Services.GateWay
         host_name: Surging.Services.Server2.dll
-        sln_name:  src/Surging.sln
+        sln_name:  Surging.Cloud.sln
     volumes:
       - ${LOG_DIR:-/var/logs}/auth:/app/logs
     networks:
