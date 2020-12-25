@@ -16,7 +16,7 @@
  *
  */
 
-using Surging.Core.CPlatform.Diagnostics;
+using Surging.Cloud.CPlatform.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 

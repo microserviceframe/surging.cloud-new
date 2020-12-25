@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Extensions.Configuration;
 using Surging.Apm.Skywalking.Abstractions;
-using Surging.Core.CPlatform;
+using Surging.Cloud.CPlatform;
 
 // ReSharper disable StringLiteralTypo
 namespace Surging.Apm.Skywalking.Configuration

@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>$(PackagePrefix).MongoDB</PackageId>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
+    <Description>Mongodb组件</Description>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.2.0" />
+    <PackageReference Include="mongocsharpdriver" Version="2.10.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
+    <ProjectReference Include="..\Surging.Cloud.Domain\Surging.Cloud.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

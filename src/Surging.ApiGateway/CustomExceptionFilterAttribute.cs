@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Surging.Core.ApiGateWay;
-using Surging.Core.CPlatform.Exceptions;
-using Surging.Core.CPlatform.Serialization;
+using Surging.Cloud.ApiGateWay;
+using Surging.Cloud.CPlatform.Exceptions;
+using Surging.Cloud.CPlatform.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;

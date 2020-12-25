@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28527.54
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Common", "Surging.Core\Surging.Core.Common\Surging.Core.Common.csproj", "{F9B2DBAE-34D5-4CF0-9CBB-67A87580BB6A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Common", "Surging.Cloud\Surging.Cloud.Common\Surging.Cloud.Common.csproj", "{F9B2DBAE-34D5-4CF0-9CBB-67A87580BB6A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.Core", "Surging.Core", "{E3ADE8DE-5F3A-4E76-B22F-2C9435AACA06}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.Cloud", "Surging.Cloud", "{E3ADE8DE-5F3A-4E76-B22F-2C9435AACA06}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.Modules", "Surging.Modules", "{CAC2EAD5-5AC7-44A2-9705-F2D8D3012A6F}"
 EndProject
@@ -13,59 +13,59 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.Services", "Surging
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.IModuleServices", "Surging.IModuleServices", "{F65BE227-30B5-4217-AEC8-AD7F96411702}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Caching", "Surging.Core\Surging.Core.Caching\Surging.Core.Caching.csproj", "{88A39824-6367-4809-900A-C1E8BCC08B9D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Caching", "Surging.Cloud\Surging.Cloud.Caching\Surging.Cloud.Caching.csproj", "{88A39824-6367-4809-900A-C1E8BCC08B9D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.DotNetty", "Surging.Core\Surging.Core.DotNetty\Surging.Core.DotNetty.csproj", "{38040915-5F97-4C51-9DFD-7D53EF544293}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.DotNetty", "Surging.Cloud\Surging.Cloud.DotNetty\Surging.Cloud.DotNetty.csproj", "{38040915-5F97-4C51-9DFD-7D53EF544293}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.IModuleServices.Common", "Surging.IModuleServices\Surging.IModuleServices.Common\Surging.IModuleServices.Common.csproj", "{D7EE7A21-8ADE-4D06-85BC-EF599F5A10AA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Modules.Common", "Surging.Modules\Surging.Modules.Common\Surging.Modules.Common.csproj", "{4DECDA1A-1014-4A4E-B60D-AD51314EEE63}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.ProxyGenerator", "Surging.Core\Surging.Core.ProxyGenerator\Surging.Core.ProxyGenerator.csproj", "{E8EEF135-302C-444E-8557-5397C52133F0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.ProxyGenerator", "Surging.Cloud\Surging.Cloud.ProxyGenerator\Surging.Cloud.ProxyGenerator.csproj", "{E8EEF135-302C-444E-8557-5397C52133F0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Zookeeper", "Surging.Core\Surging.Core.Zookeeper\Surging.Core.Zookeeper.csproj", "{5368D0CE-6158-43A6-A2A0-03CB94775D8D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Zookeeper", "Surging.Cloud\Surging.Cloud.Zookeeper\Surging.Cloud.Zookeeper.csproj", "{5368D0CE-6158-43A6-A2A0-03CB94775D8D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.CPlatform", "Surging.Core\Surging.Core.CPlatform\Surging.Core.CPlatform.csproj", "{4D97446B-5E54-482C-ABAE-857577274B0B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.CPlatform", "Surging.Cloud\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj", "{4D97446B-5E54-482C-ABAE-857577274B0B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.EventBusRabbitMQ", "Surging.Core\Surging.Core.EventBusRabbitMQ\Surging.Core.EventBusRabbitMQ.csproj", "{EE2A8BC3-CA17-4C22-A873-19927BAFB009}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.EventBusRabbitMQ", "Surging.Cloud\Surging.Cloud.EventBusRabbitMQ\Surging.Cloud.EventBusRabbitMQ.csproj", "{EE2A8BC3-CA17-4C22-A873-19927BAFB009}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.ApiGateway", "Surging.ApiGateway\Surging.ApiGateway.csproj", "{70FC4EE8-AC84-4774-BC0E-DE26A4B743B1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.ApiGateWay", "Surging.Core\Surging.Core.ApiGateWay\Surging.Core.ApiGateWay.csproj", "{58E21930-A34E-4669-89F6-9322C4847E6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.ApiGateWay", "Surging.Cloud\Surging.Cloud.ApiGateWay\Surging.Cloud.ApiGateWay.csproj", "{58E21930-A34E-4669-89F6-9322C4847E6D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.ServiceHosting", "Surging.Core\Surging.Core.ServiceHosting\Surging.Core.ServiceHosting.csproj", "{610D8A1D-719B-4ADB-B06F-662EA2C7013F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.ServiceHosting", "Surging.Cloud\Surging.Cloud.ServiceHosting\Surging.Cloud.ServiceHosting.csproj", "{610D8A1D-719B-4ADB-B06F-662EA2C7013F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Consul", "Surging.Core\Surging.Core.Consul\Surging.Core.Consul.csproj", "{F467EA55-5779-46B6-87E4-00476DE2C401}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Consul", "Surging.Cloud\Surging.Cloud.Consul\Surging.Cloud.Consul.csproj", "{F467EA55-5779-46B6-87E4-00476DE2C401}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Codec.ProtoBuffer", "Surging.Core\Surging.Core.Codec.ProtoBuffer\Surging.Core.Codec.ProtoBuffer.csproj", "{50BA075B-6DD7-419E-B3AD-4876BE930BD5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Codec.ProtoBuffer", "Surging.Cloud\Surging.Cloud.Codec.ProtoBuffer\Surging.Cloud.Codec.ProtoBuffer.csproj", "{50BA075B-6DD7-419E-B3AD-4876BE930BD5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Codec.MessagePack", "Surging.Core\Surging.Core.Codec.MessagePack\Surging.Core.Codec.MessagePack.csproj", "{1059AE4E-7391-4AC9-AECE-4B4FBE3AA243}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Codec.MessagePack", "Surging.Cloud\Surging.Cloud.Codec.MessagePack\Surging.Cloud.Codec.MessagePack.csproj", "{1059AE4E-7391-4AC9-AECE-4B4FBE3AA243}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Log4net", "Surging.Core\Surging.Core.Log4net\Surging.Core.Log4net.csproj", "{9A8C2055-997D-4F95-8FA3-5F01F0402923}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Log4net", "Surging.Cloud\Surging.Cloud.Log4net\Surging.Cloud.Log4net.csproj", "{9A8C2055-997D-4F95-8FA3-5F01F0402923}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.EventBusKafka", "Surging.Core\Surging.Core.EventBusKafka\Surging.Core.EventBusKafka.csproj", "{A93EE1A1-A939-425C-A074-5DAD39BE9EE0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.EventBusKafka", "Surging.Cloud\Surging.Cloud.EventBusKafka\Surging.Cloud.EventBusKafka.csproj", "{A93EE1A1-A939-425C-A074-5DAD39BE9EE0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Modules.Manager", "Surging.Modules\Surging.Modules.Manager\Surging.Modules.Manager.csproj", "{AF8FAB5B-029E-438F-AD57-B46681046D3F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.IModuleServices.Manager", "Surging.IModuleServices\Surging.IModuleServices.Manger\Surging.IModuleServices.Manager.csproj", "{78F64412-7403-449C-8AC4-C5C0A58E4A0E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Nlog", "Surging.Core\Surging.Core.NLog\Surging.Core.Nlog.csproj", "{704B35B0-9029-46CE-AEA2-A3A3AD3FC2C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Nlog", "Surging.Cloud\Surging.Cloud.NLog\Surging.Cloud.Nlog.csproj", "{704B35B0-9029-46CE-AEA2-A3A3AD3FC2C4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Protocol.Http", "Surging.Core\Surging.Core.Protocol.Http\Surging.Core.Protocol.Http.csproj", "{8B85B3BF-E35A-4CAD-AC82-B8AB1DE72737}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Protocol.Http", "Surging.Cloud\Surging.Cloud.Protocol.Http\Surging.Cloud.Protocol.Http.csproj", "{8B85B3BF-E35A-4CAD-AC82-B8AB1DE72737}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebSocket", "WebSocket", "{CF034401-1479-4FEA-9F1E-4F22398D4BCF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Protocol.WS", "Surging.Core\Surging.Core.Protocol.WS\Surging.Core.Protocol.WS.csproj", "{EAAF2903-BE4E-4190-8AE8-D535255B3348}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Protocol.WS", "Surging.Cloud\Surging.Cloud.Protocol.WS\Surging.Cloud.Protocol.WS.csproj", "{EAAF2903-BE4E-4190-8AE8-D535255B3348}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.KestrelHttpServer", "Surging.Core\Surging.Core.KestrelHttpServer\Surging.Core.KestrelHttpServer.csproj", "{B179376F-9319-4EBF-B986-471C68E35863}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.KestrelHttpServer", "Surging.Cloud\Surging.Cloud.KestrelHttpServer\Surging.Cloud.KestrelHttpServer.csproj", "{B179376F-9319-4EBF-B986-471C68E35863}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.System", "Surging.Core\Surging.Core.System\Surging.Core.System.csproj", "{B89155F2-D532-4B3A-8F82-26DF4D277E71}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.System", "Surging.Cloud\Surging.Cloud.System\Surging.Cloud.System.csproj", "{B89155F2-D532-4B3A-8F82-26DF4D277E71}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Services.Client", "Surging.Services\Surging.Services.Client\Surging.Services.Client.csproj", "{5846D387-8371-4E49-97B7-2B5E688FC0FD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Services.Server", "Surging.Services\Surging.Services.Server\Surging.Services.Server.csproj", "{A8C605D7-3552-44D8-AD8D-4EA08B68CF33}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Protocol.Mqtt", "Surging.Core\Surging.Core.Protocol.Mqtt\Surging.Core.Protocol.Mqtt.csproj", "{A0502179-D200-49AE-9897-A6B189A75B45}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Protocol.Mqtt", "Surging.Cloud\Surging.Cloud.Protocol.Mqtt\Surging.Cloud.Protocol.Mqtt.csproj", "{A0502179-D200-49AE-9897-A6B189A75B45}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Web", "Surging.Web\Surging.Web.csproj", "{B94ADCF5-E80F-4350-918D-4205B8C2F41B}"
 EndProject
@@ -73,13 +73,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DotNetty.Codecs", "DotNetty
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.DNS", "DotNetty.Codecs\DotNetty.Codecs.DNS\DotNetty.Codecs.DNS.csproj", "{A3B75BE5-A26A-46AC-9C1F-64CDCB2D413B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.DNS", "Surging.Core\Surging.Core.DNS\Surging.Core.DNS.csproj", "{3FA2B587-8490-4874-8318-84C1CBA2B111}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.DNS", "Surging.Cloud\Surging.Cloud.DNS\Surging.Cloud.DNS.csproj", "{3FA2B587-8490-4874-8318-84C1CBA2B111}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Swagger", "Surging.Core\Surging.Core.Swagger\Surging.Core.Swagger.csproj", "{F824A598-F19F-4A32-A28E-FF2FE96EFC10}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Swagger", "Surging.Cloud\Surging.Cloud.Swagger\Surging.Cloud.Swagger.csproj", "{F824A598-F19F-4A32-A28E-FF2FE96EFC10}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.AutoMapper", "Surging.Core\Surging.Core.AutoMapper\Surging.Core.AutoMapper.csproj", "{8D796D5A-9FC6-491B-906D-50B2AABAECF3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.AutoMapper", "Surging.Cloud\Surging.Cloud.AutoMapper\Surging.Cloud.AutoMapper.csproj", "{8D796D5A-9FC6-491B-906D-50B2AABAECF3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Stage", "Surging.Core\Surging.Core.Stage\Surging.Core.Stage.csproj", "{27E8A4B2-73DF-4C03-857B-2F529C3C49D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Stage", "Surging.Cloud\Surging.Cloud.Stage\Surging.Cloud.Stage.csproj", "{27E8A4B2-73DF-4C03-857B-2F529C3C49D6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.Apm", "Surging.Apm", "{F686341B-C87F-489F-8A4D-1C99A79B4603}"
 EndProject
@@ -87,13 +87,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Apm.Skywalking", "S
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SkyApm.Transport.Grpc.Protocol", "Surging.Apm\SkyApm.Transport.Grpc.Protocol\SkyApm.Transport.Grpc.Protocol.csproj", "{E9CD6B91-4E20-4FB6-945B-FB2B2A97837A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Protocol.Udp", "Surging.Core\Surging.Core.Protocol.Udp\Surging.Core.Protocol.Udp.csproj", "{F888A99B-9B07-43CC-96D2-B2C700F0620B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Protocol.Udp", "Surging.Cloud\Surging.Cloud.Protocol.Udp\Surging.Cloud.Protocol.Udp.csproj", "{F888A99B-9B07-43CC-96D2-B2C700F0620B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.DotNettyWSServer", "Surging.Core\Surging.Core.DotNettyWSServer\Surging.Core.DotNettyWSServer.csproj", "{03C6C6FF-15D2-467E-BC08-2B42AA0D011C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.DotNettyWSServer", "Surging.Cloud\Surging.Cloud.DotNettyWSServer\Surging.Cloud.DotNettyWSServer.csproj", "{03C6C6FF-15D2-467E-BC08-2B42AA0D011C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Domain", "Surging.Core\Surging.Core.Domain\Surging.Core.Domain.csproj", "{E2FA8928-10EF-4E02-BA2D-942A60D6DA52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Domain", "Surging.Cloud\Surging.Cloud.Domain\Surging.Cloud.Domain.csproj", "{E2FA8928-10EF-4E02-BA2D-942A60D6DA52}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Dapper", "Surging.Core\Surging.Core.Dapper\Surging.Core.Dapper.csproj", "{EDABE9D2-6A92-409B-9C8B-F192B1476F67}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Dapper", "Surging.Cloud\Surging.Cloud.Dapper\Surging.Cloud.Dapper.csproj", "{EDABE9D2-6A92-409B-9C8B-F192B1476F67}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.WebSocketCore", "WebSocket\Surging.WebSocketCore\Surging.WebSocketCore.csproj", "{9C8AA43E-980B-4E32-85AD-20D2B1E8B543}"
 EndProject
@@ -111,13 +111,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".configs", ".configs", "{78
 		Shared\configs\surgingSettings.json = Shared\configs\surgingSettings.json
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Validation", "Surging.Core\Surging.Core.Validation\Surging.Core.Validation.csproj", "{1E3116B7-3E29-4AF7-A9CC-DEA007005146}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Validation", "Surging.Cloud\Surging.Cloud.Validation\Surging.Cloud.Validation.csproj", "{1E3116B7-3E29-4AF7-A9CC-DEA007005146}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Services.Server2", "Surging.Services\Surging.Services.Server2\Surging.Services.Server2.csproj", "{ED240DCC-172D-44F5-897B-1979E9A342CB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.ElasticSearch", "Surging.Core\Surging.Core.ElasticSearch\Surging.Core.ElasticSearch.csproj", "{67D2C4FE-E7AD-4CBD-901A-CAFB051A7BA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.ElasticSearch", "Surging.Cloud\Surging.Cloud.ElasticSearch\Surging.Cloud.ElasticSearch.csproj", "{67D2C4FE-E7AD-4CBD-901A-CAFB051A7BA5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Core.Lock", "Surging.Core\Surging.Core.Lock\Surging.Core.Lock.csproj", "{4C49628C-43E2-4D57-867B-5944A348F852}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Lock", "Surging.Cloud\Surging.Cloud.Lock\Surging.Cloud.Lock.csproj", "{4C49628C-43E2-4D57-867B-5944A348F852}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

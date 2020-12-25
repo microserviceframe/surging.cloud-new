@@ -1,5 +1,5 @@
 ﻿using DapperExtensions.Mapper;
-using Surging.Core.Domain.Entities.Auditing;
+using Surging.Cloud.Domain.Entities.Auditing;
 
 namespace Surging.IModuleServices.Common.Models
 {

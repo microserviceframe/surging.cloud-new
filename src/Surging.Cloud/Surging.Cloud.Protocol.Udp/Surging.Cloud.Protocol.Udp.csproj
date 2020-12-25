@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>$(PackagePrefix).Protocol.Udp</PackageId>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
+    <Description>udp协议组件(rpc通信通过udp协议)</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DotNetty.Codecs" Version="0.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
+    <ProjectReference Include="..\Surging.Cloud.ProxyGenerator\Surging.Cloud.ProxyGenerator.csproj" />
+  </ItemGroup>
+
+</Project>

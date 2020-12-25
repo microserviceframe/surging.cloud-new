@@ -1,5 +1,5 @@
 ﻿using ProtoBuf;
-using Surging.Core.CPlatform;
+using Surging.Cloud.CPlatform;
 using System;
 using System.Collections.Generic;
 using System.Text;

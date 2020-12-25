@@ -1,0 +1,28 @@
+﻿using Surging.Cloud.CPlatform.Configurations;
+using Surging.Cloud.CPlatform.Configurations.Watch;
+using Surging.Cloud.CPlatform.Runtime.Server;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Surging.Cloud.CPlatform.Routing
+{
+    public class ServiceRouteWatch : ConfigurationWatch
+    {
+        private readonly Action _action;
+        public ServiceRouteWatch(CPlatformContainer serviceProvider,  Action action)
+        {
+            this._action = action;
+            if (serviceProvider.IsRegistered<IConfigurationWatchManager>())
+                serviceProvider.GetInstances<IConfigurationWatchManager>().Register(this);
+            _action.Invoke();
+        }
+
+        public override async Task Process()
+        {
+            await Task.Run(_action);
+        }
+
+    }
+}

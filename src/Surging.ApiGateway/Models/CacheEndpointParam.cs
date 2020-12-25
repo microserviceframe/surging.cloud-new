@@ -1,5 +1,5 @@
-﻿using Surging.Core.Caching.HashAlgorithms;
-using Surging.Core.CPlatform.Cache;
+﻿using Surging.Cloud.Caching.HashAlgorithms;
+using Surging.Cloud.CPlatform.Cache;
 using System;
 using System.Collections.Generic;
 using System.Linq;

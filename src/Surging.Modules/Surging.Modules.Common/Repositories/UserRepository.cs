@@ -1,4 +1,4 @@
-﻿using Surging.Core.CPlatform.Ioc;
+﻿using Surging.Cloud.CPlatform.Ioc;
 using System;
 using System.Collections.Generic;
 using System.Text;

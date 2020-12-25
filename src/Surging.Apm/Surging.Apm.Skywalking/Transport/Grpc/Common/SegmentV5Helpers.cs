@@ -104,7 +104,7 @@ namespace Surging.Apm.Skywalking.Transport.Grpc.Common
             return logMessage;
         }
 
-        private static void ReadStringOrIntValue<T>(T instance, Surging.Core.CPlatform.Diagnostics.StringOrIntValue stringOrIntValue, Action<T, string> stringValueReader, Action<T, int> intValueReader)
+        private static void ReadStringOrIntValue<T>(T instance, Surging.Cloud.CPlatform.Diagnostics.StringOrIntValue stringOrIntValue, Action<T, string> stringValueReader, Action<T, int> intValueReader)
         {
             if (stringOrIntValue.HasStringValue)
             {

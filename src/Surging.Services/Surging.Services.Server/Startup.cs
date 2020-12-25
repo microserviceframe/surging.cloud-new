@@ -2,8 +2,8 @@
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Surging.Core.Caching.Configurations;
-using Surging.Core.CPlatform.Utilities;
+using Surging.Cloud.Caching.Configurations;
+using Surging.Cloud.CPlatform.Utilities;
 
 namespace Surging.Services.Server
 {

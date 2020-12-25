@@ -1,6 +1,6 @@
-﻿using Surging.Core.CPlatform.EventBus.Events;
-using Surging.Core.CPlatform.Utilities;
-using Surging.Core.EventBusRabbitMQ.Attributes;
+﻿using Surging.Cloud.CPlatform.EventBus.Events;
+using Surging.Cloud.CPlatform.Utilities;
+using Surging.Cloud.EventBusRabbitMQ.Attributes;
 using Surging.IModuleServices.Common;
 using Surging.IModuleServices.Common.Models;
 using Surging.IModuleServices.Common.Models.Events;

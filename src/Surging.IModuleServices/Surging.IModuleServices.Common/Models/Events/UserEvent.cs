@@ -1,4 +1,4 @@
-﻿using Surging.Core.CPlatform.EventBus.Events;
+﻿using Surging.Cloud.CPlatform.EventBus.Events;
 using System;
 using System.Collections.Generic;
 using System.Text;

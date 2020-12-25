@@ -1,5 +1,5 @@
 ﻿using ProtoBuf;
-using Surging.Core.System.Intercept;
+using Surging.Cloud.System.Intercept;
 using System;
 using System.Collections.Generic;
 using System.Text;

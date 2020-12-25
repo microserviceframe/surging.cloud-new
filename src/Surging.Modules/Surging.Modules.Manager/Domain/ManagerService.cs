@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Surging.Core.ProxyGenerator;
+using Surging.Cloud.ProxyGenerator;
 using Surging.IModuleServices.User;
 
 namespace Surging.Modules.Manager.Domain

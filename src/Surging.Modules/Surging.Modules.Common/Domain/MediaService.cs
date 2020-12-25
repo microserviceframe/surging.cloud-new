@@ -1,6 +1,6 @@
 ﻿
 
-using Surging.Core.Protocol.WS;
+using Surging.Cloud.Protocol.WS;
 using Surging.IModuleServices.Common;
 using System;
 using System.Collections.Generic;

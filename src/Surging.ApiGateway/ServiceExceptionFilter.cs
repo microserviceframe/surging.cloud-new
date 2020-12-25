@@ -1,5 +1,5 @@
-﻿using Surging.Core.CPlatform.Exceptions;
-using Surging.Core.CPlatform.Filters.Implementation;
+﻿using Surging.Cloud.CPlatform.Exceptions;
+using Surging.Cloud.CPlatform.Filters.Implementation;
 using System;
 using System.Collections.Generic;
 using System.Linq;

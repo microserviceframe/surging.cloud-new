@@ -6,9 +6,9 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Surging.Core.CPlatform.Runtime.Server;
-using Surging.Core.CPlatform.Utilities;
-using Surging.Core.ProxyGenerator;
+using Surging.Cloud.CPlatform.Runtime.Server;
+using Surging.Cloud.CPlatform.Utilities;
+using Surging.Cloud.ProxyGenerator;
 
 namespace Surging.Services.ServiceHost
 {
@@ -60,7 +60,7 @@ namespace Surging.Services.ServiceHost
         //        var result = serviceProxyProvider.Invoke<string>(rpcParams, updateHostActionRoute).Result;
         //        if (result.IsNullOrEmpty())
         //        {
-        //            logger.LogInformation("³õÊ¼»¯ActionÊ§°Ü");
+        //            logger.LogInformation("ï¿½ï¿½Ê¼ï¿½ï¿½ActionÊ§ï¿½ï¿½");
         //        }
         //        else
         //        {

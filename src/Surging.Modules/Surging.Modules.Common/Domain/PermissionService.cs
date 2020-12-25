@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
-using Surging.Core.CPlatform.Runtime.Session;
-using Surging.Core.ProxyGenerator;
+using Surging.Cloud.CPlatform.Runtime.Session;
+using Surging.Cloud.ProxyGenerator;
 using Surging.IModuleServices.Common;
 
 namespace Surging.Modules.Common.Domain

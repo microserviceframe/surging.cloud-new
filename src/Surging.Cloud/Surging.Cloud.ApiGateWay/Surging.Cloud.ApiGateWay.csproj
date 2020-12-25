@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+     <PackageId>$(PackagePrefix).ApiGateWay</PackageId>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
+    <Description>Surging网关组件</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JWT" Version="7.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Surging.Cloud.Caching\Surging.Cloud.Caching.csproj" />
+    <ProjectReference Include="..\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
+    <ProjectReference Include="..\Surging.Cloud.ProxyGenerator\Surging.Cloud.ProxyGenerator.csproj" />
+  </ItemGroup>
+
+</Project>

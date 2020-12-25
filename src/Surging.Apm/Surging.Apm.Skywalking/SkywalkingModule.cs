@@ -4,7 +4,7 @@ using Surging.Apm.Skywalking.Abstractions.Transport;
 using Surging.Apm.Skywalking.Core.Sampling;
 using Surging.Apm.Skywalking.Transport.Grpc;
 using Surging.Apm.Skywalking.Transport.Grpc.V6;
-using Surging.Core.CPlatform.Module;
+using Surging.Cloud.CPlatform.Module;
 using Autofac;
 using Surging.Apm.Skywalking.Abstractions.Common.Tracing;
 using Surging.Apm.Skywalking.Core.Tracing;
@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System;
 using Surging.Apm.Skywalking.Transport.Grpc.V5;
 using System.Threading.Tasks;
-using Surging.Core.CPlatform.Diagnostics;
+using Surging.Cloud.CPlatform.Diagnostics;
 
 namespace Surging.Apm.Skywalking
 {

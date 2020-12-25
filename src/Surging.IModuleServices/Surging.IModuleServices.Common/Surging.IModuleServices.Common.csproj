@@ -21,12 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.Dapper\Surging.Core.Dapper.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.DotNettyWSServer\Surging.Core.DotNettyWSServer.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.KestrelHttpServer\Surging.Core.KestrelHttpServer.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.Protocol.Mqtt\Surging.Core.Protocol.Mqtt.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.Protocol.WS\Surging.Core.Protocol.WS.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.System\Surging.Core.System.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Dapper\Surging.Cloud.Dapper.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.DotNettyWSServer\Surging.Cloud.DotNettyWSServer.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.KestrelHttpServer\Surging.Cloud.KestrelHttpServer.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Protocol.Mqtt\Surging.Cloud.Protocol.Mqtt.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Protocol.WS\Surging.Cloud.Protocol.WS.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.System\Surging.Cloud.System.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -26,20 +26,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.Codec.MessagePack\Surging.Core.Codec.MessagePack.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.Codec.ProtoBuffer\Surging.Core.Codec.ProtoBuffer.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.Common\Surging.Core.Common.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.Consul\Surging.Core.Consul.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.CPlatform\Surging.Core.CPlatform.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.DotNetty\Surging.Core.DotNetty.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.EventBusKafka\Surging.Core.EventBusKafka.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.EventBusRabbitMQ\Surging.Core.EventBusRabbitMQ.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.Log4net\Surging.Core.Log4net.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.NLog\Surging.Core.Nlog.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.ProxyGenerator\Surging.Core.ProxyGenerator.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.ServiceHosting\Surging.Core.ServiceHosting.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.System\Surging.Core.System.csproj" />
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.Zookeeper\Surging.Core.Zookeeper.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Codec.MessagePack\Surging.Cloud.Codec.MessagePack.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Codec.ProtoBuffer\Surging.Cloud.Codec.ProtoBuffer.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Common\Surging.Cloud.Common.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Consul\Surging.Cloud.Consul.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.DotNetty\Surging.Cloud.DotNetty.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.EventBusKafka\Surging.Cloud.EventBusKafka.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.EventBusRabbitMQ\Surging.Cloud.EventBusRabbitMQ.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Log4net\Surging.Cloud.Log4net.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.NLog\Surging.Cloud.Nlog.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.ProxyGenerator\Surging.Cloud.ProxyGenerator.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.ServiceHosting\Surging.Cloud.ServiceHosting.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.System\Surging.Cloud.System.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Zookeeper\Surging.Cloud.Zookeeper.csproj" />
     <ProjectReference Include="..\..\Surging.IModuleServices\Surging.IModuleServices.Common\Surging.IModuleServices.Common.csproj" />
   </ItemGroup>
 

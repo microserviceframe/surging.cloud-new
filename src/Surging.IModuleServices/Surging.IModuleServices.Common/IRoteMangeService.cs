@@ -1,4 +1,4 @@
-﻿using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
+﻿using Surging.Cloud.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 using Surging.IModuleServices.Common.Models;
 using System;
 using System.Collections.Generic;

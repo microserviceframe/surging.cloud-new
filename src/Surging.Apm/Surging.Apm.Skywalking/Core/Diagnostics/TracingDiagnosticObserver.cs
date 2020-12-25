@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Surging.Apm.Skywalking.Abstractions;
-using Surging.Core.CPlatform.Diagnostics;
+using Surging.Cloud.CPlatform.Diagnostics;
 
 namespace Surging.Apm.Skywalking.Core.Diagnostics
 {

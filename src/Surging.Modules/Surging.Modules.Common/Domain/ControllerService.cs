@@ -1,8 +1,8 @@
-﻿using Surging.Core.CPlatform.Utilities;
-using Surging.Core.Protocol.Mqtt.Internal.Enums;
-using Surging.Core.Protocol.Mqtt.Internal.Messages;
-using Surging.Core.Protocol.Mqtt.Internal.Services;
-using Surging.Core.ProxyGenerator;
+﻿using Surging.Cloud.CPlatform.Utilities;
+using Surging.Cloud.Protocol.Mqtt.Internal.Enums;
+using Surging.Cloud.Protocol.Mqtt.Internal.Messages;
+using Surging.Cloud.Protocol.Mqtt.Internal.Services;
+using Surging.Cloud.ProxyGenerator;
 using Surging.IModuleServices.Common;
 using Surging.IModuleServices.Common.Models;
 using Surging.IModuleServices.User;

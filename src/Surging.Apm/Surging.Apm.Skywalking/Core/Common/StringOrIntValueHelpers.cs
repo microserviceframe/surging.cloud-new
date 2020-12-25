@@ -17,7 +17,7 @@
  */
 
 using Surging.Apm.Skywalking.Abstractions.Common;
-using Surging.Core.CPlatform.Diagnostics;
+using Surging.Cloud.CPlatform.Diagnostics;
 using System;
 
 namespace Surging.Apm.Skywalking.Core.Common

@@ -1,4 +1,4 @@
-﻿using Surging.Core.DNS.Runtime;
+﻿using Surging.Cloud.DNS.Runtime;
 using Surging.IModuleServices.Common;
 using System;
 using System.Collections.Generic;

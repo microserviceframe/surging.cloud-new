@@ -1,5 +1,5 @@
-﻿using Surging.Core.ProxyGenerator;
-using Surging.Core.System.Ioc;
+﻿using Surging.Cloud.ProxyGenerator;
+using Surging.Cloud.System.Ioc;
 using Surging.IModuleServices.Common;
 using Surging.IModuleServices.Common.Models;
 using System;

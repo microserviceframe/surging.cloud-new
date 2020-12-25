@@ -1,10 +1,10 @@
 ﻿
 
-using Surging.Core.CPlatform.Ioc;
-using Surging.Core.CPlatform.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
-using Surging.Core.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
-using Surging.Core.CPlatform.Support;
-using Surging.Core.CPlatform.Support.Attributes;
+using Surging.Cloud.CPlatform.Ioc;
+using Surging.Cloud.CPlatform.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
+using Surging.Cloud.CPlatform.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
+using Surging.Cloud.CPlatform.Support;
+using Surging.Cloud.CPlatform.Support.Attributes;
 using System.Threading.Tasks;
 
 namespace Surging.IModuleServices.User

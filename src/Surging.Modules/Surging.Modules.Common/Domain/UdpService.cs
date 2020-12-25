@@ -1,5 +1,5 @@
-﻿using Surging.Core.DNS.Runtime;
-using Surging.Core.Protocol.Udp.Runtime;
+﻿using Surging.Cloud.DNS.Runtime;
+using Surging.Cloud.Protocol.Udp.Runtime;
 using Surging.IModuleServices.Common;
 using System;
 using System.Collections.Generic;

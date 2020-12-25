@@ -1,6 +1,6 @@
 ﻿using MessagePack;
 using ProtoBuf;
-using Surging.Core.System.Intercept;
+using Surging.Cloud.System.Intercept;
 
 namespace Surging.IModuleServices.Common.Models
 {

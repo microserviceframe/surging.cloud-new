@@ -1,15 +1,15 @@
 ﻿
-using Surging.Core.Common;
-using Surging.Core.CPlatform;
-using Surging.Core.CPlatform.EventBus.Events;
-using Surging.Core.CPlatform.EventBus.Implementation;
-using Surging.Core.CPlatform.Exceptions;
-using Surging.Core.CPlatform.Ioc;
-using Surging.Core.CPlatform.Runtime.Session;
-using Surging.Core.CPlatform.Transport.Implementation;
-using Surging.Core.KestrelHttpServer;
-using Surging.Core.KestrelHttpServer.Internal;
-using Surging.Core.ProxyGenerator;
+using Surging.Cloud.Common;
+using Surging.Cloud.CPlatform;
+using Surging.Cloud.CPlatform.EventBus.Events;
+using Surging.Cloud.CPlatform.EventBus.Implementation;
+using Surging.Cloud.CPlatform.Exceptions;
+using Surging.Cloud.CPlatform.Ioc;
+using Surging.Cloud.CPlatform.Runtime.Session;
+using Surging.Cloud.CPlatform.Transport.Implementation;
+using Surging.Cloud.KestrelHttpServer;
+using Surging.Cloud.KestrelHttpServer.Internal;
+using Surging.Cloud.ProxyGenerator;
 using Surging.IModuleServices.Common;
 using Surging.IModuleServices.Common.Models;
 using Surging.IModuleServices.User;

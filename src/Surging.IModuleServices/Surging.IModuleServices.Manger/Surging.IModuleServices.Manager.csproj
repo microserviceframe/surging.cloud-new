@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Surging.Core\Surging.Core.CPlatform\Surging.Core.CPlatform.csproj" />
+    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
   </ItemGroup>
 
 </Project>

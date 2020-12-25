@@ -5,15 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using Surging.Core.CPlatform.EventBus.Events;
+using Surging.Cloud.CPlatform.EventBus.Events;
 using Newtonsoft.Json.Linq;
-using Surging.Core.CPlatform;
-using Surging.Core.CPlatform.Ioc;
-using Surging.Core.ProxyGenerator;
-using Surging.Core.KestrelHttpServer.Internal;
+using Surging.Cloud.CPlatform;
+using Surging.Cloud.CPlatform.Ioc;
+using Surging.Cloud.ProxyGenerator;
+using Surging.Cloud.KestrelHttpServer.Internal;
 using System.IO;
-using Surging.Core.KestrelHttpServer;
-using Surging.Core.Common;
+using Surging.Cloud.KestrelHttpServer;
+using Surging.Cloud.Common;
 
 namespace Surging.Modules.Common.Domain
 {

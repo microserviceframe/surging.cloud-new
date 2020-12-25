@@ -1,5 +1,5 @@
-﻿using Surging.Core.CPlatform.Engines.Implementation;
-using Surging.Core.CPlatform.Utilities;
+﻿using Surging.Cloud.CPlatform.Engines.Implementation;
+using Surging.Cloud.CPlatform.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;

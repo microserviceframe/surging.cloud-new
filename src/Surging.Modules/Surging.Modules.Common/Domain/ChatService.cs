@@ -1,7 +1,7 @@
-﻿using Surging.Core.CPlatform.Utilities;
-using Surging.Core.Protocol.WS;
-using Surging.Core.CPlatform.Runtime;
-using Surging.Core.ProxyGenerator;
+﻿using Surging.Cloud.CPlatform.Utilities;
+using Surging.Cloud.Protocol.WS;
+using Surging.Cloud.CPlatform.Runtime;
+using Surging.Cloud.ProxyGenerator;
 using Surging.IModuleServices.Common;
 using System;
 using System.Collections.Concurrent;
