@@ -26,6 +26,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AppConfig = Surging.Cloud.CPlatform.AppConfig;
 
 namespace Surging.Services.Client
 {
@@ -49,7 +50,7 @@ namespace Surging.Services.Client
                 .ConfigureLogging(logger =>
                 {
                     logger.AddConfiguration(
-                        Core.CPlatform.AppConfig.GetSection("Logging"));
+                        AppConfig.GetSection("Logging"));
                 })
                 .Configure(build => {
 #if DEBUG

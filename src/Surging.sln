@@ -9,7 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.Cloud", "Surging.Cl
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.Modules", "Surging.Modules", "{CAC2EAD5-5AC7-44A2-9705-F2D8D3012A6F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.Services", "Surging.Services", "{30ADB177-C82F-49A7-8FA7-C32996543C4A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.Sample", "Surging.Sample", "{30ADB177-C82F-49A7-8FA7-C32996543C4A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Surging.IModuleServices", "Surging.IModuleServices", "{F65BE227-30B5-4217-AEC8-AD7F96411702}"
 EndProject
@@ -28,8 +28,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.CPlatform", "Surging.Cloud\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj", "{4D97446B-5E54-482C-ABAE-857577274B0B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.EventBusRabbitMQ", "Surging.Cloud\Surging.Cloud.EventBusRabbitMQ\Surging.Cloud.EventBusRabbitMQ.csproj", "{EE2A8BC3-CA17-4C22-A873-19927BAFB009}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.ApiGateway", "Surging.ApiGateway\Surging.ApiGateway.csproj", "{70FC4EE8-AC84-4774-BC0E-DE26A4B743B1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.ApiGateWay", "Surging.Cloud\Surging.Cloud.ApiGateWay\Surging.Cloud.ApiGateWay.csproj", "{58E21930-A34E-4669-89F6-9322C4847E6D}"
 EndProject
@@ -113,7 +111,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".configs", ".configs", "{78
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.Validation", "Surging.Cloud\Surging.Cloud.Validation\Surging.Cloud.Validation.csproj", "{1E3116B7-3E29-4AF7-A9CC-DEA007005146}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Services.Server2", "Surging.Services\Surging.Services.Server2\Surging.Services.Server2.csproj", "{ED240DCC-172D-44F5-897B-1979E9A342CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Services.GateWay", "Surging.Services\Surging.Services.GateWay\Surging.Services.GateWay.csproj", "{ED240DCC-172D-44F5-897B-1979E9A342CB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Surging.Cloud.ElasticSearch", "Surging.Cloud\Surging.Cloud.ElasticSearch\Surging.Cloud.ElasticSearch.csproj", "{67D2C4FE-E7AD-4CBD-901A-CAFB051A7BA5}"
 EndProject
@@ -161,10 +159,6 @@ Global
 		{EE2A8BC3-CA17-4C22-A873-19927BAFB009}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE2A8BC3-CA17-4C22-A873-19927BAFB009}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE2A8BC3-CA17-4C22-A873-19927BAFB009}.Release|Any CPU.Build.0 = Release|Any CPU
-		{70FC4EE8-AC84-4774-BC0E-DE26A4B743B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{70FC4EE8-AC84-4774-BC0E-DE26A4B743B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{70FC4EE8-AC84-4774-BC0E-DE26A4B743B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{70FC4EE8-AC84-4774-BC0E-DE26A4B743B1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{58E21930-A34E-4669-89F6-9322C4847E6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{58E21930-A34E-4669-89F6-9322C4847E6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{58E21930-A34E-4669-89F6-9322C4847E6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -352,6 +346,8 @@ Global
 		{ED240DCC-172D-44F5-897B-1979E9A342CB} = {30ADB177-C82F-49A7-8FA7-C32996543C4A}
 		{67D2C4FE-E7AD-4CBD-901A-CAFB051A7BA5} = {E3ADE8DE-5F3A-4E76-B22F-2C9435AACA06}
 		{4C49628C-43E2-4D57-867B-5944A348F852} = {E3ADE8DE-5F3A-4E76-B22F-2C9435AACA06}
+		{F65BE227-30B5-4217-AEC8-AD7F96411702} = {30ADB177-C82F-49A7-8FA7-C32996543C4A}
+		{CAC2EAD5-5AC7-44A2-9705-F2D8D3012A6F} = {30ADB177-C82F-49A7-8FA7-C32996543C4A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9889BCDC-E6A6-448F-B01A-ECFD0FAF294C}

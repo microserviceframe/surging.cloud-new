@@ -28,7 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Abp\Surging.Cloud.Abp.csproj" />
     <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.ApiGateWay\Surging.Cloud.ApiGateWay.csproj" />
     <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Caching\Surging.Cloud.Caching.csproj" />
     <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Codec.MessagePack\Surging.Cloud.Codec.MessagePack.csproj" />

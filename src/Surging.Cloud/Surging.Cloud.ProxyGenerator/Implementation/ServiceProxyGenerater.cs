@@ -98,7 +98,7 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
                             QualifiedName(
                                 QualifiedName(
                                     IdentifierName("Surging"),
-                                    IdentifierName("Cores")),
+                                    IdentifierName("Clouds")),
                                 IdentifierName("ClientProxys")))
                 .WithMembers(
                     SingletonList<MemberDeclarationSyntax>(

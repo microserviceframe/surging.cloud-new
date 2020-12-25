@@ -8,11 +8,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Include="..\..\packages\SharedSolutionFiles\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
-  </ItemGroup>
-
+  
   <ItemGroup>
     <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.Dapper\Surging.Cloud.Dapper.csproj" />
     <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.DNS\Surging.Cloud.DNS.csproj" />

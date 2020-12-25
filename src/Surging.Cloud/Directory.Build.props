@@ -12,7 +12,7 @@
     <Product>Surging Micro Service Framework</Product>
     <Copyright>Copyright © Liuhll All Rights Reserved.</Copyright>
 	  <PackageTags>surging;surging.cloud;microservice</PackageTags>
-	   <PackagePrefix>Surging.Cloud</PackagePrefix>
+	  <PackagePrefix>Surging.Cloud</PackagePrefix>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release' ">

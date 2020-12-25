@@ -24,6 +24,7 @@ using System;
 //using Surging.Cloud.Zookeeper;
 //using Surging.Cloud.Zookeeper.Configurations;
 using System.Text;
+using AppConfig = Surging.Cloud.CPlatform.AppConfig;
 
 namespace Surging.Services.Server
 {
@@ -49,7 +50,7 @@ namespace Surging.Services.Server
                 .ConfigureLogging(logger =>
                 {
                     logger.AddConfiguration(
-                        Core.CPlatform.AppConfig.GetSection("Logging"));
+                        AppConfig.GetSection("Logging"));
                 })
                 .UseServer(options => { })
                 .UseConsoleLifetime()

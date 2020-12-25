@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Surging.Cloud.CPlatform.Runtime;
 
 namespace Surging.Services.Client
 {
@@ -149,7 +150,7 @@ namespace Surging.Services.Client
             string path = "api/user/getuser";
             string serviceKey = "User";
 
-            var userProxy = serviceProxyProvider.Invoke<object>(model, path, Core.CPlatform.Runtime.HttpMethod.POST, serviceKey);
+            var userProxy = serviceProxyProvider.Invoke<object>(model, path, HttpMethod.POST, serviceKey);
             var s = userProxy.Result;
             Console.WriteLine("Press any key to exit...");
             Console.ReadLine();

@@ -98,7 +98,7 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void RegisterProxType(string[] namespaces,params Type[] types)
+        public async void RegisterProxType(string[] namespaces,params Type[] types)
         {
             var proxyGenerater = _serviceProvider.GetService<IServiceProxyGenerater>();
             var serviceTypes = proxyGenerater.GenerateProxys(types, namespaces).ToArray();
