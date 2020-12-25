@@ -19,8 +19,7 @@ namespace Surging.Cloud.ProxyGenerator
         /// <param name="namespaces"></param>
         /// <param name="serviceCommandProvider"></param>
         /// <returns>服务代理实现。</returns>
-        Task<IEnumerable<Type>> GenerateProxys(IEnumerable<Type> interfacTypes, IEnumerable<string> namespaces,
-            IServiceCommandProvider serviceCommandProvider);
+        IEnumerable<Type> GenerateProxys(IEnumerable<Type> interfacTypes, IEnumerable<string> namespaces);
 
         // /// <summary>
         // /// 生成服务代理代码树。

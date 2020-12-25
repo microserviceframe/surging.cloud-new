@@ -50,8 +50,7 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
         /// <param name="namespaces"></param>
         /// <param name="serviceCommandProvider"></param>
         /// <returns>服务代理实现。</returns>
-        public async Task<IEnumerable<Type>> GenerateProxys(IEnumerable<Type> interfacTypes, IEnumerable<string> namespaces,
-            IServiceCommandProvider serviceCommandProvider)
+        public IEnumerable<Type> GenerateProxys(IEnumerable<Type> interfacTypes, IEnumerable<string> namespaces)
         {
             var assemblys = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default).Select(z => Assembly.Load(new AssemblyName(z.Name))));
             assemblys = assemblys.Where(i => i.IsDynamic == false).ToArray();
@@ -61,28 +60,22 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
             {
                 assemblys = assemblys.Append(t.Assembly);
             }
-            var trees = new List<SyntaxTree>();
-           foreach (var interfacType in interfacTypes)
-           {
-               var syntaxTree = await GenerateProxyTree(interfacType, namespaces, serviceCommandProvider);
-               trees.Add(syntaxTree);
-           }
-           var stream = CompilationUtilitys.CompileClientProxy(trees,
-               assemblys
-                   .Select(a => MetadataReference.CreateFromFile(a.Location))
-                   .Concat(new[]
-                   {
-                       MetadataReference.CreateFromFile(typeof(Task).GetTypeInfo().Assembly.Location)
-                   }),
-               _logger);
+            var trees = interfacTypes.Select(p=>GenerateProxyTree(p,namespaces)).ToList();
+            var stream = CompilationUtilitys.CompileClientProxy(trees,
+                assemblys
+                    .Select(a => MetadataReference.CreateFromFile(a.Location))
+                    .Concat(new[]
+                    {
+                        MetadataReference.CreateFromFile(typeof(Task).GetTypeInfo().Assembly.Location)
+                    }),
+                _logger);
 
-           using (stream)
-           {
-               var assembly = AssemblyLoadContext.Default.LoadFromStream(stream);
-               return assembly.GetExportedTypes();
-           }
+            using (stream)
+            {
+                var assembly = AssemblyLoadContext.Default.LoadFromStream(stream);
+                return assembly.GetExportedTypes();
+            }
         }
-
         /// <summary>
         /// 生成服务代理代码树。
         /// </summary>
@@ -90,25 +83,11 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
         /// <param name="namespaces"></param>
         /// <param name="serviceCommandProvider"></param>
         /// <returns>代码树。</returns>
-        public async　Task<SyntaxTree> GenerateProxyTree(Type interfaceType, IEnumerable<string> namespaces,
-            IServiceCommandProvider serviceCommandProvider)
+        public SyntaxTree GenerateProxyTree(Type interfaceType, IEnumerable<string> namespaces)
         {
             var className = interfaceType.Name.StartsWith("I") ? interfaceType.Name.Substring(1) : interfaceType.Name;
             className += "ClientProxy";
-            var serviceCommands = await serviceCommandProvider.GetCommands(interfaceType.FullName);
-            if (serviceCommands != null && serviceCommands.Any())
-            {
-                foreach (var serviceCommand in serviceCommands)
-                {
-                    if (serviceCommand.InjectionNamespaces != null && serviceCommand.InjectionNamespaces.Any())
-                    {
-                        namespaces = namespaces.Concat(serviceCommand.InjectionNamespaces);
-                    }
-                }
-            }
 
-            namespaces = namespaces.Distinct();
-           
             var members = new List<MemberDeclarationSyntax>
             {
                 GetConstructorDeclaration(className)
@@ -120,28 +99,27 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
                 .WithMembers(
                     SingletonList<MemberDeclarationSyntax>(
                         NamespaceDeclaration(
-                            QualifiedName(
                                 QualifiedName(
-                                    IdentifierName("Surging"),
-                                    IdentifierName("Clouds")),
-                                IdentifierName("ClientProxys")))
-                .WithMembers(
-                    SingletonList<MemberDeclarationSyntax>(
-                        ClassDeclaration(className)
-                            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                            .WithBaseList(
-                                BaseList(
-                                    SeparatedList<BaseTypeSyntax>(
-                                        new SyntaxNodeOrToken[]
-                                        {
-                                            SimpleBaseType(IdentifierName("ServiceProxyBase")),
-                                            Token(SyntaxKind.CommaToken),
-                                            SimpleBaseType(GetQualifiedNameSyntax(interfaceType))
-                                        })))
-                            .WithMembers(List(members))))))
+                                    QualifiedName(
+                                        IdentifierName("Surging"),
+                                        IdentifierName("Clouds")),
+                                    IdentifierName("ClientProxys")))
+                            .WithMembers(
+                                SingletonList<MemberDeclarationSyntax>(
+                                    ClassDeclaration(className)
+                                        .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                                        .WithBaseList(
+                                            BaseList(
+                                                SeparatedList<BaseTypeSyntax>(
+                                                    new SyntaxNodeOrToken[]
+                                                    {
+                                                        SimpleBaseType(IdentifierName("ServiceProxyBase")),
+                                                        Token(SyntaxKind.CommaToken),
+                                                        SimpleBaseType(GetQualifiedNameSyntax(interfaceType))
+                                                    })))
+                                        .WithMembers(List(members))))))
                 .NormalizeWhitespace().SyntaxTree;
         }
-
         #endregion Implementation of IServiceProxyGenerater
 
         #region Private Method
