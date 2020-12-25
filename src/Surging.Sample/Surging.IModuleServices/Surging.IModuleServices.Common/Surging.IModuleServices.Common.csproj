@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <PackageId>测试模块</PackageId>
+     <Description>测试</Description>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>bin\Debug\netcoreapp2.1\Surging.IModuleServices.Common.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\netcoreapp2.1\Surging.IModuleServices.Common.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="1.7.3.4" />
+    <PackageReference Include="protobuf-net" Version="2.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Dapper\Surging.Cloud.Dapper.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.DotNettyWSServer\Surging.Cloud.DotNettyWSServer.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.KestrelHttpServer\Surging.Cloud.KestrelHttpServer.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Protocol.Mqtt\Surging.Cloud.Protocol.Mqtt.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Protocol.WS\Surging.Cloud.Protocol.WS.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.System\Surging.Cloud.System.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
+</Project>

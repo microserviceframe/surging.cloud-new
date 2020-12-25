@@ -62,10 +62,7 @@ namespace Surging.Cloud.CPlatform.Runtime.Server.Implementation.ServiceDiscovery
                 var typeInfo = i.GetTypeInfo();
                 return typeInfo.IsInterface && typeInfo.GetCustomAttribute<ServiceBundleAttribute>() != null;
             }).Distinct().ToArray();
-            if (_logger.IsEnabled(LogLevel.Information))
-            {
-                _logger.LogInformation($"发现了以下服务：{string.Join(",", services.Select(i => i.ToString()))}。");
-            }
+            _logger.LogDebug($"发现了以下服务：{string.Join(",", services.Select(i => i.ToString()))}。");
             var entries = new List<ServiceEntry>();
             foreach (var service in services)
             {

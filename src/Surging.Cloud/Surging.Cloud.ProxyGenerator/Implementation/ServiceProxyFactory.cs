@@ -101,7 +101,8 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
         public async void RegisterProxType(string[] namespaces,params Type[] types)
         {
             var proxyGenerater = _serviceProvider.GetService<IServiceProxyGenerater>();
-            var serviceTypes = proxyGenerater.GenerateProxys(types, namespaces).ToArray();
+            var serviceCommandProvider = _serviceProvider.GetService<IServiceCommandProvider>();
+            var serviceTypes = (await proxyGenerater.GenerateProxys(types, namespaces, serviceCommandProvider)).ToArray();
             _serviceTypes= _serviceTypes.Except(serviceTypes).Concat(serviceTypes).ToArray();
             proxyGenerater.Dispose();
             GC.Collect();

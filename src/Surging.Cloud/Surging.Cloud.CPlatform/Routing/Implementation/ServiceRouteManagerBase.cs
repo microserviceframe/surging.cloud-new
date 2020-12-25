@@ -134,7 +134,7 @@ namespace Surging.Cloud.CPlatform.Routing.Implementation
         /// <returns>一个任务。</returns>
         protected abstract Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes);
 
-        protected abstract Task SetRouteAsync(ServiceRouteDescriptor route);
+        protected abstract Task<bool> SetRouteAsync(ServiceRouteDescriptor route);
 
         protected void OnCreated(params ServiceRouteEventArgs[] args)
         {

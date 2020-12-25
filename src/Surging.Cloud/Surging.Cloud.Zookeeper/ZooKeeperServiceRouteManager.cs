@@ -118,15 +118,15 @@ namespace Surging.Cloud.Zookeeper
         /// <returns>一个任务。</returns>
         protected override async Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes)
         {
-            if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation("准备添加服务路由。");
             using (var locker = await _lockerProvider.CreateLockAsync($"set_routes_async"))
             {
                 await locker.Lock(async () =>
                 {
+                   
                     var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
                     foreach (var zooKeeperClient in zooKeeperClients)
-                    {
+                    { 
+                        _logger.LogInformation($"准备向服务注册中心{zooKeeperClient.Options.ConnectionString}注册路由信息");
                         await CreateSubdirectory(zooKeeperClient, _configInfo.RoutePath);
 
                         var path = _configInfo.RoutePath;
@@ -134,25 +134,28 @@ namespace Surging.Cloud.Zookeeper
                             path += "/";
 
                         routes = routes.ToArray();
+                        var registerCount = 0;
                         foreach (var serviceRoute in routes)
                         {
-                            await SetRouteAsync(serviceRoute);
+                            if (await SetRouteAsync(serviceRoute))
+                            {
+                                registerCount++;
+                            }
                         }
-
-                    }               
+                        _logger.LogInformation($"成功向服务注册中心注册{registerCount}个服务路由");
+                    }
+                  
                     
                 });
             }
-
-
+          
         }
 
-        protected override async Task SetRouteAsync(ServiceRouteDescriptor route)
+        protected override async Task<bool> SetRouteAsync(ServiceRouteDescriptor route)
         {
             try
             {
-                if (_logger.IsEnabled(LogLevel.Information))
-                    _logger.LogInformation($"准备添加{route.ServiceDescriptor.Id}服务路由。");
+                _logger.LogDebug($"准备添加{route.ServiceDescriptor.Id}服务路由。");
                 var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
                 foreach (var zooKeeperClient in zooKeeperClients)
                 {                    
@@ -179,17 +182,18 @@ namespace Surging.Cloud.Zookeeper
                         if (!DataEquals(nodeData, onlineData))
                         {
                             await zooKeeperClient.SetDataAsync(nodePath, nodeData);
-                            _logger.LogInformation($"{nodePath}节点的缓存的服务路由与服务注册中心不一致,路由数据已被更新。");
+                            _logger.LogDebug($"{nodePath}节点的缓存的服务路由与服务注册中心不一致,路由数据已被更新。");
 
                         }
                     }
-
-
                 }
+
+                return true;
             }
             catch (Exception ex)
             {
                 _logger.LogError($"{route.ServiceDescriptor.Id}服务的路由注册失败,原因:{ex.Message}" );
+                return false;
 
             }
 

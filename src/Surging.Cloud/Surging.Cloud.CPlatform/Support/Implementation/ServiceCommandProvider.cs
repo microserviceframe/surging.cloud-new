@@ -14,7 +14,7 @@ namespace Surging.Cloud.CPlatform.Support.Implementation
         private readonly IServiceEntryManager _serviceEntryManager;
         private readonly IServiceProvider _serviceProvider;
         private readonly ConcurrentDictionary<string, ServiceCommand> _serviceCommand = new ConcurrentDictionary<string, ServiceCommand>();
-
+        private readonly ConcurrentDictionary<string, IEnumerable<ServiceCommand>> _serviceAppCommands = new ConcurrentDictionary<string, IEnumerable<ServiceCommand>>();
         public ServiceCommandProvider(IServiceEntryManager serviceEntryManager, IServiceProvider serviceProvider)
         {
             _serviceEntryManager = serviceEntryManager;
@@ -28,7 +28,7 @@ namespace Surging.Cloud.CPlatform.Support.Implementation
             }
         }
 
-        public override async  ValueTask<ServiceCommand> GetCommand(string serviceId)
+        public override async Task<ServiceCommand> GetCommand(string serviceId)
         {
             var result = _serviceCommand.GetValueOrDefault(serviceId);
             if (result == null)
@@ -39,6 +39,50 @@ namespace Surging.Cloud.CPlatform.Support.Implementation
             {
                 return result;
             }
+        }
+
+        public async override Task<IEnumerable<ServiceCommand>> GetCommands(string serviceAppName)
+        {
+            var result = _serviceAppCommands.GetValueOrDefault(serviceAppName);
+            if (result == null)
+            {
+                return await GetCommandsAsync(serviceAppName);
+            }
+            else
+            {
+                return result;
+            }
+        }
+
+        private async Task<IEnumerable<ServiceCommand>> GetCommandsAsync(string serviceAppName)
+        {
+            var result = new List<ServiceCommand>();
+            var manager = _serviceProvider.GetService<IServiceCommandManager>();
+            if (manager == null)
+            {
+                var commands = (from q in _serviceEntryManager.GetEntries()
+                    let k = q.Attributes
+                    where k.OfType<CommandAttribute>().Count() > 0 && q.Descriptor.Id.Contains(serviceAppName)
+                    select k.OfType<CommandAttribute>().FirstOrDefault());
+                foreach (var command in commands)
+                {
+                    var serviceCommand = ConvertServiceCommand(command);
+                    result.Add(serviceCommand);
+                }
+              
+            }
+            else
+            {
+                var commands = await manager.GetServiceCommandsAsync();
+                var serviceCommands = commands.Where(p => p.ServiceId.Contains(serviceAppName));
+                foreach (var command in commands)
+                {
+                    var serviceCommand = ConvertServiceCommand(command);
+                    result.Add(serviceCommand);
+                }
+            }
+
+            return result;
         }
 
         public async Task<ServiceCommand> GetCommandAsync(string serviceId)

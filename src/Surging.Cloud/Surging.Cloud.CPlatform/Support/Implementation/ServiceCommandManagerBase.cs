@@ -116,9 +116,9 @@ namespace Surging.Cloud.CPlatform.Support.Implementation
         /// <summary>
         /// 设置服务命令。
         /// </summary>
-        /// <param name="routes">服务命令集合。</param>
+        /// <param name="serviceCommands">服务命令集合。</param>
         /// <returns>一个任务。</returns>
-        public abstract Task SetServiceCommandsAsync(IEnumerable<ServiceCommandDescriptor> routes);
+        public abstract Task SetServiceCommandsAsync(IEnumerable<ServiceCommandDescriptor> serviceCommands);
 
         protected void OnCreated(params ServiceCommandEventArgs[] args)
         {

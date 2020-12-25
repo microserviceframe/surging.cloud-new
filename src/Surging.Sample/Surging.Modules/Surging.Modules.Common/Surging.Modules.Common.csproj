@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Dapper\Surging.Cloud.Dapper.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.DNS\Surging.Cloud.DNS.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.DotNettyWSServer\Surging.Cloud.DotNettyWSServer.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.EventBusRabbitMQ\Surging.Cloud.EventBusRabbitMQ.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Protocol.Mqtt\Surging.Cloud.Protocol.Mqtt.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Protocol.Udp\Surging.Cloud.Protocol.Udp.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Protocol.WS\Surging.Cloud.Protocol.WS.csproj" />
+    <ProjectReference Include="..\..\Surging.IModuleServices\Surging.IModuleServices.Common\Surging.IModuleServices.Common.csproj" />
+    <ProjectReference Include="..\..\Surging.IModuleServices\Surging.IModuleServices.Manger\Surging.IModuleServices.Manager.csproj" />
+  </ItemGroup>
+
+</Project>

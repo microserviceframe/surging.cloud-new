@@ -107,22 +107,23 @@ namespace Surging.Cloud.Zookeeper
         /// </summary>
         /// <param name="routes">服务命令集合。</param>
         /// <returns>一个任务。</returns>
-        public override async Task SetServiceCommandsAsync(IEnumerable<ServiceCommandDescriptor> serviceCommand)
+        public override async Task SetServiceCommandsAsync(IEnumerable<ServiceCommandDescriptor> serviceCommands)
         {
-            if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation("准备添加服务命令。");
+          
             var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
             foreach (var zooKeeperClient in zooKeeperClients)
             {
+                _logger.LogInformation($"准备向服务注册中心{zooKeeperClient.Options.ConnectionString}添加服务命令。");
                 await CreateSubdirectory(zooKeeperClient, _configInfo.CommandPath);
 
                 var path = _configInfo.CommandPath;
                 if (!path.EndsWith("/"))
                     path += "/";
 
-                serviceCommand = serviceCommand.ToArray();
-
-                foreach (var command in serviceCommand)
+                serviceCommands = serviceCommands.ToArray();
+                var addCount = 0;
+                var exsitCount = 0;
+                foreach (var command in serviceCommands)
                 {
 
                     var nodePath = $"{path}{command.ServiceId}";
@@ -135,24 +136,28 @@ namespace Surging.Cloud.Zookeeper
                    
                     if (!await zooKeeperClient.ExistsAsync(nodePath))
                     {
-                        if (_logger.IsEnabled(LogLevel.Debug))
-                            _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
-
+                        _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
                         await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                        addCount++;
                     }
                     else
                     {
-                        if (_logger.IsEnabled(LogLevel.Debug))
-                            _logger.LogDebug($"将更新节点：{nodePath}的数据。");
-
+                        _logger.LogDebug($"将更新节点：{nodePath}的数据。");
                         var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
                         if (!DataEquals(nodeData, onlineData))
+                        {
                             await zooKeeperClient.SetDataAsync(nodePath, nodeData);
+                            addCount++;
+                        }
+                        else
+                        {
+                            exsitCount++;
+                        }
                     }
                     NodeChange(command);
                 }
-                if (_logger.IsEnabled(LogLevel.Information))
-                    _logger.LogInformation("服务命令添加成功。");
+                _logger.LogInformation($"共发现{serviceCommands.Count()}个服务命令,其中,成功向服务注册中心添加{addCount}个,服务注册中心已经存在{exsitCount}个");
+                   
 
             }
         }
@@ -227,14 +232,15 @@ namespace Surging.Cloud.Zookeeper
 
         private ServiceCommandDescriptor GetServiceCommand(byte[] data)
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.LogDebug($"准备转换服务命令，配置内容：{Encoding.UTF8.GetString(data)}。");
+            _logger.LogDebug($"准备转换服务命令，配置内容：{Encoding.UTF8.GetString(data)}。");
+            if (data != null)
+            {
+                var descriptor = _serializer.Deserialize<byte[], ServiceCommandDescriptor>(data);
+                return descriptor;
+                
+            }
+            return null;
 
-            if (data == null)
-                return null;
-
-            var descriptor = _serializer.Deserialize<byte[], ServiceCommandDescriptor>(data);
-            return descriptor;
         }
 
         private async Task<ServiceCommandDescriptor> GetServiceCommand(string path)

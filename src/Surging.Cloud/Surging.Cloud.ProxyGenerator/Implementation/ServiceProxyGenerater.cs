@@ -17,12 +17,13 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using Surging.Cloud.CPlatform;
+using Surging.Cloud.CPlatform.Support;
 using Surging.Cloud.Domain.PagedAndSorted;
 using Surging.Cloud.Domain.Trees;
 
 namespace Surging.Cloud.ProxyGenerator.Implementation
 {
-    public class ServiceProxyGenerater : IServiceProxyGenerater,IDisposable
+    public class ServiceProxyGenerater : IServiceProxyGenerater ,IDisposable
     {
         #region Field
 
@@ -46,8 +47,11 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
         /// 生成服务代理。
         /// </summary>
         /// <param name="interfacTypes">需要被代理的接口类型。</param>
+        /// <param name="namespaces"></param>
+        /// <param name="serviceCommandProvider"></param>
         /// <returns>服务代理实现。</returns>
-        public IEnumerable<Type> GenerateProxys(IEnumerable<Type> interfacTypes, IEnumerable<string> namespaces)
+        public async Task<IEnumerable<Type>> GenerateProxys(IEnumerable<Type> interfacTypes, IEnumerable<string> namespaces,
+            IServiceCommandProvider serviceCommandProvider)
         {
             var assemblys = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default).Select(z => Assembly.Load(new AssemblyName(z.Name))));
             assemblys = assemblys.Where(i => i.IsDynamic == false).ToArray();
@@ -57,33 +61,54 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
             {
                 assemblys = assemblys.Append(t.Assembly);
             }
-            var trees = interfacTypes.Select(p=>GenerateProxyTree(p,namespaces)).ToList();
-            var stream = CompilationUtilitys.CompileClientProxy(trees,
-                assemblys
-                    .Select(a => MetadataReference.CreateFromFile(a.Location))
-                    .Concat(new[]
-                    {
-                        MetadataReference.CreateFromFile(typeof(Task).GetTypeInfo().Assembly.Location)
-                    }),
-                _logger);
+            var trees = new List<SyntaxTree>();
+           foreach (var interfacType in interfacTypes)
+           {
+               var syntaxTree = await GenerateProxyTree(interfacType, namespaces, serviceCommandProvider);
+               trees.Add(syntaxTree);
+           }
+           var stream = CompilationUtilitys.CompileClientProxy(trees,
+               assemblys
+                   .Select(a => MetadataReference.CreateFromFile(a.Location))
+                   .Concat(new[]
+                   {
+                       MetadataReference.CreateFromFile(typeof(Task).GetTypeInfo().Assembly.Location)
+                   }),
+               _logger);
 
-            using (stream)
-            {
-                var assembly = AssemblyLoadContext.Default.LoadFromStream(stream);
-                return assembly.GetExportedTypes();
-            }
+           using (stream)
+           {
+               var assembly = AssemblyLoadContext.Default.LoadFromStream(stream);
+               return assembly.GetExportedTypes();
+           }
         }
 
         /// <summary>
         /// 生成服务代理代码树。
         /// </summary>
         /// <param name="interfaceType">需要被代理的接口类型。</param>
+        /// <param name="namespaces"></param>
+        /// <param name="serviceCommandProvider"></param>
         /// <returns>代码树。</returns>
-        public SyntaxTree GenerateProxyTree(Type interfaceType, IEnumerable<string> namespaces)
+        public async　Task<SyntaxTree> GenerateProxyTree(Type interfaceType, IEnumerable<string> namespaces,
+            IServiceCommandProvider serviceCommandProvider)
         {
             var className = interfaceType.Name.StartsWith("I") ? interfaceType.Name.Substring(1) : interfaceType.Name;
             className += "ClientProxy";
+            var serviceCommands = await serviceCommandProvider.GetCommands(interfaceType.FullName);
+            if (serviceCommands != null && serviceCommands.Any())
+            {
+                foreach (var serviceCommand in serviceCommands)
+                {
+                    if (serviceCommand.InjectionNamespaces != null && serviceCommand.InjectionNamespaces.Any())
+                    {
+                        namespaces = namespaces.Concat(serviceCommand.InjectionNamespaces);
+                    }
+                }
+            }
 
+            namespaces = namespaces.Distinct();
+           
             var members = new List<MemberDeclarationSyntax>
             {
                 GetConstructorDeclaration(className)

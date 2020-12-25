@@ -19,7 +19,7 @@ namespace Surging.Cloud.ServiceHosting.Internal.Implementation
         {
             ApplicationLifetime.ApplicationStarted.Register(() =>
             {
-                Console.WriteLine("服务已启动。 按下Ctrl + C关闭。");
+                Console.WriteLine("服务宿主机已启动。 按下Ctrl + C关闭。");
             });
 
             AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) =>

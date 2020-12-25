@@ -1,6 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Surging.Cloud.CPlatform.Support;
 
 namespace Surging.Cloud.ProxyGenerator
 {
@@ -14,14 +16,17 @@ namespace Surging.Cloud.ProxyGenerator
         /// </summary>
         /// <param name="interfacTypes">需要被代理的接口类型。</param>
         /// <param name="interfacTypes">引用的命名空间。</param>
+        /// <param name="namespaces"></param>
+        /// <param name="serviceCommandProvider"></param>
         /// <returns>服务代理实现。</returns>
-        IEnumerable<Type> GenerateProxys(IEnumerable<Type> interfacTypes,IEnumerable<string> namespaces);
+        Task<IEnumerable<Type>> GenerateProxys(IEnumerable<Type> interfacTypes, IEnumerable<string> namespaces,
+            IServiceCommandProvider serviceCommandProvider);
 
-        /// <summary>
-        /// 生成服务代理代码树。
-        /// </summary>
-        /// <param name="interfaceType">需要被代理的接口类型。</param>
-        /// <returns>代码树。</returns>
-        SyntaxTree GenerateProxyTree(Type interfaceType, IEnumerable<string> namespaces);
+        // /// <summary>
+        // /// 生成服务代理代码树。
+        // /// </summary>
+        // /// <param name="interfaceType">需要被代理的接口类型。</param>
+        // /// <returns>代码树。</returns>
+        // SyntaxTree GenerateProxyTree(Type interfaceType, IEnumerable<string> namespaces);
     }
 }

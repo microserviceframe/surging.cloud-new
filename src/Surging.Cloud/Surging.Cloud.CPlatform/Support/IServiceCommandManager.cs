@@ -33,9 +33,9 @@ namespace Surging.Cloud.CPlatform.Support
         /// <summary>
         /// 设置服务命令。
         /// </summary>
-        /// <param name="commands">服务命令集合。</param>
+        /// <param name="serviceCommands">服务命令集合。</param>
         /// <returns>一个任务。</returns>
-        Task SetServiceCommandsAsync(IEnumerable<ServiceCommandDescriptor> commands);
+        Task SetServiceCommandsAsync(IEnumerable<ServiceCommandDescriptor> serviceCommands);
 
 
         Task SetServiceCommandsAsync();
