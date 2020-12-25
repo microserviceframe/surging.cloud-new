@@ -8,7 +8,7 @@ Param(
 # Paths
 $packFolder = (Get-Item -Path "./" -Verbose).FullName
 $slnPath = Join-Path $packFolder "../src"
-$srcPath = Join-Path $packFolder "../src/Surging.Core"
+$srcPath = Join-Path $packFolder "../src/Surging.Cloud"
 
 
 
@@ -26,17 +26,17 @@ function Pack($projectFolder,$projectName) {
    & dotnet msbuild /t:pack /p:Configuration=Release /p:SourceLinkCreate=true
    if ($projectName) {
     $projectPackPath = Join-Path $projectFolder ("/bin/Release/" + $projectName + ".*.nupkg")
-   }else {
-    $projectName = $project -replace "Core","Cloud"
+   }
+   else {
+    $projectName = $project 
     $projectPackPath = Join-Path $projectFolder ("/bin/Release/" + $projectName + ".*.nupkg")
    }
-
    Move-Item -Force $projectPackPath $packFolder 
 }
 
 if ($build) {
   Set-Location $slnPath
-  & dotnet restore Surging.sln
+  & dotnet restore Surging.Cloud.sln
 
   foreach($project in $projects) {
     if (-not $project.StartsWith("#")){
