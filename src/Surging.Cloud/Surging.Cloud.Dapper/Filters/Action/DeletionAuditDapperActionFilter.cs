@@ -28,9 +28,8 @@ namespace Surging.Cloud.Dapper.Filters.Action
             {
                 if (((IOrgAudited) entity).OrgId.HasValue)
                 {
-                    if (!_loginUser.IsAllOrg && (_loginUser.DataPermissionOrgIds == null 
-                                                 || !_loginUser.OrgId.HasValue 
-                                                 || !_loginUser.DataPermissionOrgIds.Contains(_loginUser.OrgId.Value)))
+                    if (!_loginUser.IsAllOrg && (_loginUser.DataPermissionOrgIds == null
+                                                 || !_loginUser.DataPermissionOrgIds.Contains(((IOrgAudited) entity).OrgId.Value)))
                     {
                         throw new BusinessException("您没有删除该数据的权限");
                     }
