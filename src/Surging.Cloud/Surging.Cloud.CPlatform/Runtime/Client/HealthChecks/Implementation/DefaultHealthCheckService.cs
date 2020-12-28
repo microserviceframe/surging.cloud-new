@@ -75,7 +75,15 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
                     entry = new MonitorEntry(address, true);
                     _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), entry);
                 }
-
+                if (!entry.Health)
+                {
+                    if (entry.LastUnhealthyDateTime.HasValue &&
+                        (DateTime.Now - entry.LastUnhealthyDateTime.Value).TotalSeconds > (AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds * AppConfig.ServerOptions.AllowServerUnhealthyTimes))
+                    {
+                        entry.Health = true;
+                        entry.UnhealthyTimes = 0;
+                    }
+                }
                 OnChanged(new HealthCheckEventArgs(address, entry.Health));
                 return entry.Health;
 
@@ -123,6 +131,7 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
             var entry = _dictionaries.GetOrAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), k => new MonitorEntry(address,false));
             entry.Health = false;
             entry.UnhealthyTimes += 1;
+            entry.LastUnhealthyDateTime = DateTime.Now;
             if (entry.UnhealthyTimes > AppConfig.ServerOptions.AllowServerUnhealthyTimes)
             {
                 _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port),out MonitorEntry monitor);
@@ -200,6 +209,8 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
             }
 
             public int UnhealthyTimes { get; set; }
+            
+            public DateTime? LastUnhealthyDateTime { get; set; }
 
             public AddressModel Address { get; set; }
 
