@@ -44,14 +44,10 @@ namespace Surging.Cloud.System.Intercept
             {
                 if (ex is BusinessException || ex.InnerException is BusinessException)
                 {
-                    return returnValue;
+                    throw;
                 }
-                else
-                {
-                    returnValue = await getFromPersistence();
-                    return returnValue;
-
-                }
+                returnValue = await getFromPersistence();
+                return returnValue;
             }
         }
 
@@ -100,14 +96,10 @@ namespace Surging.Cloud.System.Intercept
             {
                 if (ex is BusinessException || ex.InnerException is BusinessException)
                 {
-                    return default(T);
+                    throw;
                 }
-                else
-                {
-                    returnValue = await getFromPersistence();
-                    return returnValue as T;
-
-                }
+                returnValue = await getFromPersistence();
+                return returnValue as T;
             }
         }
 

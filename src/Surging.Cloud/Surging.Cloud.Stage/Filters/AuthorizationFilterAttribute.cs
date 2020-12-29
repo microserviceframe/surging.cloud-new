@@ -104,9 +104,7 @@ namespace Surging.Cloud.Stage.Filters
                                     attachments.TryAdd(kv.Key,kv.Value);
                                 }
                                 rpcParams.Add("attachments", attachments);
-                                try
-                                {
-                                    var checkPermissionResult = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
+                                             var checkPermissionResult = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
                                     if (checkPermissionResult == null || !checkPermissionResult.ContainsKey("isPermission"))
                                     {
                                         filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key" };
@@ -134,13 +132,6 @@ namespace Surging.Cloud.Stage.Filters
 
                                         claimsIdentity.AddClaim(new Claim(kv.Key,kv.Value.ToString()));
                                     }
-                                }
-                                catch (Exception e)
-                                {
-                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = e.GetExceptionMessage() };
-                                    return;
-                                }
-
                                 
                             }
                             

@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Org.BouncyCastle.Security;
 
 namespace Surging.Modules.Common.Domain
 {
@@ -35,7 +36,7 @@ namespace Surging.Modules.Common.Domain
 
         public async Task<IDictionary<string, object>> Check(long? userId, string serviceId)
         {
-            throw new AuthException("测试异常");
+            throw new AuthException("测试异常",StatusCode.UnAuthorized);
         }
 
         public async Task<string> GetUserName(int id)

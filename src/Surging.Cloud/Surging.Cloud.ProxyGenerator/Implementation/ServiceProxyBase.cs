@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Autofac;
 using Surging.Cloud.CPlatform.Utilities;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using Surging.Cloud.CPlatform.Exceptions;
 using Surging.Cloud.CPlatform.Transport.Implementation;
 
@@ -30,6 +31,7 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
         private readonly IBreakeRemoteInvokeService _breakeRemoteInvokeService;
         private readonly IEnumerable<IInterceptor> _interceptors;
         private readonly IInterceptor _cacheInterceptor;
+        protected readonly ILogger<ServiceProxyBase> _logger;
         #endregion Field
 
         #region Constructor
@@ -43,6 +45,7 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
             _serviceProvider = serviceProvider;
             _commandProvider = serviceProvider.GetInstances<IServiceCommandProvider>();
             _breakeRemoteInvokeService = serviceProvider.GetInstances<IBreakeRemoteInvokeService>();
+            _logger = serviceProvider.GetInstances<ILogger<ServiceProxyBase>>();
             _interceptors = new List<IInterceptor>();
             if (serviceProvider.Current.IsRegistered<IInterceptor>())
             {
@@ -110,7 +113,7 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
             }
             if (message != null)
             {
-                result = GetInvokeResult<T>(message);
+                result = await GetInvokeResult<T>(message);
             }
             return (T)result;
         }
@@ -156,7 +159,7 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
                 return await CallInvokeBackFallBackRetryInvoke(parameters, serviceId, command, type, type == typeof(Task) ? false : true);
             }
             if (type == typeof(Task)) return message;
-            return GetInvokeResult(message, invocation.ReturnType);
+            return await GetInvokeResult(message, invocation.ReturnType);
         }
 
         private async Task<Tuple<RemoteInvokeResultMessage, object>> Intercept(IInterceptor interceptor, IInvocation invocation)
@@ -177,45 +180,52 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
             return invocation.GetCacheInvocation(this, parameters, serviceId, returnType);
         }
 
-        private object GetInvokeResult<T>(RemoteInvokeResultMessage message)
+        private Task<T> GetInvokeResult<T>(RemoteInvokeResultMessage message)
         {
-            object result = default(T);
-            if (message.StatusCode == StatusCode.Success)
+            return Task.Run(() =>
             {
-                if (message.Result != null)
+                object result = default(T);
+                if (message.StatusCode == StatusCode.Success)
                 {
-                    result = _typeConvertibleService.Convert(message.Result, typeof(T));
-                }
-            }
-            else
-            {
-                throw message.GetExceptionByStatusCode();
-            }
-
-            return result;
-        }
-
-        private object GetInvokeResult(RemoteInvokeResultMessage message, Type returnType)
-        {
-            object result;
-            if (message.StatusCode == StatusCode.Success)
-            {
-                if (message.Result != null)
-                {
-                    result = _typeConvertibleService.Convert(message.Result, returnType);
+                    if (message.Result != null)
+                    {
+                        result = _typeConvertibleService.Convert(message.Result, typeof(T));
+                    }
                 }
                 else
                 {
-                    result = message.Result;
+                    throw message.GetExceptionByStatusCode();
                 }
 
-            }
-            else
-            {
-                throw message.GetExceptionByStatusCode();
-            }
+                return (T) result;
+            });
+        }
 
-            return result;
+        private Task<object> GetInvokeResult(RemoteInvokeResultMessage message, Type returnType)
+        {
+            return Task.Run(() =>
+            {
+                object result;
+                if (message.StatusCode == StatusCode.Success)
+                {
+                    if (message.Result != null)
+                    {
+                        result = _typeConvertibleService.Convert(message.Result, returnType);
+                    }
+                    else
+                    {
+                        result = message.Result;
+                    }
+
+                }
+                else
+                {
+                    throw message.GetExceptionByStatusCode();
+                }
+
+                return result;
+
+            });
         }
 
         private async Task<T> FallBackRetryInvoke<T>(IDictionary<string, object> parameters, string serviceId, ServiceCommand command)

@@ -1,4 +1,5 @@
-﻿using Surging.Cloud.CPlatform;
+﻿using System;
+using Surging.Cloud.CPlatform;
 using Surging.Cloud.CPlatform.DependencyResolution;
 using Surging.Cloud.CPlatform.Exceptions;
 using Surging.Cloud.CPlatform.Routing;
@@ -33,8 +34,8 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
                     proxy = new RemoteServiceProxy(serviceKey.ToString(), _serviceProvider);
                     ServiceResolver.Current.Register(serviceKey.ToString(), proxy);
                 }
-                result = await proxy.Invoke<T>(parameters, serviceRoute.ServiceDescriptor.Id);
 
+                result = await proxy.Invoke<T>(parameters, serviceRoute.ServiceDescriptor.Id);
             }
             else
             {
@@ -63,6 +64,7 @@ namespace Surging.Cloud.ProxyGenerator.Implementation
                     proxy = new RemoteServiceProxy(serviceKey, _serviceProvider);
                     ServiceResolver.Current.Register(serviceKey, proxy);
                 }
+                
                 result = await proxy.Invoke<T>(parameters, serviceRoute.ServiceDescriptor.Id);
             }
             else
