@@ -14,6 +14,7 @@ using Surging.Cloud.KestrelHttpServer.Internal;
 using System.IO;
 using Surging.Cloud.KestrelHttpServer;
 using Surging.Cloud.Common;
+using Surging.Cloud.CPlatform.Exceptions;
 
 namespace Surging.Modules.Common.Domain
 {
@@ -30,6 +31,11 @@ namespace Surging.Modules.Common.Domain
         public Task<string> GetUserName(int id)
         {
             return GetService<IUserService>("User").GetUserName(id);
+        }
+        
+        public async Task<IDictionary<string, object>> Check(long? userId, string serviceId)
+        {
+            throw new AuthException("测试异常");
         }
 
         public Task<bool> Exists(int id)

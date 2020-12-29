@@ -33,6 +33,11 @@ namespace Surging.Modules.Common.Domain
             _surgingSession = NullSurgingSession.Instance;
         }
 
+        public async Task<IDictionary<string, object>> Check(long? userId, string serviceId)
+        {
+            throw new AuthException("测试异常");
+        }
+
         public async Task<string> GetUserName(int id)
         {
            var text= await this.GetService<IManagerService>().SayHello("fanly");

@@ -59,7 +59,7 @@
       "AccessTokenExpireTimeSpan": "10080",
       "AuthenticationRoutePath": "api/user/authentication",
       "AuthenticationServiceKey": "",
-      "AuthorizationRoutePath": "",
+      "AuthorizationRoutePath": "api/user/checkpermission",
       "AuthorizationServiceKey": "",
       "TokenEndpointPath": "api/oauth2/token",
       "CacheMode": "ddlCache.Redis", //MemoryCache or  gateway.Redis save token

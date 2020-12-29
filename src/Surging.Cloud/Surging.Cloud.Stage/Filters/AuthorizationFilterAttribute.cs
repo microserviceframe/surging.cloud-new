@@ -104,35 +104,43 @@ namespace Surging.Cloud.Stage.Filters
                                     attachments.TryAdd(kv.Key,kv.Value);
                                 }
                                 rpcParams.Add("attachments", attachments);
-                                var checkPermissionResult = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
-                                
-                                if (checkPermissionResult == null || !checkPermissionResult.ContainsKey("isPermission"))
+                                try
                                 {
-                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key" };
+                                    var checkPermissionResult = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
+                                    if (checkPermissionResult == null || !checkPermissionResult.ContainsKey("isPermission"))
+                                    {
+                                        filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key" };
+                                        return;
+                                    }
+
+                                    var isPermission = Convert.ToBoolean(checkPermissionResult["isPermission"]);
+                                    if (!isPermission)
+                                    {
+                                        var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty() ? filterContext.Route.ServiceDescriptor.RoutePath : filterContext.Route.ServiceDescriptor.GroupName();
+                                        filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"没有请求{actionName}的权限" };
+                                        return;
+                                    }
+                                    foreach (var kv in checkPermissionResult)
+                                    {
+                                        if (kv.Key == "isPermission")
+                                        {
+                                            continue;
+                                        }
+
+                                        if (kv.Value == null)
+                                        {
+                                            continue;
+                                        }
+
+                                        claimsIdentity.AddClaim(new Claim(kv.Key,kv.Value.ToString()));
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = e.GetExceptionMessage() };
                                     return;
                                 }
 
-                                var isPermission = Convert.ToBoolean(checkPermissionResult["isPermission"]);
-                                if (!isPermission)
-                                {
-                                    var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty() ? filterContext.Route.ServiceDescriptor.RoutePath : filterContext.Route.ServiceDescriptor.GroupName();
-                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"没有请求{actionName}的权限" };
-                                    return;
-                                }
-                                foreach (var kv in checkPermissionResult)
-                                {
-                                    if (kv.Key == "isPermission")
-                                    {
-                                        continue;
-                                    }
-
-                                    if (kv.Value == null)
-                                    {
-                                        continue;
-                                    }
-
-                                    claimsIdentity.AddClaim(new Claim(kv.Key,kv.Value.ToString()));
-                                }
                                 
                             }
                             

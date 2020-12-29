@@ -31,6 +31,11 @@ namespace Surging.IModuleServices.Common
         /// <returns>用户模型</returns>
         [Service(EnableAuthorization = false)]
         Task<IDictionary<string, object>> Authentication(AuthenticationRequestData requestData);
+        
+        [HttpPost]
+        [Service(DisableNetwork = true, Name = "接口鉴权")]
+        [ServiceRoute("checkpermission")]
+        Task<IDictionary<string, object>> Check(long? userId, string serviceId);
 
         /// <summary>
         /// 获取用户姓名
