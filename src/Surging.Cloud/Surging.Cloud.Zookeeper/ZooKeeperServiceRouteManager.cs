@@ -153,6 +153,7 @@ namespace Surging.Cloud.Zookeeper
 
         protected override async Task<bool> SetRouteAsync(ServiceRouteDescriptor route)
         {
+            var registerResult = false;
             try
             {
                 _logger.LogDebug($"准备添加{route.ServiceDescriptor.Id}服务路由。");
@@ -182,18 +183,19 @@ namespace Surging.Cloud.Zookeeper
                         if (!DataEquals(nodeData, onlineData))
                         {
                             await zooKeeperClient.SetDataAsync(nodePath, nodeData);
+                            registerResult = true;
                             _logger.LogDebug($"{nodePath}节点的缓存的服务路由与服务注册中心不一致,路由数据已被更新。");
 
                         }
                     }
                 }
 
-                return true;
+                return registerResult;
             }
             catch (Exception ex)
             {
                 _logger.LogError($"{route.ServiceDescriptor.Id}服务的路由注册失败,原因:{ex.Message}" );
-                return false;
+                return registerResult;
 
             }
 
