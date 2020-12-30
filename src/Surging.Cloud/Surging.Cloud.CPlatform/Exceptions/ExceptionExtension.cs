@@ -13,9 +13,9 @@ namespace Surging.Cloud.CPlatform.Exceptions
                 return string.Empty;
 
             var message = exception.Message;
-            if ((AppConfig.ServerOptions.Environment == RuntimeEnvironment.Development 
-                && !(exception is BusinessException || exception.InnerException is BusinessException))                
-                || AppConfig.ServerOptions.ForceDisplayStackTrace)
+            if ((AppConfig.ServerOptions.Environment == RuntimeEnvironment.Development || AppConfig.ServerOptions.ForceDisplayStackTrace)
+                && !exception.IsBusinessException())       
+                
             {
                 message += Environment.NewLine + " 堆栈信息:" + exception.StackTrace;
                 if (exception.InnerException != null)
@@ -25,17 +25,9 @@ namespace Surging.Cloud.CPlatform.Exceptions
             }
             else
             {
-                if (exception.InnerException != null)
+                if (!exception.IsBusinessException())
                 {
-                    if (exception.InnerException is BusinessException)
-                    {
-                        message = exception.InnerException.Message;
-                    }
-                    else
-                    {
-                        message += ";" + GetExceptionMessage(exception.InnerException);
-                    }
-
+                    message += ";" + GetExceptionMessage(exception.InnerException);
                 }
             }
 

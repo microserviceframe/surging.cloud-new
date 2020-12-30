@@ -42,7 +42,7 @@ namespace Surging.Cloud.System.Intercept
             }
             catch(Exception ex)
             {
-                if (ex is BusinessException || ex.InnerException is BusinessException)
+                if (ex.IsBusinessException())
                 {
                     throw;
                 }
@@ -94,7 +94,7 @@ namespace Surging.Cloud.System.Intercept
             }
             catch (Exception ex)
             {
-                if (ex is BusinessException || ex.InnerException is BusinessException)
+                if (ex.IsBusinessException())
                 {
                     throw;
                 }
