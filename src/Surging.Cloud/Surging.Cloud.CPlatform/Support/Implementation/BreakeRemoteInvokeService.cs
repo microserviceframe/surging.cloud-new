@@ -47,7 +47,6 @@ namespace Surging.Cloud.CPlatform.Support.Implementation
                     FirstInvokeTime = DateTime.Now,
                     FinalRemoteInvokeTime = DateTime.Now
                 });
-            UpdateAttachments(parameters);
             RpcContext.GetContext().SetAttachment("isFailoverInvoke", isFailoverInvoke);
             var command = await _commandProvider.GetCommand(serviceId);
             var intervalSeconds = (DateTime.Now - serviceInvokeInfos.FinalRemoteInvokeTime).TotalSeconds;
@@ -188,22 +187,6 @@ namespace Surging.Cloud.CPlatform.Support.Implementation
             }
             return result;
         }
-
-        private void UpdateAttachments(IDictionary<string, object> parameters)
-        {
-           
-            if (parameters.ContainsKey("attachments"))
-            {
-                var attachments = parameters["attachments"] as Dictionary<string, object>;
-                if (attachments != null)
-                {
-                    foreach (var attachment in attachments)
-                    {
-                        RpcContext.GetContext().SetAttachment(attachment.Key, attachment.Value);
-                    }
-                }
-                parameters.Remove("attachments");
-            }
-        }
+        
     }
 }

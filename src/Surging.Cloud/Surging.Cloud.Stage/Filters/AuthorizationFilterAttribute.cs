@@ -28,6 +28,7 @@ namespace Surging.Cloud.Stage.Filters
         private readonly IServiceProxyProvider _serviceProxyProvider;
         private readonly IServiceRouteProvider _serviceRouteProvider;
         private const int _order = int.MaxValue;
+
         public AuthorizationFilterAttribute()
         {
             _authorizationServerProvider = ServiceLocator.Current.Resolve<IAuthorizationServerProvider>();
@@ -35,7 +36,10 @@ namespace Surging.Cloud.Stage.Filters
             _serviceRouteProvider = ServiceLocator.Current.Resolve<IServiceRouteProvider>();
         }
 
-        public int Order { get { return _order; } }
+        public int Order
+        {
+            get { return _order; }
+        }
 
         public async Task OnAuthorization(AuthorizationFilterContext filterContext)
         {
@@ -43,8 +47,14 @@ namespace Surging.Cloud.Stage.Filters
 
             if (filterContext.Route != null && filterContext.Route.ServiceDescriptor.DisableNetwork())
             {
-                var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty() ? filterContext.Route.ServiceDescriptor.RoutePath : filterContext.Route.ServiceDescriptor.GroupName();
-                filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthorized, Message = $"{actionName}禁止被外网访问" };
+                var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty()
+                    ? filterContext.Route.ServiceDescriptor.RoutePath
+                    : filterContext.Route.ServiceDescriptor.GroupName();
+                filterContext.Result = new HttpResultMessage<object>
+                {
+                    IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthorized,
+                    Message = $"{actionName}禁止被外网访问"
+                };
             }
             else
             {
@@ -54,26 +64,41 @@ namespace Surging.Cloud.Stage.Filters
                 {
                     if (filterContext.Route.ServiceDescriptor.AuthType() == AuthorizationType.JWT.ToString())
                     {
-
                         if (token.Any() && token.Count >= 1)
                         {
                             var validateResult = _authorizationServerProvider.ValidateClientAuthentication(token);
-                            if (filterContext.Route.ServiceDescriptor.EnableAuthorization() && validateResult != ValidateResult.Success)
+                            if (filterContext.Route.ServiceDescriptor.EnableAuthorization() &&
+                                validateResult != ValidateResult.Success)
                             {
                                 if (validateResult == ValidateResult.TokenFormatError)
                                 {
-                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = "token格式不正确" };
+                                    filterContext.Result = new HttpResultMessage<object>
+                                    {
+                                        IsSucceed = false,
+                                        StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication,
+                                        Message = "token格式不正确"
+                                    };
                                     return;
                                 }
 
                                 if (validateResult == ValidateResult.SignatureError)
                                 {
-                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = "token凭证不合法,请重新登录" };
+                                    filterContext.Result = new HttpResultMessage<object>
+                                    {
+                                        IsSucceed = false,
+                                        StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication,
+                                        Message = "token凭证不合法,请重新登录"
+                                    };
                                     return;
                                 }
+
                                 if (validateResult == ValidateResult.TokenExpired)
                                 {
-                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.TokenExpired, Message = "登录超时,请重新登录" };
+                                    filterContext.Result = new HttpResultMessage<object>
+                                    {
+                                        IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.TokenExpired,
+                                        Message = "登录超时,请重新登录"
+                                    };
                                     return;
                                 }
                             }
@@ -86,62 +111,87 @@ namespace Surging.Cloud.Stage.Filters
                             {
                                 claimsIdentity.AddClaim(new Claim(item.Key, item.Value.ToString()));
                             }
-                            
-                            if (!gatewayAppConfig.AuthorizationRoutePath.IsNullOrEmpty() && filterContext.Route.ServiceDescriptor.EnableAuthorization())
+
+                            if (!gatewayAppConfig.AuthorizationRoutePath.IsNullOrEmpty() &&
+                                filterContext.Route.ServiceDescriptor.EnableAuthorization())
                             {
-                                var rpcParams = new Dictionary<string, object>() {
-                                        {  "serviceId", filterContext.Route.ServiceDescriptor.Id }
-                                    };
-                                var authorizationRoutePath = await _serviceRouteProvider.GetRouteByPathOrRegexPath(gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST.ToString());
+                                var rpcParams = new Dictionary<string, object>()
+                                {
+                                    {"serviceId", filterContext.Route.ServiceDescriptor.Id}
+                                };
+                                var authorizationRoutePath =
+                                    await _serviceRouteProvider.GetRouteByPathOrRegexPath(
+                                        gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST.ToString());
                                 if (authorizationRoutePath == null)
                                 {
-                                    filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.RequestError, Message = "没有找到实现接口鉴权的WebApi的路由信息" };
+                                    filterContext.Result = new HttpResultMessage<object>
+                                    {
+                                        IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.RequestError,
+                                        Message = "没有找到实现接口鉴权的WebApi的路由信息"
+                                    };
                                     return;
                                 }
-                                var attachments = new Dictionary<string, object>();
+                                
                                 foreach (var kv in payload)
                                 {
-                                    attachments.TryAdd(kv.Key,kv.Value);
+                                   RpcContext.GetContext().SetAttachment(kv.Key,kv.Value);
                                 }
-                                rpcParams.Add("attachments", attachments);
-                                             var checkPermissionResult = await _serviceProxyProvider.Invoke<IDictionary<string,object>>(rpcParams, gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST, gatewayAppConfig.AuthorizationServiceKey);
-                                    if (checkPermissionResult == null || !checkPermissionResult.ContainsKey("isPermission"))
-                                    {
-                                        filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key" };
-                                        return;
-                                    }
-
-                                    var isPermission = Convert.ToBoolean(checkPermissionResult["isPermission"]);
-                                    if (!isPermission)
-                                    {
-                                        var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty() ? filterContext.Route.ServiceDescriptor.RoutePath : filterContext.Route.ServiceDescriptor.GroupName();
-                                        filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = StatusCode.UnAuthorized, Message = $"没有请求{actionName}的权限" };
-                                        return;
-                                    }
-                                    foreach (var kv in checkPermissionResult)
-                                    {
-                                        if (kv.Key == "isPermission")
-                                        {
-                                            continue;
-                                        }
-
-                                        if (kv.Value == null)
-                                        {
-                                            continue;
-                                        }
-
-                                        claimsIdentity.AddClaim(new Claim(kv.Key,kv.Value.ToString()));
-                                    }
                                 
+                                var checkPermissionResult =
+                                    await _serviceProxyProvider.Invoke<IDictionary<string, object>>(rpcParams,
+                                        gatewayAppConfig.AuthorizationRoutePath, HttpMethod.POST,
+                                        gatewayAppConfig.AuthorizationServiceKey);
+                                if (checkPermissionResult == null || !checkPermissionResult.ContainsKey("isPermission"))
+                                {
+                                    filterContext.Result = new HttpResultMessage<object>
+                                    {
+                                        IsSucceed = false, StatusCode = StatusCode.UnAuthorized,
+                                        Message = $"接口鉴权返回数据格式错误,鉴权接口返回数据格式必须为字典,且必须包含IsPermission的key"
+                                    };
+                                    return;
+                                }
+
+                                var isPermission = Convert.ToBoolean(checkPermissionResult["isPermission"]);
+                                if (!isPermission)
+                                {
+                                    var actionName = filterContext.Route.ServiceDescriptor.GroupName().IsNullOrEmpty()
+                                        ? filterContext.Route.ServiceDescriptor.RoutePath
+                                        : filterContext.Route.ServiceDescriptor.GroupName();
+                                    filterContext.Result = new HttpResultMessage<object>
+                                    {
+                                        IsSucceed = false, StatusCode = StatusCode.UnAuthorized,
+                                        Message = $"没有请求{actionName}的权限"
+                                    };
+                                    return;
+                                }
+
+                                foreach (var kv in checkPermissionResult)
+                                {
+                                    if (kv.Key == "isPermission")
+                                    {
+                                        continue;
+                                    }
+
+                                    if (kv.Value == null)
+                                    {
+                                        continue;
+                                    }
+
+                                    claimsIdentity.AddClaim(new Claim(kv.Key, kv.Value.ToString()));
+                                }
                             }
-                            
+
                             filterContext.Context.User = new ClaimsPrincipal(claimsIdentity);
                         }
                         else
                         {
                             if (filterContext.Route.ServiceDescriptor.EnableAuthorization())
                             {
-                                filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = $"请先登录系统" };
+                                filterContext.Result = new HttpResultMessage<object>
+                                {
+                                    IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication,
+                                    Message = $"请先登录系统"
+                                };
                                 return;
                             }
                             else
@@ -149,16 +199,18 @@ namespace Surging.Cloud.Stage.Filters
                                 filterContext.Context.User = null;
                             }
                         }
-
                     }
                     else
                     {
                         if (filterContext.Route.ServiceDescriptor.EnableAuthorization())
                         {
-                            filterContext.Result = new HttpResultMessage<object> { IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication, Message = $"暂不支持{filterContext.Route.ServiceDescriptor.AuthType()}类型的身份认证方式" };
+                            filterContext.Result = new HttpResultMessage<object>
+                            {
+                                IsSucceed = false, StatusCode = CPlatform.Exceptions.StatusCode.UnAuthentication,
+                                Message = $"暂不支持{filterContext.Route.ServiceDescriptor.AuthType()}类型的身份认证方式"
+                            };
                         }
                     }
-
                 }
             }
 
@@ -169,4 +221,3 @@ namespace Surging.Cloud.Stage.Filters
         }
     }
 }
-
