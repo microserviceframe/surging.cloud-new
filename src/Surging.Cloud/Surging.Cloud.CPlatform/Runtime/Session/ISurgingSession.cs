@@ -12,6 +12,8 @@ namespace Surging.Cloud.CPlatform.Runtime.Session
         public long[] DataPermissionOrgIds { get;  }
 
         string UserName { get; }
+        
+        long?  TenantId { get; }
 
     }
 }

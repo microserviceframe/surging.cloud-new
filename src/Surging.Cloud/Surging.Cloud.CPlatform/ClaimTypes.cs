@@ -18,6 +18,8 @@
 
         public const string DataPermissionOrgIds = "http://sugingcloud.com/identity/claims/DataPermissionOrgIds";
 
+        public const string TenantId = "http://sugingcloud.com/identity/claims/TenantId";
+
        // public const string InspectDataPermission = "http://sugingcloud.com/identity/claims/InspectDataPermission";
         
         public const string IsAllOrg = "http://sugingcloud.com/identity/claims/IsAllOrg";

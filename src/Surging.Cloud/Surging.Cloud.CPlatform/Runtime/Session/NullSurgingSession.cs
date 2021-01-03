@@ -16,5 +16,7 @@
 
         public override bool IsAllOrg { get; } = Instance.IsAllOrg;
 
+        public override long? TenantId { get; } = Instance.TenantId;
+
     }
 }

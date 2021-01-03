@@ -24,7 +24,18 @@ namespace Surging.Cloud.Dapper.Filters.Action
                     ((IDeletionAudited)entity).DeleterUserId = _loginUser.UserId;
                 }
             }
-            if (typeof(IOrgAudited).IsAssignableFrom(entity.GetType()) && _loginUser != null)
+            
+            if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)))
+            {
+
+                var record = entity as IMultiTenant;
+                if (_loginUser.TenantId != record.TenantId) 
+                {
+                    throw new BusinessException("您没有删除该数据的权限");
+                }
+
+            }
+            if (typeof(IOrgAudited).IsAssignableFrom(entity.GetType()))
             {
                 if (((IOrgAudited) entity).OrgId.HasValue)
                 {

@@ -36,7 +36,7 @@ namespace Surging.Cloud.Dapper
             builder.RegisterGeneric(typeof(CreationAuditDapperActionFilter<,>)).Named(typeof(CreationAuditDapperActionFilter<,>).Name, typeof(IAuditActionFilter<,>)).InstancePerDependency();
             builder.RegisterGeneric(typeof(ModificationAuditDapperActionFilter<,>)).Named(typeof(ModificationAuditDapperActionFilter<,>).Name, typeof(IAuditActionFilter<,>)).InstancePerDependency();
             builder.RegisterGeneric(typeof(DeletionAuditDapperActionFilter<,>)).Named(typeof(DeletionAuditDapperActionFilter<,>).Name, typeof(IAuditActionFilter<,>)).InstancePerDependency();
-            builder.RegisterType<SoftDeleteQueryFilter>().As<ISoftDeleteQueryFilter>().AsSelf().InstancePerDependency();
+            builder.RegisterType<QueryFilter>().As<IQueryFilter>().AsSelf().InstancePerDependency();
             builder.RegisterType<OrgQueryFilter>().As<IOrgQueryFilter>().AsSelf().InstancePerDependency();
             DapperExtensions.DapperExtensions.DefaultMapper = typeof(ClassMapper<>);
 

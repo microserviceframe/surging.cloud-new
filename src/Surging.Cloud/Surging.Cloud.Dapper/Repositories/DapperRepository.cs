@@ -21,7 +21,7 @@ namespace Surging.Cloud.Dapper.Repositories
     public class DapperRepository<TEntity, TPrimaryKey> : DapperRepositoryBase, IDapperRepository<TEntity, TPrimaryKey>
         where TEntity : class, IEntity<TPrimaryKey>
     {
-        private readonly ISoftDeleteQueryFilter _softDeleteQueryFilter;
+        private readonly IQueryFilter _queryFilter;
         private readonly IOrgQueryFilter _orgQueryFilter;
         private readonly IAuditActionFilter<TEntity, TPrimaryKey> _creationActionFilter;
         private readonly IAuditActionFilter<TEntity, TPrimaryKey> _modificationActionFilter;
@@ -29,11 +29,11 @@ namespace Surging.Cloud.Dapper.Repositories
         
         private readonly ILogger<DapperRepository<TEntity, TPrimaryKey>> _logger;
 
-        public DapperRepository(ISoftDeleteQueryFilter softDeleteQueryFilter,
+        public DapperRepository(IQueryFilter queryFilter,
             IOrgQueryFilter orgQueryFilter,
             ILogger<DapperRepository<TEntity, TPrimaryKey>> logger)
         {
-            _softDeleteQueryFilter = softDeleteQueryFilter;
+            _queryFilter = queryFilter;
             _orgQueryFilter = orgQueryFilter;
             _logger = logger;
             _creationActionFilter =
@@ -267,7 +267,7 @@ namespace Surging.Cloud.Dapper.Repositories
                         conn.Open();
                     }
 
-                    predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     if (dataPermission)
                     {
                         predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -300,7 +300,7 @@ namespace Surging.Cloud.Dapper.Repositories
                         conn.Open();
                     }
 
-                    predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     if (dataPermission)
                     {
                         predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -333,7 +333,7 @@ namespace Surging.Cloud.Dapper.Repositories
                         conn.Open();
                     }
 
-                    predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     if (dataPermission)
                     {
                         predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -366,7 +366,7 @@ namespace Surging.Cloud.Dapper.Repositories
                         conn.Open();
                     }
 
-                    predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     if (dataPermission)
                     {
                         predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -404,7 +404,7 @@ namespace Surging.Cloud.Dapper.Repositories
                         conn.Open();
                     }
 
-                    var predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
+                    var predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
                     if (dataPermission)
                     {
                         predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -436,7 +436,7 @@ namespace Surging.Cloud.Dapper.Repositories
                         conn.Open();
                     }
 
-                    predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     if (dataPermission)
                     {
                         predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -710,7 +710,7 @@ namespace Surging.Cloud.Dapper.Repositories
                         conn.Open();
                     }
 
-                    var predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
+                    var predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
                     if (dataPermission)
                     {
                         predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -735,7 +735,7 @@ namespace Surging.Cloud.Dapper.Repositories
         {
             try
             {
-                predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                 predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                 var pg = predicate.ToPredicateGroup<TEntity, TPrimaryKey>();
                 var count = conn.Count<TEntity>(pg, transaction: trans);
@@ -763,7 +763,7 @@ namespace Surging.Cloud.Dapper.Repositories
                         conn.Open();
                     }
 
-                    predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     if (dataPermission)
                     {
                         predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -816,7 +816,7 @@ namespace Surging.Cloud.Dapper.Repositories
                         });
                     }
 
-                    predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+                    predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
                     if (dataPermission)
                     {
                         predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -878,7 +878,7 @@ namespace Surging.Cloud.Dapper.Repositories
                         sorts.Add(sort);
                     }
 
-                    var predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
+                    var predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
                     if (dataPermission)
                     {
                         predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -909,7 +909,7 @@ namespace Surging.Cloud.Dapper.Repositories
         {
             try
             {
-                var predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
+                var predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
                 if (dataPermission)
                 {
                     predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -932,7 +932,7 @@ namespace Surging.Cloud.Dapper.Repositories
         public Task<TEntity> SingleAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
             DbTransaction trans, bool dataPermission = true)
         {
-            predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             if (dataPermission)
             {
                 predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -945,7 +945,7 @@ namespace Surging.Cloud.Dapper.Repositories
         public Task<TEntity> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
             DbTransaction trans, bool dataPermission = true)
         {
-            predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             if (dataPermission)
             {
                 predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -958,7 +958,7 @@ namespace Surging.Cloud.Dapper.Repositories
         public Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
             DbTransaction trans, bool dataPermission = true)
         {
-            predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             if (dataPermission)
             {
                 predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -972,7 +972,7 @@ namespace Surging.Cloud.Dapper.Repositories
         public Task<TEntity> FirstAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
             DbTransaction trans, bool dataPermission = true)
         {
-            predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             if (dataPermission)
             {
                 predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -985,7 +985,7 @@ namespace Surging.Cloud.Dapper.Repositories
         public Task<TEntity> LastOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
             DbTransaction trans, bool dataPermission = true)
         {
-            predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             if (dataPermission)
             {
                 predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -999,7 +999,7 @@ namespace Surging.Cloud.Dapper.Repositories
         public Task<TEntity> LastAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
             DbTransaction trans, bool dataPermission = true)
         {
-            predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             if (dataPermission)
             {
                 predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -1017,7 +1017,7 @@ namespace Surging.Cloud.Dapper.Repositories
         public Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate, DbConnection conn,
             DbTransaction trans, bool dataPermission = true)
         {
-            predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
+            predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
             if (dataPermission)
             {
                 predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);
@@ -1029,7 +1029,7 @@ namespace Surging.Cloud.Dapper.Repositories
 
         public Task<IEnumerable<TEntity>> GetAllAsync(DbConnection conn, DbTransaction trans, bool dataPermission = true)
         {
-            var predicate = _softDeleteQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
+            var predicate = _queryFilter.ExecuteFilter<TEntity, TPrimaryKey>();
             if (dataPermission)
             {
                 predicate = _orgQueryFilter.ExecuteFilter<TEntity, TPrimaryKey>(predicate);

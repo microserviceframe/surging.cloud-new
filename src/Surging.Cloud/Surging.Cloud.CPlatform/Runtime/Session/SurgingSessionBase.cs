@@ -7,6 +7,8 @@
         public abstract long? OrgId { get; }
         public abstract bool IsAllOrg { get; }
         public abstract long[] DataPermissionOrgIds { get; }
+        
+        public abstract long? TenantId { get; }
 
         
     }

@@ -21,12 +21,8 @@ namespace Surging.Cloud.Dapper.Filters.Action
                 ((IHasCreationTime)entity).CreationTime = DateTime.Now;
             }
             CheckAndSetId(entity);
-
-            if (_loginUser == null)
-            {
-                _logger.LogDebug($"未获取到登录的用户信息");
-            }
-            if (typeof(ICreationAudited).IsAssignableFrom(typeof(TEntity)) && _loginUser != null)
+            
+            if (typeof(ICreationAudited).IsAssignableFrom(typeof(TEntity)))
             {
                 _logger.LogDebug($"当前操作数据的用户为:{_loginUser.UserId} - {_loginUser.UserName}");
                 var record = entity as ICreationAudited;
@@ -37,12 +33,17 @@ namespace Surging.Cloud.Dapper.Filters.Action
             {
                 ((IHasModificationTime)entity).LastModificationTime = DateTime.Now;
             }
-            if (typeof(IModificationAudited).IsAssignableFrom(entity.GetType()) && _loginUser != null)
+            if (typeof(IModificationAudited).IsAssignableFrom(entity.GetType()))
             {
                 ((IModificationAudited)entity).LastModifierUserId = _loginUser.UserId;
             }
+            
+            if (typeof(IMultiTenant).IsAssignableFrom(entity.GetType()))
+            {
+                ((IMultiTenant)entity).TenantId = _loginUser.TenantId;
+            }
 
-            if (typeof(IOrgAudited).IsAssignableFrom(entity.GetType()) && _loginUser != null)
+            if (typeof(IOrgAudited).IsAssignableFrom(entity.GetType()))
             {
                 if (((IOrgAudited) entity).OrgId.HasValue)
                 {
@@ -59,6 +60,7 @@ namespace Surging.Cloud.Dapper.Filters.Action
                 }
                 
             }
+            
         }
     }
 }

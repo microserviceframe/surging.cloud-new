@@ -81,5 +81,19 @@ namespace Surging.Cloud.CPlatform.Runtime.Session
                 return false;
             }
         }
+
+        public override long? TenantId
+        {
+            get
+            {
+                var tenantId = RpcContext.GetContext().GetAttachment(ClaimTypes.TenantId);
+                if (tenantId != null)
+                {
+                    return Convert.ToInt64(tenantId);
+                }
+                return null;
+            }
+            
+        }
     }
 }

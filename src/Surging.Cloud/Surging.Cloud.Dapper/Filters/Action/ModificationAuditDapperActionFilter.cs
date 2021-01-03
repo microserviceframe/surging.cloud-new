@@ -10,8 +10,7 @@ namespace Surging.Cloud.Dapper.Filters.Action
     {
         public void ExecuteFilter(TEntity entity)
         {
-            ////var loginUser = NullSurgingSession.Instance;
-            if (typeof(IModificationAudited).IsAssignableFrom(typeof(TEntity)) && _loginUser != null)
+            if (typeof(IModificationAudited).IsAssignableFrom(typeof(TEntity)))
             {
 
                 var record = entity as IModificationAudited;
@@ -22,7 +21,17 @@ namespace Surging.Cloud.Dapper.Filters.Action
                 record.LastModificationTime = DateTime.Now;
 
             }
-            if (typeof(IOrgAudited).IsAssignableFrom(entity.GetType()) && _loginUser != null)
+            if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)))
+            {
+
+                var record = entity as IMultiTenant;
+                if (_loginUser.TenantId != record.TenantId) 
+                {
+                    throw new BusinessException("您没有更新数据的权限");
+                }
+
+            }
+            if (typeof(IOrgAudited).IsAssignableFrom(entity.GetType()))
             {
                 if (((IOrgAudited) entity).OrgId.HasValue)
                 {
