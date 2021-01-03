@@ -14,34 +14,35 @@ namespace Surging.Cloud.Dapper.Extensions
     public static class DapperExtensions
     {
         private static int IsDeleted => 0;
+
         public static async Task<IEnumerable<T>> QueryDataPermissionAsync<T>(this DbConnection connection,
             string sql,
             IDictionary<string, object> sqlParams,
-
             IDictionary<string, SortType> sortTypes = null,
             string orgIdFieldName = "OrgId",
-            string deleteField = "IsDeleted")
-        where T : class
+            string deleteField = "IsDeleted",
+            string tenantField = "")
+            where T : class
         {
-            string queryCountSql = UpdateSql(ref sql, sqlParams, sortTypes, orgIdFieldName, deleteField);
+            var queryCountSql = UpdateSql(sql, sqlParams, sortTypes, orgIdFieldName, deleteField, tenantField);
 
-            return await connection.QueryAsync<T>(sql, sqlParams);
+            return await connection.QueryAsync<T>(queryCountSql, sqlParams);
         }
 
 
-
-
-        public static async Task<Tuple<IEnumerable<T>, long>> QueryDataPermissionPageAsync<T>(this DbConnection connection,
+        public static async Task<Tuple<IEnumerable<T>, long>> QueryDataPermissionPageAsync<T>(
+            this DbConnection connection,
             string sql,
             IDictionary<string, object> sqlParams,
             int pageIndex,
             int pageCount,
             IDictionary<string, SortType> sortTypes = null,
             string orgIdFieldName = "OrgId",
-            string deleteField = "IsDeleted")
+            string deleteField = "IsDeleted",
+            string tenantField = "")
             where T : class
         {
-            sql = UpdateSql(ref sql, sqlParams, sortTypes, orgIdFieldName, deleteField);
+            sql = UpdateSql(sql, sqlParams, sortTypes, orgIdFieldName, deleteField, tenantField);
             var queryCountSql = "SELECT COUNT(ID) FROM " + sql.Substring(sql.ToLower().IndexOf("from") + "from".Length);
 
             switch (DbSetting.Instance.DbType)
@@ -56,30 +57,41 @@ namespace Surging.Cloud.Dapper.Extensions
                     sql += $" ROWNO  BETWEEN  {(pageIndex - 1) * pageCount} AND {pageIndex * pageCount}";
                     break;
             }
-            if (connection.State != ConnectionState.Open)
-            {
-                await connection.OpenAsync();
-            }
+
+            if (connection.State != ConnectionState.Open) await connection.OpenAsync();
 
             var count = await connection.ExecuteScalarAsync<int>(queryCountSql, sqlParams);
             var queryResult = await connection.QueryAsync<T>(sql, sqlParams);
             return new Tuple<IEnumerable<T>, long>(queryResult, count);
-
         }
 
-        private static string UpdateSql(ref string sql, IDictionary<string, object> sqlParams, IDictionary<string, SortType> sortTypes, string orgIdFieldName, string deleteField)
+        public static async Task<long> QueryDataPermissionCountAsync<T>(this DbConnection connection,
+            string sql,
+            IDictionary<string, object> sqlParams,
+            string orgIdFieldName = "OrgId",
+            string deleteField = "IsDeleted",
+            string tenantField = "")
+            where T : class
         {
-            if (!sql.ToLower().Contains("where"))
-            {
-                sql += " WHERE 1=1 ";
-            }
+            sql = UpdateSql(sql, sqlParams, orgIdFieldName, deleteField, tenantField);
+            return await connection.ExecuteScalarAsync<long>(sql, sqlParams);
+        }
+
+        private static string UpdateSql(string sql, IDictionary<string, object> sqlParams,
+            IDictionary<string, SortType> sortTypes, string orgIdFieldName, string deleteField, string tenantField)
+        {
+            if (!sql.ToLower().Contains("where")) sql += " WHERE 1=1 ";
             if (!deleteField.IsNullOrEmpty())
             {
                 sql += $" AND {deleteField}=@Deleted";
-                if (!sqlParams.ContainsKey("Deleted"))
-                {
-                    sqlParams.Add("Deleted", IsDeleted);
-                }
+                if (!sqlParams.ContainsKey("Deleted")) sqlParams.Add("Deleted", IsDeleted);
+            }
+
+            var tenantId = GetTenantId();
+            if (!tenantField.IsNullOrEmpty())
+            {
+                sql += $" AND {tenantField}=@Tenant";
+                if (!sqlParams.ContainsKey("Tenant")) sqlParams.Add("Tenant", tenantId);
             }
 
             var permissionOrgIds = GetPermissionOrgIds();
@@ -90,21 +102,17 @@ namespace Surging.Cloud.Dapper.Extensions
                 {
                     sql += $" {orgIdFieldName}=@PermissionOrgId{permissionOrgId} OR";
                     if (!sqlParams.ContainsKey($"@PermissionOrgId{permissionOrgId}"))
-                    {
                         sqlParams.Add($"@PermissionOrgId{permissionOrgId}", permissionOrgId);
-                    }
                 }
 
                 sql = sql.Remove(sql.Length - 2);
                 sql += ")";
             }
+
             if (sortTypes != null && sortTypes.Any())
             {
                 sql += " ORDER BY ";
-                foreach (var sortType in sortTypes)
-                {
-                    sql += $" {sortType.Key} {sortType.Value}";
-                }
+                foreach (var sortType in sortTypes) sql += $" {sortType.Key} {sortType.Value}";
             }
             else
             {
@@ -113,31 +121,23 @@ namespace Surging.Cloud.Dapper.Extensions
 
             return sql;
         }
-        
-        public static async Task<long> QueryDataPermissionCountAsync<T>(this DbConnection connection,
-            string sql,
-            IDictionary<string, object> sqlParams,
-            string orgIdFieldName = "OrgId",
-            string deleteField = "IsDeleted")
-            where T : class
-        {
-            sql = UpdateSql(sql, sqlParams, orgIdFieldName, deleteField);
-            return await connection.ExecuteScalarAsync<long>(sql, sqlParams);
-        }
 
-        private static string UpdateSql(string sql, IDictionary<string, object> sqlParams, string orgIdFieldName, string deleteField)
+
+        private static string UpdateSql(string sql, IDictionary<string, object> sqlParams, string orgIdFieldName,
+            string deleteField, string tenantField)
         {
-            if (!sql.ToLower().Contains("where"))
-            {
-                sql += " WHERE 1=1 ";
-            }
+            if (!sql.ToLower().Contains("where")) sql += " WHERE 1=1 ";
             if (!deleteField.IsNullOrEmpty())
             {
                 sql += $" AND {deleteField}=@Deleted";
-                if (!sqlParams.ContainsKey("Deleted"))
-                {
-                    sqlParams.Add("Deleted", IsDeleted);
-                }
+                if (!sqlParams.ContainsKey("Deleted")) sqlParams.Add("Deleted", IsDeleted);
+            }
+
+            var tenantId = GetTenantId();
+            if (!tenantField.IsNullOrEmpty())
+            {
+                sql += $" AND {tenantField}=@Tenant";
+                if (!sqlParams.ContainsKey("Tenant")) sqlParams.Add("Tenant", tenantId);
             }
 
             var permissionOrgIds = GetPermissionOrgIds();
@@ -148,9 +148,7 @@ namespace Surging.Cloud.Dapper.Extensions
                 {
                     sql += $" {orgIdFieldName}=@PermissionOrgId{permissionOrgId} OR";
                     if (!sqlParams.ContainsKey($"@PermissionOrgId{permissionOrgId}"))
-                    {
                         sqlParams.Add($"@PermissionOrgId{permissionOrgId}", permissionOrgId);
-                    }
                 }
 
                 sql = sql.Remove(sql.Length - 2);
@@ -163,22 +161,20 @@ namespace Surging.Cloud.Dapper.Extensions
         private static long[] GetPermissionOrgIds()
         {
             var loginUser = NullSurgingSession.Instance;
-            if (!loginUser.UserId.HasValue)
-            {
-                return null;
-            }
+            if (!loginUser.UserId.HasValue) return null;
 
-            if (loginUser.IsAllOrg)
-            {
-                return null;
-            }
-            var permissionOrgIds = new long[] { loginUser.OrgId.HasValue ? loginUser.OrgId.Value : -1 };
+            if (loginUser.IsAllOrg) return null;
+            var permissionOrgIds = new[] {loginUser.OrgId.HasValue ? loginUser.OrgId.Value : -1};
             if (loginUser.DataPermissionOrgIds != null && loginUser.DataPermissionOrgIds.Any())
-            {
                 permissionOrgIds = loginUser.DataPermissionOrgIds;
-            }
 
             return permissionOrgIds;
+        }
+
+        private static long? GetTenantId()
+        {
+            var loginUser = NullSurgingSession.Instance;
+            return loginUser.TenantId;
         }
     }
 }
