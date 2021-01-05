@@ -40,7 +40,10 @@ namespace Surging.Cloud.Dapper.Filters.Action
             
             if (typeof(IMultiTenant).IsAssignableFrom(entity.GetType()))
             {
-                ((IMultiTenant)entity).TenantId = _loginUser.TenantId;
+                if (!((IMultiTenant)entity).TenantId.HasValue)
+                {
+                    ((IMultiTenant)entity).TenantId = _loginUser.TenantId;
+                }
             }
 
             if (typeof(IOrgAudited).IsAssignableFrom(entity.GetType()))
