@@ -14,6 +14,7 @@ using Surging.Cloud.DotNetty.Adapter;
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Surging.Cloud.CPlatform.Address;
 using Surging.Cloud.CPlatform.Runtime.Client.HealthChecks;
 using Surging.Cloud.CPlatform.Utilities;
 
@@ -145,11 +146,13 @@ namespace Surging.Cloud.DotNetty
         {
             private readonly Action<IChannelHandlerContext, TransportMessage> _readAction;
             private readonly ILogger _logger;
+            private readonly IHealthCheckService _healthCheckService;
 
             public ServerHandler(Action<IChannelHandlerContext, TransportMessage> readAction, ILogger logger)
             {
                 _readAction = readAction;
                 _logger = logger;
+                _healthCheckService = ServiceLocator.GetService<IHealthCheckService>();
             }
 
             #region Overrides of ChannelHandlerAdapter
@@ -170,10 +173,39 @@ namespace Surging.Cloud.DotNetty
 
             public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
             {
-                context.CloseAsync();//客户端主动断开需要应答，否则socket变成CLOSE_WAIT状态导致socket资源耗尽
+                context.Channel.CloseAsync();//客户端主动断开需要应答，否则socket变成CLOSE_WAIT状态导致socket资源耗尽
                 if (_logger.IsEnabled(LogLevel.Error))
                     _logger.LogError(exception,$"与服务器：{context.Channel.RemoteAddress}通信时发送了错误。");
             }
+
+            public override async Task CloseAsync(IChannelHandlerContext context)
+            {
+                await MarkServiceUnHealth(context);
+                await base.CloseAsync(context);
+            }
+
+            public async override void ChannelActive(IChannelHandlerContext context)
+            {
+               await MarkServiceHealth(context);
+               base.ChannelActive(context);
+            }
+
+            private async Task MarkServiceUnHealth(IChannelHandlerContext context)
+            {
+                var iPEndPoint = context.Channel.RemoteAddress as IPEndPoint;
+                var ipAddressModel = new IpAddressModel(iPEndPoint.Address.MapToIPv4().ToString(),
+                    iPEndPoint.Port);
+                await _healthCheckService.MarkFailure(ipAddressModel);
+            }
+            
+            private async Task MarkServiceHealth(IChannelHandlerContext context)
+            {
+                var iPEndPoint = context.Channel.RemoteAddress as IPEndPoint;
+                var ipAddressModel = new IpAddressModel(iPEndPoint.Address.MapToIPv4().ToString(),
+                    iPEndPoint.Port);
+                await _healthCheckService.MarkHealth(ipAddressModel);
+            }
+
 
             #endregion Overrides of ChannelHandlerAdapter
         }

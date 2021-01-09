@@ -72,7 +72,7 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
                 MonitorEntry entry;
                 if (!_dictionaries.TryGetValue(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out entry))
                 {
-                    entry = new MonitorEntry(address, true);
+                    entry = new MonitorEntry(address, SocketCheck.TestConnection(ipAddress.Ip,ipAddress.Port));
                     _dictionaries.TryAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), entry);
                 }
                 if (!entry.Health)
@@ -80,8 +80,11 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
                     if (entry.LastUnhealthyDateTime.HasValue &&
                         (DateTime.Now - entry.LastUnhealthyDateTime.Value).TotalSeconds > (AppConfig.ServerOptions.HealthCheckWatchIntervalInSeconds * AppConfig.ServerOptions.AllowServerUnhealthyTimes))
                     {
-                        entry.Health = true;
-                        entry.UnhealthyTimes = 0;
+                        entry.Health = SocketCheck.TestConnection(ipAddress.Ip,ipAddress.Port);
+                        if (entry.Health)
+                        {
+                            entry.UnhealthyTimes = 0;
+                        }
                     }
                 }
                 OnChanged(new HealthCheckEventArgs(address, entry.Health));
@@ -89,20 +92,6 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
 
             });
 
-        }
-
-        public Task RemoveHealthMonitor(AddressModel address)
-        {
-            return Task.Run(() =>
-            {
-                var ipAddress = address as IpAddressModel;
-                if (_dictionaries.ContainsKey(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port)))
-                {
-                    _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), out MonitorEntry entry);
-                    OnChanged(new HealthCheckEventArgs(address, false));
-                }
-                
-            });
         }
 
         public Task MarkHealth(IpAddressModel address)
@@ -130,8 +119,11 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
             var ipAddress = address as IpAddressModel;
             var entry = _dictionaries.GetOrAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), k => new MonitorEntry(address,false));
             entry.Health = false;
-            entry.UnhealthyTimes += 1;
             entry.LastUnhealthyDateTime = DateTime.Now;
+            if ((DateTime.Now - entry.FirstUnhealthyDateTime)?.Minutes > 5)
+            {
+                entry.UnhealthyTimes += 1;
+            }
             if (entry.UnhealthyTimes > AppConfig.ServerOptions.AllowServerUnhealthyTimes)
             {
                 _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port),out MonitorEntry monitor);
@@ -200,22 +192,41 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
 
         protected class MonitorEntry
         {
+            private bool _health;
             public MonitorEntry(AddressModel addressModel, bool health)
             {
                 Address = addressModel;
-                Health = health;
+                _health = health;
                 UnhealthyTimes = 0;
+                if (!health)
+                {
+                    FirstUnhealthyDateTime = DateTime.Now;
+                }
 
             }
 
             public int UnhealthyTimes { get; set; }
             
             public DateTime? LastUnhealthyDateTime { get; set; }
+            
+            public DateTime? FirstUnhealthyDateTime { get; private set; }
 
-            public AddressModel Address { get; set; }
+            public AddressModel Address { get; private set; }
 
-            public bool Health { get; set; }
+            public bool Health {
+                get => _health;
+                set
+                {
+                    if (!value && !FirstUnhealthyDateTime.HasValue)
+                    {
+                        FirstUnhealthyDateTime = DateTime.Now;
+                    }
 
+                    _health = value;
+                }
+            }
+
+           
         }
 
         #endregion Help Class
