@@ -133,14 +133,11 @@ namespace Surging.Cloud.DotNetty
                 //移除
                 _clients.TryRemove(key, out var value);
                 var ipEndPoint = endPoint as IPEndPoint;
-                if (ipEndPoint == null)
+                if (ipEndPoint != null)
                 {
-                    throw ex;
+                    await _healthCheckService.MarkFailure(new IpAddressModel(ipEndPoint.Address.ToString(), ipEndPoint.Port));
                 }
-                else
-                {
-                    throw new CommunicationException($"服务提供者{ipEndPoint.Address}:{ipEndPoint.Port}无法连接", ex);
-                }
+                throw;
             }
         }
 
@@ -218,7 +215,7 @@ namespace Surging.Cloud.DotNetty
 
             public async override void ChannelInactive(IChannelHandlerContext context)
             {
-                await RemoveServiceProvider(context);
+                await MarkServiceUnHealth(context);
                 base.ChannelInactive(context);
             }
 
@@ -230,7 +227,7 @@ namespace Surging.Cloud.DotNetty
 
             public async override Task CloseAsync(IChannelHandlerContext context)
             {
-                await RemoveServiceProvider(context);
+                await MarkServiceUnHealth(context);
                 await base.CloseAsync(context);
             }
 
@@ -246,13 +243,13 @@ namespace Surging.Cloud.DotNetty
             {
                 if (!exception.IsBusinessException())
                 {
-                    await RemoveServiceProvider(context);
+                    await MarkServiceUnHealth(context);
                 }
             }
 
             #endregion Overrides of ChannelHandlerAdapter
             
-            private async Task RemoveServiceProvider(IChannelHandlerContext context)
+            private async Task MarkServiceUnHealth(IChannelHandlerContext context)
             {
                 var providerServerEndpoint = context.Channel.RemoteAddress as IPEndPoint;
                 var providerServerAddress = new IpAddressModel(providerServerEndpoint.Address.MapToIPv4().ToString(),
@@ -260,11 +257,6 @@ namespace Surging.Cloud.DotNetty
                 _factory.RemoveClient(providerServerEndpoint);
                 _factory.RemoveClient(context.Channel.GetAttribute(origEndPointKey).Get());
                 await _healthCheckService.MarkFailure(providerServerAddress);
-                if (context.Channel.Open || context.Channel.Active)
-                {
-                    await context.CloseAsync();
-                    
-                }
             }
             
             private async Task MarkServiceProviderHealth(IChannelHandlerContext context)

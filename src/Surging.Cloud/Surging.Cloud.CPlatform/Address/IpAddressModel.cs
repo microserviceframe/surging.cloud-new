@@ -6,24 +6,24 @@ using System.Text;
 namespace Surging.Cloud.CPlatform.Address
 {
     /// <summary>
-    /// ip��ַģ�͡�
+    /// ip地址模型
     /// </summary>
     public sealed class IpAddressModel : AddressModel
     {
         #region Constructor
 
         /// <summary>
-        /// ��ʼ��һ���µ�ip��ַģ��ʵ����
+        /// ip地址模型
         /// </summary>
         public IpAddressModel()
         {
         }
 
         /// <summary>
-        /// ��ʼ��һ���µ�ip��ַģ��ʵ����
+        /// 通过ip和端口号创建地址模型
         /// </summary>
-        /// <param name="ip">ip��ַ��</param>
-        /// <param name="port">�˿ڡ�</param>
+        /// <param name="ip">ip地址</param>
+        /// <param name="port">端口号</param>
         public IpAddressModel(string ip, int port)
         {
             Ip = ip;

@@ -5,10 +5,7 @@ namespace Surging.Cloud.DotNetty.Adapter
 {
     public class ChannelInboundHandlerAdapter : ChannelHandlerAdapter
     {
-        public ChannelInboundHandlerAdapter() 
-        {
-        
-        }
+
         public async override void UserEventTriggered(IChannelHandlerContext context, object evt) 
         {
             if (evt is IdleStateEvent @event)
