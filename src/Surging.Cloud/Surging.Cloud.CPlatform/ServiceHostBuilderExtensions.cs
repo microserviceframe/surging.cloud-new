@@ -38,17 +38,17 @@ namespace Surging.Cloud.CPlatform
                 _ip = AppConfig.ServerOptions.Ip = AppConfig.ServerOptions.IpEndpoint?.Address.ToString() ?? _ip;
                 _ip = NetUtils.GetHostAddress(_ip);
                 mapper.Resolve<IModuleProvider>().Initialize();
-                if (!AppConfig.ServerOptions.DisableServiceRegistration)
-                {
-                    await mapper.Resolve<IServiceCommandManager>().SetServiceCommandsAsync();
-                    await ConfigureRoute(mapper);
-                }
                 var serviceHosts = mapper.Resolve<IList<Runtime.Server.IServiceHost>>();
                 Task.Factory.StartNew(async () =>
                 {
                     foreach (var serviceHost in serviceHosts)
                         await serviceHost.StartAsync(_ip, _port);
                     mapper.Resolve<IServiceEngineLifetime>().NotifyStarted();
+                    if (!AppConfig.ServerOptions.DisableServiceRegistration)
+                    {
+                        await mapper.Resolve<IServiceCommandManager>().SetServiceCommandsAsync();
+                        await ConfigureRoute(mapper);
+                    }
                 }).Wait();
             });
         }
@@ -82,6 +82,7 @@ namespace Surging.Cloud.CPlatform
                 mapper.Resolve<IModuleProvider>().Initialize();
             });
         }
+        
 
         public static void BuildServiceEngine(IContainer container)
         {

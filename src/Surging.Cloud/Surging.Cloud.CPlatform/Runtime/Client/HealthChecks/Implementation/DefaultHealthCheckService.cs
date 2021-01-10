@@ -1,14 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Surging.Cloud.CPlatform.Address;
-using Surging.Cloud.CPlatform.Configurations;
 using Surging.Cloud.CPlatform.Routing;
-using Surging.Cloud.CPlatform.Runtime.Server;
 using Surging.Cloud.CPlatform.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
@@ -120,10 +116,6 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
             var entry = _dictionaries.GetOrAdd(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port), k => new MonitorEntry(address,false));
             entry.Health = false;
             entry.LastUnhealthyDateTime = DateTime.Now;
-            if ((DateTime.Now - entry.FirstUnhealthyDateTime)?.Minutes > 5)
-            {
-                entry.UnhealthyTimes += 1;
-            }
             if (entry.UnhealthyTimes > AppConfig.ServerOptions.AllowServerUnhealthyTimes)
             {
                 _dictionaries.TryRemove(new Tuple<string, int>(ipAddress.Ip, ipAddress.Port),out MonitorEntry monitor);
@@ -192,16 +184,11 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
 
         protected class MonitorEntry
         {
-            private bool _health;
             public MonitorEntry(AddressModel addressModel, bool health)
             {
                 Address = addressModel;
-                _health = health;
+                Health = health;
                 UnhealthyTimes = 0;
-                if (!health)
-                {
-                    FirstUnhealthyDateTime = DateTime.Now;
-                }
 
             }
 
@@ -209,21 +196,13 @@ namespace Surging.Cloud.CPlatform.Runtime.Client.HealthChecks.Implementation
             
             public DateTime? LastUnhealthyDateTime { get; set; }
             
-            public DateTime? FirstUnhealthyDateTime { get; private set; }
 
             public AddressModel Address { get; private set; }
 
-            public bool Health {
-                get => _health;
-                set
-                {
-                    if (!value && !FirstUnhealthyDateTime.HasValue)
-                    {
-                        FirstUnhealthyDateTime = DateTime.Now;
-                    }
-
-                    _health = value;
-                }
+            public bool Health
+            {
+                get;
+                set;
             }
 
            
