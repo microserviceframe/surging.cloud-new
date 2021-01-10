@@ -163,7 +163,7 @@ namespace Surging.Cloud.CPlatform.Routing.Implementation
             }
         }
 
-        protected override async Task<bool> SetRouteAsync(ServiceRouteDescriptor route)
+        protected virtual async Task<bool> SetRouteAsync(ServiceRouteDescriptor route)
         {
             throw new NotImplementedException();
         }

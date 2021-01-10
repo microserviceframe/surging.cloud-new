@@ -218,27 +218,22 @@ namespace Surging.Cloud.Consul
                 {
                     foreach (var serviceRoute in routes)
                     {
-                        await SetRouteAsync(serviceRoute);
+                        await SetRouteAsync(serviceRoute,client);
                     }
                 });
                 
             }
         }
 
-        protected override async Task<bool> SetRouteAsync(ServiceRouteDescriptor route)
+        private async Task<bool> SetRouteAsync(ServiceRouteDescriptor route, ConsulClient client)
         {
-            var hostAddr = NetUtils.GetHostAddress();
-            var clients = await _consulClientProvider.GetClients();
-            foreach (var client in clients)
-            {
-                var nodeData = _serializer.Serialize(route);
-                _logger.LogDebug($"准备设置服务路由信息：{Encoding.UTF8.GetString(nodeData)}。");
-                var keyValuePair = new KVPair($"{_configInfo.RoutePath}{route.ServiceDescriptor.Id}") { Value = nodeData };
-                await client.KV.Put(keyValuePair);
-
-            }
+            var nodeData = _serializer.Serialize(route);
+            _logger.LogDebug($"准备设置服务路由信息：{Encoding.UTF8.GetString(nodeData)}。");
+            var keyValuePair = new KVPair($"{_configInfo.RoutePath}{route.ServiceDescriptor.Id}") { Value = nodeData };
+            await client.KV.Put(keyValuePair);
             return true;
         }
+
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> address)
         {
             await EnterRoutes(true);
@@ -252,15 +247,17 @@ namespace Surging.Cloud.Consul
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> address, string serviceId)
         {
             var serviceRoute = await GetRouteByServiceIdAsync(serviceId, false);
-            serviceRoute.Address = serviceRoute.Address.Except(address).ToList();
-            await base.SetRouteAsync(serviceRoute);
-
+            await RemveAddressAsync(address, serviceRoute);
         }
 
         protected override async Task RemveAddressAsync(IEnumerable<AddressModel> address, ServiceRoute serviceRoute)
         {
             serviceRoute.Address = serviceRoute.Address.Except(address).ToList();
-            await base.SetRouteAsync(serviceRoute);
+            var clients = await _consulClientProvider.GetClients();
+            foreach (var client in clients)
+            {
+                await SetRouteAsync(CreateServiceRouteDescriptor(serviceRoute),client);
+            }
         }
 
         #region 私有方法
@@ -282,7 +279,7 @@ namespace Surging.Cloud.Consul
                         if (removeRoute != null && removeRoute.Address != null && removeRoute.Address.Any(p => p.Equals(hostAddr)))
                         {
                             var nodePath = $"{_configInfo.RoutePath}{removeRouteId}";
-                            await SetRouteAsync(removeRoute);
+                            await SetRouteAsync(CreateServiceRouteDescriptor(removeRoute),client);
                         }
 
                     }
@@ -511,16 +508,21 @@ namespace Surging.Cloud.Consul
         /// <returns></returns>
         private async Task ChildrenChange(string[] oldChildrens, string[] newChildrens)
         {
-            _logger.LogDebug($"最新的节点信息：{string.Join(",", newChildrens)}");
-            _logger.LogDebug($"旧的节点信息：{string.Join(",", oldChildrens)}");
-            
+            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+                _logger.LogDebug($"最新的节点信息：{string.Join(",", newChildrens)}");
+
+            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+                _logger.LogDebug($"旧的节点信息：{string.Join(",", oldChildrens)}");
+
             //计算出已被删除的节点。
             var deletedChildrens = oldChildrens.Except(newChildrens).ToArray();
             //计算出新增的节点。
             var createdChildrens = newChildrens.Except(oldChildrens).ToArray();
-            _logger.LogDebug($"需要被删除的路由节点：{string.Join(",", deletedChildrens)}");
-            _logger.LogDebug($"需要被添加的路由节点：{string.Join(",", createdChildrens)}");
-             
+
+            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+                _logger.LogDebug($"需要被删除的路由节点：{string.Join(",", deletedChildrens)}");
+            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+                _logger.LogDebug($"需要被添加的路由节点：{string.Join(",", createdChildrens)}");
 
             //获取新增的路由信息。
             var newRoutes = (await GetRoutes(createdChildrens)).ToArray();
@@ -545,8 +547,8 @@ namespace Surging.Cloud.Consul
             //触发路由被创建事件。
             OnCreated(newRoutes.Select(route => new ServiceRouteEventArgs(route)).ToArray());
 
-            _logger.LogInformation("路由数据更新成功。");
-               
+            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Information))
+                _logger.LogInformation("路由数据更新成功。");
         }
         #endregion
     }

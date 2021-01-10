@@ -150,7 +150,7 @@ namespace Surging.Cloud.Consul
         protected override async Task InitServiceCommandsAsync(IEnumerable<ServiceCommandDescriptor> serviceCommands)
         {
             var commands = await GetServiceCommands(serviceCommands.Select(p => $"{ _configInfo.CommandPath}{ p.ServiceId}"));
-            if (commands.Count() == 0 || _configInfo.ReloadOnChange)
+            if (!commands.Any() || _configInfo.ReloadOnChange)
             {
                 await SetServiceCommandsAsync(serviceCommands);
             }

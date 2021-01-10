@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 using static org.apache.zookeeper.KeeperException;
 namespace Surging.Cloud.Zookeeper
 {
-    public class ZooKeeperServiceRouteManager : ServiceRouteManagerBase, IDisposable
+     public class ZooKeeperServiceRouteManager : ServiceRouteManagerBase, IDisposable
     {
         private readonly ConfigInfo _configInfo;
         private readonly ISerializer<byte[]> _serializer;
@@ -137,7 +137,7 @@ namespace Surging.Cloud.Zookeeper
                         var registerCount = 0;
                         foreach (var serviceRoute in routes)
                         {
-                            if (await SetRouteAsync(serviceRoute))
+                            if (await SetRouteAsync(serviceRoute, zooKeeperClient))
                             {
                                 registerCount++;
                             }
@@ -151,54 +151,49 @@ namespace Surging.Cloud.Zookeeper
           
         }
 
-        protected override async Task<bool> SetRouteAsync(ServiceRouteDescriptor route)
+        private async Task<bool> SetRouteAsync(ServiceRouteDescriptor route, IZookeeperClient zooKeeperClient)
         {
-            var registerResult = false;
             try
             {
+                bool isSetRoute = false;
                 _logger.LogDebug($"准备添加{route.ServiceDescriptor.Id}服务路由。");
                 var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
-                foreach (var zooKeeperClient in zooKeeperClients)
-                {                    
-                    await CreateSubdirectory(zooKeeperClient, _configInfo.RoutePath);
-                    var path = _configInfo.RoutePath;
-                    if (!path.EndsWith("/"))
-                        path += "/";
+                await CreateSubdirectory(zooKeeperClient, _configInfo.RoutePath);
+                var path = _configInfo.RoutePath;
+                if (!path.EndsWith("/"))
+                    path += "/";
 
-                    var nodePath = $"{path}{route.ServiceDescriptor.Id}";
-                    var nodeData = _serializer.Serialize(route);
-                    _logger.LogDebug($"服务路由内容为：{Encoding.UTF8.GetString(nodeData)}。");
-                    if (!nodeWatchers.ContainsKey(nodePath))
-                    {   var watcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                        await zooKeeperClient.SubscribeDataChange(nodePath, watcher.HandleNodeDataChange);
-                    }
-                    if (!await zooKeeperClient.ExistsAsync(nodePath))
+                var nodePath = $"{path}{route.ServiceDescriptor.Id}";
+                var nodeData = _serializer.Serialize(route);
+                _logger.LogDebug($"服务路由内容为：{Encoding.UTF8.GetString(nodeData)}。");
+                if (!nodeWatchers.ContainsKey(nodePath))
+                {   var watcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                    await zooKeeperClient.SubscribeDataChange(nodePath, watcher.HandleNodeDataChange);
+                }
+                if (!await zooKeeperClient.ExistsAsync(nodePath))
+                {
+                    _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
+                    await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                }
+                else
+                {
+                    var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
+                    if (!DataEquals(nodeData, onlineData))
                     {
-                        _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
-                        await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                    }
-                    else
-                    {
-                        var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
-                        if (!DataEquals(nodeData, onlineData))
-                        {
-                            await zooKeeperClient.SetDataAsync(nodePath, nodeData);
-                            registerResult = true;
-                            _logger.LogDebug($"{nodePath}节点的缓存的服务路由与服务注册中心不一致,路由数据已被更新。");
-
-                        }
+                        await zooKeeperClient.SetDataAsync(nodePath, nodeData);
+                        _logger.LogDebug($"{nodePath}节点的缓存的服务路由与服务注册中心不一致,路由数据已被更新。");
+                        isSetRoute = true;
                     }
                 }
 
-                return registerResult;
+                return isSetRoute;
             }
             catch (Exception ex)
             {
                 _logger.LogError($"{route.ServiceDescriptor.Id}服务的路由注册失败,原因:{ex.Message}" );
-                return registerResult;
+                return false;
 
             }
-
         }
 
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> address)
@@ -217,26 +212,30 @@ namespace Surging.Cloud.Zookeeper
                 });
             }
 
-            
         }
 
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> address, string serviceId)
         {
-            using (var locker = await  _lockerProvider.CreateLockAsync($"remove_{serviceId}")) 
-            {
-                await locker.Lock(async () => {
-                    var serviceRoute = await GetRouteByServiceIdAsync(serviceId, false);
-                    serviceRoute.Address = serviceRoute.Address.Except(address).ToList();
-                    await base.SetRouteAsync(serviceRoute);
-                });
-            }
-           
+            var serviceRoute = await GetRouteByServiceIdAsync(serviceId, false);
+            await RemveAddressAsync(address, serviceRoute);
+
         }
 
         protected override async Task RemveAddressAsync(IEnumerable<AddressModel> address, ServiceRoute serviceRoute)
         {        
             serviceRoute.Address = serviceRoute.Address.Except(address).ToList();
-            await base.SetRouteAsync(serviceRoute);
+            using (var locker = await  _lockerProvider.CreateLockAsync($"remove_{serviceRoute.ServiceDescriptor.Id}")) 
+            {
+                await locker.Lock(async () => {
+                  
+                    serviceRoute.Address = serviceRoute.Address.Except(address).ToList();
+                    var zookeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
+                    foreach (var zookeeperClient in zookeeperClients)
+                    {
+                        await SetRouteAsync(CreateServiceRouteDescriptor(serviceRoute), zookeeperClient);
+                    }
+                });
+            }
 
         }
         public override async Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod)
@@ -357,7 +356,7 @@ namespace Surging.Cloud.Zookeeper
                             try
                             {
                                 removeRoute.Address = removeRoute.Address.Where(p => !p.Equals(hostAddr)).ToList();
-                                await SetRouteAsync(removeRoute);
+                                await SetRouteAsync(CreateServiceRouteDescriptor(removeRoute),zooKeeper);
                             }
                             catch (NoNodeException ex)
                             {

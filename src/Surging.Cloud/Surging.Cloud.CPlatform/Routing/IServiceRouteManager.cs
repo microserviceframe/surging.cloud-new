@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Surging.Cloud.CPlatform.Routing
 {
-    /// <summary>
+     /// <summary>
     /// 一个抽象的服务路由发现者。
     /// </summary>
     public interface IServiceRouteManager
@@ -46,9 +46,6 @@ namespace Surging.Cloud.CPlatform.Routing
         /// <param name="routes">服务路由集合。</param>
         /// <returns>一个任务。</returns>
         Task SetRoutesAsync(IEnumerable<ServiceRoute> routes);
-
-        Task SetRouteAsync(ServiceRoute route);
-
         /// <summary>
         /// 移除地址列表
         /// </summary>

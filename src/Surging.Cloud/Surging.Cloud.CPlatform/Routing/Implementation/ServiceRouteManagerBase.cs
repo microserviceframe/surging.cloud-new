@@ -91,8 +91,8 @@ namespace Surging.Cloud.CPlatform.Routing.Implementation
 
             return SetRoutesAsync(descriptors);
         }
-
-        public virtual Task SetRouteAsync(ServiceRoute route)
+        
+        protected virtual ServiceRouteDescriptor CreateServiceRouteDescriptor(ServiceRoute route)
         {
             if (route == null)
                 throw new ArgumentNullException(nameof(route));
@@ -104,7 +104,7 @@ namespace Surging.Cloud.CPlatform.Routing.Implementation
                 }) ?? Enumerable.Empty<ServiceAddressDescriptor>(),
                 ServiceDescriptor = route.ServiceDescriptor
             };
-            return SetRouteAsync(descriptor);
+            return descriptor;
         }
 
         public abstract Task<ServiceRoute> GetRouteByPathAsync(string path, string httpMethod);
@@ -133,8 +133,6 @@ namespace Surging.Cloud.CPlatform.Routing.Implementation
         /// <param name="routes">服务路由集合。</param>
         /// <returns>一个任务。</returns>
         protected abstract Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes);
-
-        protected abstract Task<bool> SetRouteAsync(ServiceRouteDescriptor route);
 
         protected void OnCreated(params ServiceRouteEventArgs[] args)
         {
