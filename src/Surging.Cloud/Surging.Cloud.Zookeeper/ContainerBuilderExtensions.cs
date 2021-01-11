@@ -9,7 +9,6 @@ using Surging.Cloud.CPlatform.Routing;
 using Surging.Cloud.CPlatform.Runtime.Client;
 using Surging.Cloud.CPlatform.Runtime.Server;
 using Surging.Cloud.CPlatform.Serialization;
-using Surging.Cloud.Lock.Provider;
 using Surging.Cloud.Zookeeper.Configurations;
 using Surging.Cloud.Zookeeper.Internal;
 using Surging.Cloud.Zookeeper.Internal.Cluster.HealthChecks;
@@ -38,8 +37,7 @@ namespace Surging.Cloud.Zookeeper
                 provider.GetRequiredService<ISerializer<string>>(),
                 provider.GetRequiredService<IServiceRouteFactory>(),
                 provider.GetRequiredService<ILogger<ZooKeeperServiceRouteManager>>(),
-                provider.GetRequiredService<IZookeeperClientProvider>(),
-                provider.GetRequiredService<ILockerProvider>()
+                provider.GetRequiredService<IZookeeperClientProvider>()
                   ));
         }
 
@@ -53,8 +51,7 @@ namespace Surging.Cloud.Zookeeper
                      provider.GetRequiredService<ISerializer<string>>(),
                      provider.GetRequiredService<IMqttServiceFactory>(),
                      provider.GetRequiredService<ILogger<ZooKeeperMqttServiceRouteManager>>(),
-                    provider.GetRequiredService<IZookeeperClientProvider>(),
-                    provider.GetRequiredService<ILockerProvider>());
+                    provider.GetRequiredService<IZookeeperClientProvider>());
                 return result;
             });
         }

@@ -6,8 +6,6 @@ using Surging.Cloud.CPlatform.Mqtt;
 using Surging.Cloud.CPlatform.Mqtt.Implementation;
 using Surging.Cloud.CPlatform.Serialization;
 using Surging.Cloud.CPlatform.Utilities;
-using Surging.Cloud.Lock;
-using Surging.Cloud.Lock.Provider;
 using Surging.Cloud.Zookeeper.Configurations;
 using Surging.Cloud.Zookeeper.Internal;
 using Surging.Cloud.Zookeeper.WatcherProvider;
@@ -29,18 +27,15 @@ namespace Surging.Cloud.Zookeeper
         private readonly IZookeeperClientProvider _zookeeperClientProvider;
         private IDictionary<string, NodeMonitorWatcher> nodeWatchers = new Dictionary<string, NodeMonitorWatcher>();
         private ChildrenMonitorWatcher watcher =null;
-        private readonly ILockerProvider _lockerProvider;
         public ZooKeeperMqttServiceRouteManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
             ISerializer<string> stringSerializer, IMqttServiceFactory mqttServiceFactory,
-            ILogger<ZooKeeperMqttServiceRouteManager> logger, IZookeeperClientProvider zookeeperClientProvider,
-            ILockerProvider lockerProvider) : base(stringSerializer)
+            ILogger<ZooKeeperMqttServiceRouteManager> logger, IZookeeperClientProvider zookeeperClientProvider) : base(stringSerializer)
         {
             _configInfo = configInfo;
             _serializer = serializer;
             _mqttServiceFactory = mqttServiceFactory;
             _logger = logger;
             _zookeeperClientProvider = zookeeperClientProvider;
-            _lockerProvider = lockerProvider;
             EnterRoutes().Wait();
            
         }
@@ -123,34 +118,28 @@ namespace Surging.Cloud.Zookeeper
                     var nodePath = $"{path}{serviceRoute.MqttDescriptor.Topic}";
                     var nodeData = _serializer.Serialize(serviceRoute);
 
-                    using (var locker = await _lockerProvider.CreateLockAsync(nodePath)) 
+                    if (!nodeWatchers.ContainsKey(nodePath))
                     {
-                        await locker.Lock(async ()=> {
-                            if (!nodeWatchers.ContainsKey(nodePath))
-                            {
-                                var nodeWathcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                                await zooKeeperClient.SubscribeDataChange(nodePath, nodeWathcher.HandleNodeDataChange);
-                            }
-                           
-                            if (!await zooKeeperClient.ExistsAsync(nodePath))
-                            {
-                                if (_logger.IsEnabled(LogLevel.Debug))
-                                    _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
-                                await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                            }
-                            else
-                            {
-                                if (_logger.IsEnabled(LogLevel.Debug))
-                                    _logger.LogDebug($"将更新节点：{nodePath}的数据。");
-                                var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
-                                if (!DataEquals(nodeData, onlineData))
-                                {
-                                    await zooKeeperClient.SetDataAsync(nodePath, nodeData);
-                                }
-                            }
-                        });
+                        var nodeWathcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                        await zooKeeperClient.SubscribeDataChange(nodePath, nodeWathcher.HandleNodeDataChange);
                     }
-
+                           
+                    if (!await zooKeeperClient.ExistsAsync(nodePath))
+                    {
+                        if (_logger.IsEnabled(LogLevel.Debug))
+                            _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
+                        await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    }
+                    else
+                    {
+                        if (_logger.IsEnabled(LogLevel.Debug))
+                            _logger.LogDebug($"将更新节点：{nodePath}的数据。");
+                        var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
+                        if (!DataEquals(nodeData, onlineData))
+                        {
+                            await zooKeeperClient.SetDataAsync(nodePath, nodeData);
+                        }
+                    }
                     
                 }
                 if (_logger.IsEnabled(LogLevel.Information))
@@ -278,25 +267,17 @@ namespace Surging.Cloud.Zookeeper
             {
                 return result;
             }
-            using (var locker = await _lockerProvider.CreateLockAsync(path)) 
+            if (await zooKeeperClient.ExistsAsync(path))
             {
-                result = await locker.Lock(async () => 
+                var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
+                if (!nodeWatchers.ContainsKey(path))
                 {
-                    if (await zooKeeperClient.ExistsAsync(path))
-                    {
-                        var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
-                        if (!nodeWatchers.ContainsKey(path))
-                        {
-                            var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                            await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
-                        }
+                    var watcher = nodeWatchers.GetOrAdd(path, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
+                    await zooKeeperClient.SubscribeDataChange(path, watcher.HandleNodeDataChange);
+                }
                         
-                        return await GetRoute(data);
-                    }
-                    return null;
-                });
+                result = await GetRoute(data);
             }
-                
 
             return result;
 

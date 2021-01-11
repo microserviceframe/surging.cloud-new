@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
-    <ProjectReference Include="..\Surging.Cloud.Lock\Surging.Cloud.Lock.csproj" />
   </ItemGroup>
 
 </Project>

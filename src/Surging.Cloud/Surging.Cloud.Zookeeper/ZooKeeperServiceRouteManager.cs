@@ -5,11 +5,8 @@ using Surging.Cloud.CPlatform;
 using Surging.Cloud.CPlatform.Address;
 using Surging.Cloud.CPlatform.Routing;
 using Surging.Cloud.CPlatform.Routing.Implementation;
-using Surging.Cloud.CPlatform.Runtime.Client.HealthChecks;
 using Surging.Cloud.CPlatform.Serialization;
 using Surging.Cloud.CPlatform.Utilities;
-using Surging.Cloud.Lock;
-using Surging.Cloud.Lock.Provider;
 using Surging.Cloud.Zookeeper.Configurations;
 using Surging.Cloud.Zookeeper.Internal;
 using Surging.Cloud.Zookeeper.WatcherProvider;
@@ -31,14 +28,12 @@ namespace Surging.Cloud.Zookeeper
         private readonly ILogger<ZooKeeperServiceRouteManager> _logger;
         private ServiceRoute[] _routes;
         private readonly IZookeeperClientProvider _zookeeperClientProvider;
-        private readonly ILockerProvider _lockerProvider;
         private IDictionary<string, NodeMonitorWatcher> nodeWatchers = new Dictionary<string, NodeMonitorWatcher>();
         private ChildrenMonitorWatcher watcher = null;
 
         public ZooKeeperServiceRouteManager(ConfigInfo configInfo, ISerializer<byte[]> serializer,
             ISerializer<string> stringSerializer, IServiceRouteFactory serviceRouteFactory,
-            ILogger<ZooKeeperServiceRouteManager> logger, IZookeeperClientProvider zookeeperClientProvider,
-            ILockerProvider lockerProvider)
+            ILogger<ZooKeeperServiceRouteManager> logger, IZookeeperClientProvider zookeeperClientProvider)
             : base(stringSerializer)
         {
             _configInfo = configInfo;
@@ -47,7 +42,6 @@ namespace Surging.Cloud.Zookeeper
             _serviceRouteFactory = serviceRouteFactory;
             _logger = logger;
             _zookeeperClientProvider = zookeeperClientProvider;
-            _lockerProvider = lockerProvider;
             EnterRoutes().Wait();            
         }
 
@@ -118,35 +112,26 @@ namespace Surging.Cloud.Zookeeper
         /// <returns>一个任务。</returns>
         protected override async Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes)
         {
-            using (var locker = await _lockerProvider.CreateLockAsync($"set_routes_async"))
-            {
-                await locker.Lock(async () =>
+            var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
+            foreach (var zooKeeperClient in zooKeeperClients)
+            { 
+                _logger.LogInformation($"准备向服务注册中心{zooKeeperClient.Options.ConnectionString}注册路由信息");
+                await CreateSubdirectory(zooKeeperClient, _configInfo.RoutePath);
+
+                var path = _configInfo.RoutePath;
+                if (!path.EndsWith("/"))
+                    path += "/";
+
+                routes = routes.ToArray();
+                var registerCount = 0;
+                foreach (var serviceRoute in routes)
                 {
-                   
-                    var zooKeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
-                    foreach (var zooKeeperClient in zooKeeperClients)
-                    { 
-                        _logger.LogInformation($"准备向服务注册中心{zooKeeperClient.Options.ConnectionString}注册路由信息");
-                        await CreateSubdirectory(zooKeeperClient, _configInfo.RoutePath);
-
-                        var path = _configInfo.RoutePath;
-                        if (!path.EndsWith("/"))
-                            path += "/";
-
-                        routes = routes.ToArray();
-                        var registerCount = 0;
-                        foreach (var serviceRoute in routes)
-                        {
-                            if (await SetRouteAsync(serviceRoute, zooKeeperClient))
-                            {
-                                registerCount++;
-                            }
-                        }
-                        _logger.LogInformation($"成功向服务注册中心注册{registerCount}个服务路由");
+                    if (await SetRouteAsync(serviceRoute, zooKeeperClient))
+                    {
+                        registerCount++;
                     }
-                  
-                    
-                });
+                }
+                _logger.LogInformation($"成功向服务注册中心注册{registerCount}个服务路由");
             }
           
         }
@@ -198,20 +183,12 @@ namespace Surging.Cloud.Zookeeper
 
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> address)
         {
-            using (var locker = await _lockerProvider.CreateLockAsync($"remove_unhealth_address"))
+            await EnterRoutes(true);
+            var routes = _routes.Where(route => route.Address.Any(p => address.Any(q => q.Equals(p))));
+            foreach (var route in routes)
             {
-                await locker.Lock(async () =>
-                {
-                    await EnterRoutes(true);
-                    var routes = _routes.Where(route => route.Address.Any(p => address.Any(q => q.Equals(p))));
-                    foreach (var route in routes)
-                    {
-                        await RemveAddressAsync(address, route);
-                    }
-                    
-                });
+                await RemveAddressAsync(address, route);
             }
-
         }
 
         public override async Task RemveAddressAsync(IEnumerable<AddressModel> address, string serviceId)
@@ -222,19 +199,12 @@ namespace Surging.Cloud.Zookeeper
         }
 
         protected override async Task RemveAddressAsync(IEnumerable<AddressModel> address, ServiceRoute serviceRoute)
-        {        
+        {
             serviceRoute.Address = serviceRoute.Address.Except(address).ToList();
-            using (var locker = await  _lockerProvider.CreateLockAsync($"remove_{serviceRoute.ServiceDescriptor.Id}")) 
+            var zookeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
+            foreach (var zookeeperClient in zookeeperClients)
             {
-                await locker.Lock(async () => {
-                  
-                    serviceRoute.Address = serviceRoute.Address.Except(address).ToList();
-                    var zookeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
-                    foreach (var zookeeperClient in zookeeperClients)
-                    {
-                        await SetRouteAsync(CreateServiceRouteDescriptor(serviceRoute), zookeeperClient);
-                    }
-                });
+                await SetRouteAsync(CreateServiceRouteDescriptor(serviceRoute), zookeeperClient);
             }
 
         }
