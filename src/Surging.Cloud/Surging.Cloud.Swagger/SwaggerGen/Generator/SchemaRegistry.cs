@@ -22,7 +22,7 @@ namespace Surging.Cloud.SwaggerGen
             SchemaRegistryOptions options = null)
         {
             _jsonSerializerSettings = jsonSerializerSettings;
-            _jsonContractResolver = _jsonSerializerSettings.ContractResolver ?? new DefaultContractResolver();
+            _jsonContractResolver = _jsonSerializerSettings.ContractResolver ?? new CamelCasePropertyNamesContractResolver();
             _options = options ?? new SchemaRegistryOptions();
             _schemaIdManager = new SchemaIdManager(_options.SchemaIdSelector);
             Definitions = new Dictionary<string, Schema>();

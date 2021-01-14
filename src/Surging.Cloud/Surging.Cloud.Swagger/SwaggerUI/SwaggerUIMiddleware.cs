@@ -28,7 +28,7 @@ namespace Surging.Cloud.Swagger.SwaggerUI
 
         public SwaggerUIMiddleware(
             RequestDelegate next,
-            IHostingEnvironment hostingEnv,
+            IWebHostEnvironment hostingEnv,
             ILoggerFactory loggerFactory,
             IOptions<SwaggerUIOptions> optionsAccessor)
             : this(next, hostingEnv, loggerFactory, optionsAccessor.Value)
@@ -36,7 +36,7 @@ namespace Surging.Cloud.Swagger.SwaggerUI
 
         public SwaggerUIMiddleware(
             RequestDelegate next,
-            IHostingEnvironment hostingEnv,
+            IWebHostEnvironment hostingEnv,
             ILoggerFactory loggerFactory,
             SwaggerUIOptions options)
         {
@@ -119,7 +119,7 @@ namespace Surging.Cloud.Swagger.SwaggerUI
 
         private StaticFileMiddleware CreateStaticFileMiddleware(
             RequestDelegate next,
-            IHostingEnvironment hostingEnv,
+            IWebHostEnvironment hostingEnv,
             ILoggerFactory loggerFactory,
             SwaggerUIOptions options)
         {

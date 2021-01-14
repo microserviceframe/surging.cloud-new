@@ -64,13 +64,16 @@ namespace Surging.Cloud.AutoMapper
 
         private static IEnumerable<Assembly> GetAllReferenceAssemblies()
         {
-            var serviceEngine = ServiceLocator.GetService<IServiceEngine>() as VirtualPathProviderServiceEngine;
             string[] paths = null;
-            if (serviceEngine != null)
+            if (ServiceLocator.IsRegistered(typeof(IServiceEngine)))
             {
-                if (serviceEngine.ModuleServiceLocationFormats != null)
+                var serviceEngine = ServiceLocator.GetService<IServiceEngine>() as VirtualPathProviderServiceEngine;
+                if (serviceEngine != null)
                 {
-                    paths = GetPaths(serviceEngine.ModuleServiceLocationFormats);
+                    if (serviceEngine.ModuleServiceLocationFormats != null)
+                    {
+                        paths = GetPaths(serviceEngine.ModuleServiceLocationFormats);
+                    }
                 }
             }
             var referenceAssemblies = paths == null ? GetReferenceAssembly() : GetReferenceAssembly(paths);

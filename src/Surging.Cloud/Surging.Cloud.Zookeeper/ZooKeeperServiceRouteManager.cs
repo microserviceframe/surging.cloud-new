@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 using static org.apache.zookeeper.KeeperException;
 namespace Surging.Cloud.Zookeeper
 {
-     public class ZooKeeperServiceRouteManager : ServiceRouteManagerBase, IDisposable
+     public class ZooKeeperServiceRouteManager : ServiceRouteManagerBase
     {
         private readonly ConfigInfo _configInfo;
         private readonly ISerializer<byte[]> _serializer;
@@ -587,11 +587,7 @@ namespace Surging.Cloud.Zookeeper
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.LogInformation("路由数据更新成功。");
         }
-
-        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-        public void Dispose()
-        {
-        }
+        
 
     }
 }

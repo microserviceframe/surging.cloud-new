@@ -113,7 +113,7 @@ namespace Surging.Modules.Common.Domain
 
         public Task<IDictionary<string,object>> Authentication(AuthenticationRequestData requestData)
         {
-            if (requestData.UserName == "admin" && requestData.Password == "admin")
+            if (requestData.UserName != null && requestData.UserName == "admin" && requestData.Password == "admin")
             {
                 IDictionary<string, object> payload = new Dictionary<string,object>();
                 payload.Add(ClaimTypes.UserId, 1);

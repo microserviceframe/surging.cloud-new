@@ -188,32 +188,7 @@ namespace Surging.Cloud.CPlatform
         }
 
         #endregion RouteManager
-
-        /// <summary>
-        /// 设置共享文件路由管理者。
-        /// </summary>
-        /// <param name="builder">服务构建者。</param>
-        /// <param name="filePath">文件路径。</param>
-        /// <returns>服务构建者。</returns>
-        public static IServiceBuilder UseSharedFileRouteManager(this IServiceBuilder builder, string filePath)
-        {
-            return builder.UseRouteManager(provider =>
-            new SharedFileServiceRouteManager(
-                filePath,
-                provider.GetRequiredService<ISerializer<string>>(),
-                provider.GetRequiredService<IServiceRouteFactory>(),
-                provider.GetRequiredService<ILogger<SharedFileServiceRouteManager>>()));
-        }
-
-        public static IServiceBuilder UseSharedFileRouteManager(this IServiceBuilder builder, string ip, string port)
-        {
-            return builder.UseRouteManager(provider =>
-            new SharedFileServiceRouteManager(
-                ip,
-                provider.GetRequiredService<ISerializer<string>>(),
-                provider.GetRequiredService<IServiceRouteFactory>(),
-                provider.GetRequiredService<ILogger<SharedFileServiceRouteManager>>()));
-        }
+        
 
         #region AddressSelector
         /// <summary>
@@ -353,7 +328,7 @@ namespace Surging.Cloud.CPlatform
             services.RegisterType(typeof(DefaultHealthCheckService)).As(typeof(IHealthCheckService)).SingleInstance();
             services.RegisterType(typeof(DefaultAddressResolver)).As(typeof(IAddressResolver)).SingleInstance();
             services.RegisterType(typeof(RemoteInvokeService)).As(typeof(IRemoteInvokeService)).SingleInstance();
-            return builder.UseAddressSelector().AddRuntime().AddClusterSupport();
+            return builder.UseAddressSelector().AddClusterSupport();
         }
 
         /// <summary>
@@ -408,8 +383,14 @@ namespace Surging.Cloud.CPlatform
             builder.Services.RegisterType(typeof(DefaultServiceEntryLocate)).As(typeof(IServiceEntryLocate)).SingleInstance();
             builder.Services.RegisterType(typeof(DefaultServiceExecutor)).As(typeof(IServiceExecutor))
                 .Named<IServiceExecutor>(CommunicationProtocol.Tcp.ToString()).SingleInstance();
-
-            return builder.RegisterServices().RegisterRepositories().RegisterServiceBus().RegisterModules().RegisterInstanceByConstraint().AddRuntime();
+            return builder.Services
+                .AddCoreService()
+                .RegisterServices()
+                .RegisterRepositories()
+                .RegisterServiceBus()
+                .RegisterModules()
+                .RegisterInstanceByConstraint()
+                .AddRuntime();
         }
 
         /// <summary>
@@ -436,7 +417,11 @@ namespace Surging.Cloud.CPlatform
             Check.NotNull(services, "services");
             //注册服务ID生成实例 
             services.RegisterType<DefaultServiceIdGenerator>().As<IServiceIdGenerator>().SingleInstance();
-            services.Register(p => new CPlatformContainer(p));
+            services.Register(p =>
+            {   
+                var context = p.Resolve<IComponentContext>();
+                return new CPlatformContainer(context);
+            });
             //注册默认的类型转换 
             services.RegisterType(typeof(DefaultTypeConvertibleProvider)).As(typeof(ITypeConvertibleProvider)).SingleInstance();
             //注册默认的类型转换服务 
@@ -455,8 +440,6 @@ namespace Surging.Cloud.CPlatform
             services.RegisterType(typeof(ServiceTokenGenerator)).As(typeof(IServiceTokenGenerator)).SingleInstance();
             //注册哈希一致性算法 
             services.RegisterType(typeof(HashAlgorithm)).As(typeof(IHashAlgorithm)).SingleInstance();
-            //注册组件生命周期接口 
-            services.RegisterType(typeof(ServiceEngineLifetime)).As(typeof(IServiceEngineLifetime)).SingleInstance();
             //注册服务心跳管理 
             services.RegisterType(typeof(DefaultServiceHeartbeatManager)).As(typeof(IServiceHeartbeatManager)).SingleInstance();
             return new ServiceBuilder(services)
@@ -487,7 +470,6 @@ namespace Surging.Cloud.CPlatform
             var services = builder.Services;
 
             services.RegisterType(typeof(ClrServiceEntryFactory)).As(typeof(IClrServiceEntryFactory)).SingleInstance();
-
             services.Register(provider =>
             {
                 try
@@ -495,26 +477,17 @@ namespace Surging.Cloud.CPlatform
                     var assemblys = GetReferenceAssembly();
                     var types = assemblys.SelectMany(i => i.ExportedTypes).ToArray();
                     return new AttributeServiceEntryProvider(types, provider.Resolve<IClrServiceEntryFactory>(),
-                         provider.Resolve<ILogger<AttributeServiceEntryProvider>>(), provider.Resolve<CPlatformContainer>());
+                        provider.Resolve<ILogger<AttributeServiceEntryProvider>>(), provider.Resolve<CPlatformContainer>());
                 }
                 finally
                 {
                     builder = null;
                 }
-            }).As<IServiceEntryProvider>();
+            }).As<IServiceEntryProvider>().SingleInstance();
             builder.Services.RegisterType(typeof(DefaultServiceEntryManager)).As(typeof(IServiceEntryManager)).SingleInstance();
             return builder;
         }
-
-       /// <summary>
-       /// 添加微服务
-       /// </summary>
-       /// <param name="builder"></param>
-       /// <param name="option"></param>
-        public static void AddMicroService(this ContainerBuilder builder, Action<IServiceBuilder> option)
-        {
-            option.Invoke(builder.AddCoreService());
-        }
+        
 
         /// <summary>.
         /// 依赖注入业务模块程序集
@@ -637,7 +610,7 @@ namespace Surging.Cloud.CPlatform
                 });
             }
             builder.Services.Register(provider => new ModuleProvider(
-               _modules, virtualPaths, provider.Resolve<ILogger<ModuleProvider>>(), provider.Resolve<CPlatformContainer>()
+               _modules, virtualPaths, provider.Resolve<ILogger<ModuleProvider>>()
                 )).As<IModuleProvider>().SingleInstance();
             return builder;
         }

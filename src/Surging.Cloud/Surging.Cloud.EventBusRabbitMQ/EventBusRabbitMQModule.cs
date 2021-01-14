@@ -22,14 +22,14 @@ namespace Surging.Cloud.EventBusRabbitMQ
         {
             var serviceProvider = context.ServiceProvoider;
             base.Initialize(context);
-            new ServiceRouteWatch(serviceProvider.GetInstances<CPlatformContainer>(), () =>
+            new ServiceRouteWatch(serviceProvider.Resolve<CPlatformContainer>(), () =>
             {
-                var subscriptionAdapt = serviceProvider.GetInstances<ISubscriptionAdapt>();
-                serviceProvider.GetInstances<IEventBus>().OnShutdown += (sender, args) =>
+                var subscriptionAdapt = serviceProvider.Resolve<ISubscriptionAdapt>();
+                serviceProvider.Resolve<IEventBus>().OnShutdown += (sender, args) =>
                  {
                      subscriptionAdapt.Unsubscribe();
                  };
-                serviceProvider.GetInstances<ISubscriptionAdapt>().SubscribeAt();
+                serviceProvider.Resolve<ISubscriptionAdapt>().SubscribeAt();
             });
         }
 
