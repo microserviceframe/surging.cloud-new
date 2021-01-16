@@ -23,7 +23,7 @@ namespace Surging.Cloud.CPlatform.Engines.Implementation
 
         public void Build(ContainerBuilder serviceContainer)
         {
-            var serviceBuilder = new ServiceBuilder(serviceContainer);
+            var serviceBuilder = ServiceBuilder.GetServiceBuilder(serviceContainer);
             var virtualPaths = new List<string>();
             if (_serviceEngine != null)
             {
@@ -53,7 +53,7 @@ namespace Surging.Cloud.CPlatform.Engines.Implementation
         public ValueTuple<List<Type>, IEnumerable<string>>? ReBuild(ContainerBuilder serviceContainer)
         {
             ValueTuple<List<Type>, IEnumerable<string>>? result = null ;
-            var serviceBuilder = new ServiceBuilder(serviceContainer);
+            var serviceBuilder = ServiceBuilder.GetServiceBuilder(serviceContainer);
             var virtualPaths = new List<string>();
             string rootPath = string.IsNullOrEmpty(AppConfig.ServerOptions.RootPath) ?
             AppContext.BaseDirectory : AppConfig.ServerOptions.RootPath;

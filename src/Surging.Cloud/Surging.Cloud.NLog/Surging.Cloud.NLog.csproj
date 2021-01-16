@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
-    <ProjectReference Include="..\Surging.Cloud.ServiceHosting\Surging.Cloud.ServiceHosting.csproj" />
   </ItemGroup>
 
 </Project>

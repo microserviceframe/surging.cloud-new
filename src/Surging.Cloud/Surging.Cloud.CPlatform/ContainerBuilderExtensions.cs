@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyModel;
 using Microsoft.Extensions.Logging;
 using Surging.Cloud.CPlatform.Cache;
@@ -47,6 +46,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
+using Autofac.Core;
 
 namespace Surging.Cloud.CPlatform
 {
@@ -66,12 +66,33 @@ namespace Surging.Cloud.CPlatform
     /// </summary>
     internal sealed class ServiceBuilder : IServiceBuilder
     {
-        public ServiceBuilder(ContainerBuilder services)
+        private ServiceBuilder(ContainerBuilder services)
         {
             if (services == null)
                 throw new ArgumentNullException(nameof(services));
             Services = services;
         }
+
+        private static ServiceBuilder _instance;
+
+        private static object _locker = new object();
+        public static ServiceBuilder GetServiceBuilder(ContainerBuilder builder)
+        {
+            if (_instance == null)
+            {
+                        
+                lock (_locker)
+                {
+                    if (_instance == null)
+                    {
+                        _instance = new ServiceBuilder(builder);
+                    }
+                }
+            }
+
+            return _instance;
+        }
+
 
         #region Implementation of IServiceBuilder
 
@@ -307,6 +328,11 @@ namespace Surging.Cloud.CPlatform
 
         #endregion Codec Factory
 
+        public static IServiceBuilder GetServiceBuilder(this ContainerBuilder containerBuilder)
+        {
+            return ServiceBuilder.GetServiceBuilder(containerBuilder);
+        }
+
         /// <summary>
         /// 使用Json编解码器。
         /// </summary>
@@ -442,10 +468,9 @@ namespace Surging.Cloud.CPlatform
             services.RegisterType(typeof(HashAlgorithm)).As(typeof(IHashAlgorithm)).SingleInstance();
             //注册服务心跳管理 
             services.RegisterType(typeof(DefaultServiceHeartbeatManager)).As(typeof(IServiceHeartbeatManager)).SingleInstance();
-            return new ServiceBuilder(services)
+            return services.GetServiceBuilder()
                 .AddJsonSerialization()
                 .UseJsonCodec();
-
         }
 
         public static IServiceBuilder RegisterInstanceByConstraint(this IServiceBuilder builder, params string[] virtualPaths)

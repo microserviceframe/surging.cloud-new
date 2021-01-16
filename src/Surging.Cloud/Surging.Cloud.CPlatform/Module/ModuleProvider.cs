@@ -37,9 +37,10 @@ namespace Surging.Cloud.CPlatform.Module
                 try
                 {
                     Type[] types = { typeof(SystemModule), typeof(BusinessModule), typeof(EnginePartModule), typeof(AbstractModule) };
-                    if (p.Enable)
+                    if (p.Enable && !p.IsInitialize)
                     {
                         p.Initialize(new AppModuleContext(_modules, _virtualPaths, ServiceLocator.Current));
+                        p.IsInitialize = true;
                     }
                     
                     var type = p.GetType().BaseType;

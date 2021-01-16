@@ -184,7 +184,7 @@ namespace Surging.Cloud.KestrelHttpServer
 
         public void Dispose()
         {
-            _host.Dispose();
+            _host?.Dispose();
         }
 
     }

@@ -83,7 +83,7 @@ namespace Surging.Services.Server
                 })
                 .UseServer()
                 .UseClient()
-                .RunConsoleAsync();
+                .Build().RunAsync();
 
 
         }

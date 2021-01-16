@@ -53,6 +53,8 @@ namespace Surging.Cloud.CPlatform.Module
         /// </summary>
         public List<Component> Components { get; set; }
 
+        public bool IsInitialize { get; set; } = false;
+        
         #endregion
 
         #region 构造函数

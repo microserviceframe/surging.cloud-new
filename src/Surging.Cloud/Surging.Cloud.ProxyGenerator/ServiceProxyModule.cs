@@ -22,7 +22,7 @@ namespace Surging.Cloud.ProxyGenerator
         protected override void RegisterBuilder(ContainerBuilderWrapper builder)
         {
             base.RegisterBuilder(builder);
-            builder.ContainerBuilder.AddCoreService().AddClientRuntime().AddClientProxy().AddClientIntercepted();
+            builder.ContainerBuilder.GetServiceBuilder().AddClientRuntime().AddClientProxy().AddClientIntercepted();
             builder.RegisterType<RpcTransportDiagnosticProcessor>().As<ITracingDiagnosticProcessor>().SingleInstance();
         }
     }

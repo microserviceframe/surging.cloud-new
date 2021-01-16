@@ -6,6 +6,8 @@ using Surging.Cloud.CPlatform.Configurations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Surging.Cloud.CPlatform.Engines;
+using Surging.Cloud.CPlatform.Exceptions;
 using Surging.Cloud.CPlatform.Utilities;
 
 namespace Surging.Cloud.CPlatform
@@ -19,9 +21,9 @@ namespace Surging.Cloud.CPlatform
                 .UseServiceProviderFactory(new AutofacServiceProviderFactory())
                 .ConfigureContainer<ContainerBuilder>(containerBuilder =>
                 {
-                    var builder = new ServiceBuilder(containerBuilder);
-                        builder.AddServiceRuntime()
-                            .AddRelateServiceRuntime();
+                    containerBuilder.GetServiceBuilder()
+                                .AddServiceRuntime()
+                                .AddRelateServiceRuntime();
                         
                 })
                 .ConfigureLogging(logging =>
@@ -32,6 +34,24 @@ namespace Surging.Cloud.CPlatform
                     }
                 })
                 ;
+        }
+
+        public static IHostBuilder UseEngine<T>(this IHostBuilder hostBuilder) where T: IServiceEngine
+        {
+            return hostBuilder.UseEngine(typeof(T));
+        }
+        
+        public static IHostBuilder UseEngine(this IHostBuilder hostBuilder, Type type)
+        {
+            if (!typeof(IServiceEngine).IsAssignableFrom(type))
+            {
+                throw new CPlatformException($"设置的服务引擎类型必须继承IServiceEngine接口");
+            }
+
+            return hostBuilder.ConfigureContainer<ContainerBuilder>(containerBuilder =>
+            {
+                containerBuilder.GetServiceBuilder().AddServiceEngine(type);
+            });
         }
 
         public static IHostBuilder UseServer(this IHostBuilder hostBuilder)
