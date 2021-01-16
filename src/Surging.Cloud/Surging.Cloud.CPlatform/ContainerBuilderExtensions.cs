@@ -47,6 +47,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using Autofac.Core;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Surging.Cloud.CPlatform
 {
@@ -58,7 +59,7 @@ namespace Surging.Cloud.CPlatform
         /// <summary>
         /// 服务集合。
         /// </summary>
-        ContainerBuilder Services { get; set; }
+        ContainerBuilder Services { get; }
     }
 
     /// <summary>
@@ -74,21 +75,10 @@ namespace Surging.Cloud.CPlatform
         }
 
         private static ServiceBuilder _instance;
-
-        private static object _locker = new object();
-        public static ServiceBuilder GetServiceBuilder(ContainerBuilder builder)
+        
+        public static ServiceBuilder CreateServiceBuilder(ContainerBuilder builder)
         {
-            if (_instance == null)
-            {
-                        
-                lock (_locker)
-                {
-                    if (_instance == null)
-                    {
-                        _instance = new ServiceBuilder(builder);
-                    }
-                }
-            }
+            _instance = new ServiceBuilder(builder);
 
             return _instance;
         }
@@ -99,7 +89,7 @@ namespace Surging.Cloud.CPlatform
         /// <summary>
         /// 服务集合。
         /// </summary>
-        public ContainerBuilder Services { get; set; }
+        public ContainerBuilder Services { get; private set; }
 
         #endregion Implementation of IServiceBuilder
     }
@@ -330,7 +320,7 @@ namespace Surging.Cloud.CPlatform
 
         public static IServiceBuilder GetServiceBuilder(this ContainerBuilder containerBuilder)
         {
-            return ServiceBuilder.GetServiceBuilder(containerBuilder);
+            return ServiceBuilder.CreateServiceBuilder(containerBuilder);
         }
 
         /// <summary>
@@ -409,7 +399,7 @@ namespace Surging.Cloud.CPlatform
             builder.Services.RegisterType(typeof(DefaultServiceEntryLocate)).As(typeof(IServiceEntryLocate)).SingleInstance();
             builder.Services.RegisterType(typeof(DefaultServiceExecutor)).As(typeof(IServiceExecutor))
                 .Named<IServiceExecutor>(CommunicationProtocol.Tcp.ToString()).SingleInstance();
-            return builder.Services
+            return builder
                 .AddCoreService()
                 .RegisterServices()
                 .RegisterRepositories()
@@ -436,39 +426,39 @@ namespace Surging.Cloud.CPlatform
         /// <summary>
         /// 添加核心服务。
         /// </summary>
-        /// <param name="services">服务集合。</param>
+        /// <param name="builder">服务集合。</param>
         /// <returns>服务构建者。</returns>
-        public static IServiceBuilder AddCoreService(this ContainerBuilder services)
+        public static IServiceBuilder AddCoreService(this IServiceBuilder builder)
         {
-            Check.NotNull(services, "services");
+            Check.NotNull(builder, "builder");
             //注册服务ID生成实例 
-            services.RegisterType<DefaultServiceIdGenerator>().As<IServiceIdGenerator>().SingleInstance();
-            services.Register(p =>
+            builder.Services.RegisterType<DefaultServiceIdGenerator>().As<IServiceIdGenerator>().SingleInstance();
+            builder.Services.Register(p =>
             {   
                 var context = p.Resolve<IComponentContext>();
                 return new CPlatformContainer(context);
             });
             //注册默认的类型转换 
-            services.RegisterType(typeof(DefaultTypeConvertibleProvider)).As(typeof(ITypeConvertibleProvider)).SingleInstance();
+            builder.Services.RegisterType(typeof(DefaultTypeConvertibleProvider)).As(typeof(ITypeConvertibleProvider)).SingleInstance();
             //注册默认的类型转换服务 
-            services.RegisterType(typeof(DefaultTypeConvertibleService)).As(typeof(ITypeConvertibleService)).SingleInstance();
+            builder.Services.RegisterType(typeof(DefaultTypeConvertibleService)).As(typeof(ITypeConvertibleService)).SingleInstance();
             //注册权限过滤 
-            services.RegisterType(typeof(AuthorizationAttribute)).As(typeof(IAuthorizationFilter)).SingleInstance();
+            builder.Services.RegisterType(typeof(AuthorizationAttribute)).As(typeof(IAuthorizationFilter)).SingleInstance();
             //注册基本过滤 
-            services.RegisterType(typeof(AuthorizationAttribute)).As(typeof(IFilter)).SingleInstance();
+            builder.Services.RegisterType(typeof(AuthorizationAttribute)).As(typeof(IFilter)).SingleInstance();
             //注册服务器路由接口 
-            services.RegisterType(typeof(DefaultServiceRouteProvider)).As(typeof(IServiceRouteProvider)).SingleInstance();
+            builder.Services.RegisterType(typeof(DefaultServiceRouteProvider)).As(typeof(IServiceRouteProvider)).SingleInstance();
             //注册服务路由工厂 
-            services.RegisterType(typeof(DefaultServiceRouteFactory)).As(typeof(IServiceRouteFactory)).SingleInstance();
+            builder.Services.RegisterType(typeof(DefaultServiceRouteFactory)).As(typeof(IServiceRouteFactory)).SingleInstance();
             //注册服务订阅工厂 
-            services.RegisterType(typeof(DefaultServiceSubscriberFactory)).As(typeof(IServiceSubscriberFactory)).SingleInstance();
+            builder.Services.RegisterType(typeof(DefaultServiceSubscriberFactory)).As(typeof(IServiceSubscriberFactory)).SingleInstance();
             //注册服务token生成接口 
-            services.RegisterType(typeof(ServiceTokenGenerator)).As(typeof(IServiceTokenGenerator)).SingleInstance();
+            builder.Services.RegisterType(typeof(ServiceTokenGenerator)).As(typeof(IServiceTokenGenerator)).SingleInstance();
             //注册哈希一致性算法 
-            services.RegisterType(typeof(HashAlgorithm)).As(typeof(IHashAlgorithm)).SingleInstance();
+            builder.Services.RegisterType(typeof(HashAlgorithm)).As(typeof(IHashAlgorithm)).SingleInstance();
             //注册服务心跳管理 
-            services.RegisterType(typeof(DefaultServiceHeartbeatManager)).As(typeof(IServiceHeartbeatManager)).SingleInstance();
-            return services.GetServiceBuilder()
+            builder.Services.RegisterType(typeof(DefaultServiceHeartbeatManager)).As(typeof(IServiceHeartbeatManager)).SingleInstance();
+            return builder
                 .AddJsonSerialization()
                 .UseJsonCodec();
         }
