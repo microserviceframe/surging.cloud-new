@@ -21,12 +21,7 @@ namespace Surging.Cloud.KestrelHttpServer
 {
     public class KestrelHttpModule : EnginePartModule
     {
-        public override void Initialize(AppModuleContext context)
-        {
-            base.Initialize(context);
-            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", AppConfig.ServerOptions.Environment.ToString());
-        }
-
+        
         public virtual void Initialize(ApplicationInitializationContext builder)
         {
         }

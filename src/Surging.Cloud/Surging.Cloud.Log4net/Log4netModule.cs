@@ -10,6 +10,7 @@ namespace Surging.Cloud.Log4net
     {
         private string log4NetConfigFile = "${LogPath}|log4net.config";
         private bool isAddProvider = false;
+
         public override void Initialize(AppModuleContext context)
         {
             if (!isAddProvider)
@@ -21,16 +22,6 @@ namespace Surging.Cloud.Log4net
                 serviceProvider.Resolve<ILoggerFactory>().AddProvider(new Log4NetProvider(log4NetConfigFile));
                 isAddProvider = true;
             }
-        }
-
-        /// <summary>
-        /// Inject dependent third-party components
-        /// </summary>
-        /// <param name="builder"></param>
-        protected override void RegisterBuilder(ContainerBuilderWrapper builder)
-        {
-            base.RegisterBuilder(builder);
-
         }
     }
 }

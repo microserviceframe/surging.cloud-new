@@ -14,9 +14,5 @@
   <ItemGroup>
     <ProjectReference Include="..\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Attributes\" />
-  </ItemGroup>
-
+  
 </Project>

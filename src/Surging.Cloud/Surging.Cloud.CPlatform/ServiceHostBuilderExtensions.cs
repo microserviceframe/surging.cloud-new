@@ -1,6 +1,7 @@
 ﻿using System;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using Surging.Cloud.CPlatform.Configurations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -13,6 +14,7 @@ namespace Surging.Cloud.CPlatform
     {
         public static IHostBuilder RegisterMicroServices(this IHostBuilder hostBuilder)
         {
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", AppConfig.ServerOptions.Environment.ToString());
             return hostBuilder
                 .UseServiceProviderFactory(new AutofacServiceProviderFactory())
                 .ConfigureContainer<ContainerBuilder>(containerBuilder =>
@@ -21,6 +23,13 @@ namespace Surging.Cloud.CPlatform
                         builder.AddServiceRuntime()
                             .AddRelateServiceRuntime();
                         
+                })
+                .ConfigureLogging(logging =>
+                {
+                    if (AppConfig.Configuration.GetSection("Logging").Exists())
+                    {
+                        logging.AddConfiguration(AppConfig.Configuration.GetSection("Logging"));
+                    }
                 })
                 ;
         }
