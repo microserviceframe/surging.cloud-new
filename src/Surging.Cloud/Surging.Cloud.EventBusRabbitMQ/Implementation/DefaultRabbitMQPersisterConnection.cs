@@ -13,8 +13,8 @@ using System.Text;
 
 namespace Surging.Cloud.EventBusRabbitMQ.Implementation
 {
-   public class DefaultRabbitMQPersistentConnection
-       : IRabbitMQPersistentConnection
+   public class DefaultRabbitMQPersistentConnection : IRabbitMQPersistentConnection
+      
     {
         private readonly IConnectionFactory _connectionFactory;
         private readonly ILogger<DefaultRabbitMQPersistentConnection> _logger;
@@ -55,10 +55,9 @@ namespace Surging.Cloud.EventBusRabbitMQ.Implementation
             if (_disposed) return;
 
             _disposed = true;
-
             try
             {
-                _connection.Dispose();
+                _connection?.Dispose();
             }
             catch (IOException ex)
             {

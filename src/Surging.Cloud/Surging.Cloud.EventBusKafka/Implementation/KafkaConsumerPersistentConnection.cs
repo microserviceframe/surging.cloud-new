@@ -99,7 +99,7 @@ namespace Surging.Cloud.EventBusKafka.Implementation
 
             try
             {
-                _consumerClient.Dispose();
+                _consumerClient?.Dispose();
             }
             catch (IOException ex)
             {

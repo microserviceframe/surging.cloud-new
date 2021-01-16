@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <ServerGarbageCollection>false</ServerGarbageCollection>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <TieredCompilation>true</TieredCompilation>
     <RootNamespace>Surging.Services.Server2</RootNamespace>
   </PropertyGroup>
@@ -17,9 +17,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.AutoMapper\Surging.Cloud.AutoMapper.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Codec.MessagePack\Surging.Cloud.Codec.MessagePack.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Codec.ProtoBuffer\Surging.Cloud.Codec.ProtoBuffer.csproj" />
     <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
     <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.DotNetty\Surging.Cloud.DotNetty.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.EventBusRabbitMQ\Surging.Cloud.EventBusRabbitMQ.csproj" />
     <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.KestrelHttpServer\Surging.Cloud.KestrelHttpServer.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Lock\Surging.Cloud.Lock.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Log4net\Surging.Cloud.Log4net.csproj" />
+    <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.NLog\Surging.Cloud.Nlog.csproj" />
     <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.ProxyGenerator\Surging.Cloud.ProxyGenerator.csproj" />
     <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Stage\Surging.Cloud.Stage.csproj" />
     <ProjectReference Include="..\..\..\Surging.Cloud\Surging.Cloud.Swagger\Surging.Cloud.Swagger.csproj" />
