@@ -48,7 +48,7 @@ namespace Surging.Apm.Skywalking.Transport.Grpc.Common
 
         public Release Lock()
         {
-            _semaphore.Wait();
+            _semaphore.GetAwaiter().GetResult();
 
             return _release;
         }

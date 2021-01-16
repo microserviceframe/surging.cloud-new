@@ -100,7 +100,7 @@ namespace Surging.Cloud.EventBusKafka.Implementation
         
         private void ConsumerClient_OnMessage(object sender, Message<Null, string> e)
         {
-            ProcessEvent(e.Topic, e.Value).Wait();
+            ProcessEvent(e.Topic, e.Value).GetAwaiter().GetResult();
         }
         
         private async Task ProcessEvent(string eventName, string message)

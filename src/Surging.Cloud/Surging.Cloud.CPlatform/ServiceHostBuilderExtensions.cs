@@ -16,7 +16,7 @@ namespace Surging.Cloud.CPlatform
     {
         public static IHostBuilder RegisterMicroServices(this IHostBuilder hostBuilder)
         {
-            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", AppConfig.ServerOptions.Environment.ToString());
+           
             return hostBuilder
                 .UseServiceProviderFactory(new AutofacServiceProviderFactory())
                 .ConfigureContainer<ContainerBuilder>(containerBuilder =>

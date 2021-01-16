@@ -36,7 +36,7 @@ namespace Surging.Cloud.Zookeeper
             _mqttServiceFactory = mqttServiceFactory;
             _logger = logger;
             _zookeeperClientProvider = zookeeperClientProvider;
-            EnterRoutes().Wait();
+            EnterRoutes().GetAwaiter().GetResult();
            
         }
 

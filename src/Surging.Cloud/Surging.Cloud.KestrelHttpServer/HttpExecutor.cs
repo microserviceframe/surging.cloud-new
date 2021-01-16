@@ -164,7 +164,7 @@ namespace Surging.Cloud.KestrelHttpServer
                 }
                 else
                 {
-                    task.Wait();
+                    task.GetAwaiter().GetResult();
                     var taskType = task.GetType().GetTypeInfo();
                     if (taskType.IsGenericType)
                         resultMessage.Data = taskType.GetProperty("Result").GetValue(task);

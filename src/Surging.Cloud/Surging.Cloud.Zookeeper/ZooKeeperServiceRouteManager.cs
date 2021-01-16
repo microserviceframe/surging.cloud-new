@@ -42,7 +42,7 @@ namespace Surging.Cloud.Zookeeper
             _serviceRouteFactory = serviceRouteFactory;
             _logger = logger;
             _zookeeperClientProvider = zookeeperClientProvider;
-            EnterRoutes().Wait();            
+            EnterRoutes().GetAwaiter().GetResult();            
         }
 
 

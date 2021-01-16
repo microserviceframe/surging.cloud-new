@@ -37,6 +37,10 @@ namespace Surging.Cloud.CPlatform
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+           
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", AppConfig.ServerOptions.Environment.ToString());
+            Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", AppConfig.ServerOptions.Environment.ToString());
+       
             _serviceTokenGenerator.GeneratorToken(AppConfig.ServerOptions.Token);
             int _port = AppConfig.ServerOptions.Port = AppConfig.ServerOptions.Port == 0 ? 100 : AppConfig.ServerOptions.Port;
             string _ip =  AppConfig.ServerOptions.Ip ?? "0.0.0.0";
@@ -61,14 +65,17 @@ namespace Surging.Cloud.CPlatform
                     await serviceHost.StartAsync(_ip, _port);
                 
             }, cancellationToken);
-            
+          
         }
         
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            var serviceRoutManager = ServiceLocator.Current.Resolve<IServiceRouteManager>();
-            await serviceRoutManager.RemveAddressAsync(new List<AddressModel>() {NetUtils.GetHostAddress()});
+            var serviceHosts = ServiceLocator.Current.Resolve<IList<Runtime.Server.IServiceHost>>();
+            foreach (var serviceHost in serviceHosts)
+            {
+                serviceHost.Dispose();
+            }
         }
     }
 }

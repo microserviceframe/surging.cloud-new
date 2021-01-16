@@ -53,7 +53,7 @@ namespace Surging.Cloud.DotNetty
             Task.Run(async () =>
             {
                 await _channel.DisconnectAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         #endregion Implementation of IDisposable

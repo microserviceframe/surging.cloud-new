@@ -38,7 +38,7 @@ namespace Surging.Cloud.Consul
             _logger = logger;
             _manager = manager;
             _consulClientFactory = consulClientFactory;
-            EnterSubscribers().Wait();
+            EnterSubscribers().GetAwaiter().GetResult();
         }
 
         /// <summary>

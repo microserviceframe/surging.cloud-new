@@ -122,7 +122,7 @@ namespace Surging.Cloud.DotNetty
             {
                 await _channel.EventLoop.ShutdownGracefullyAsync();
                 await _channel.CloseAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         #region Implementation of IDisposable

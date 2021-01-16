@@ -37,7 +37,7 @@ namespace Surging.Cloud.Consul
             _consulClientFactory = consulClientFactory;
             _logger = logger;
             _manager = manager;
-           EnterCaches().Wait();
+           EnterCaches().GetAwaiter().GetResult();
         }
 
         public override async Task ClearAsync()

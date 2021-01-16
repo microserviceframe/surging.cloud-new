@@ -116,7 +116,7 @@ namespace Surging.Cloud.DotNettyWSServer
             {
                 await _channel.EventLoop.ShutdownGracefullyAsync();
                 await _channel.CloseAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         public void Dispose()
@@ -124,7 +124,7 @@ namespace Surging.Cloud.DotNettyWSServer
             Task.Run(async () =>
             {
                 await _channel.DisconnectAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         #endregion

@@ -131,7 +131,7 @@ namespace Surging.Cloud.Caching.HealthChecks.Implementation
             if (monitorEntry.Any())
             {
                 var addresses = monitorEntry.Select(p => p.EndPoint).ToList();
-                _serviceCacheManager.RemveAddressAsync(addresses).Wait();
+                _serviceCacheManager.RemveAddressAsync(addresses).GetAwaiter().GetResult();
                 addresses.ForEach(p => {
 
                     _dictionary.TryRemove(new Tuple<string, int>(p.Host, p.Port), out MonitorEntry value);

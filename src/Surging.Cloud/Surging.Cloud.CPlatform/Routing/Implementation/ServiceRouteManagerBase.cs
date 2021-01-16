@@ -162,5 +162,9 @@ namespace Surging.Cloud.CPlatform.Routing.Implementation
         }
 
 
+        public virtual void Dispose()
+        {
+            RemveAddressAsync(new List<AddressModel>() {NetUtils.GetHostAddress()}).GetAwaiter().GetResult();
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Surging.Cloud.Caching.Configurations;
+﻿using System;
+using Surging.Cloud.Caching.Configurations;
 using Surging.Cloud.CPlatform;
 using Surging.Cloud.CPlatform.Configurations;
 //using Surging.Cloud.EventBusKafka;
@@ -83,7 +84,8 @@ namespace Surging.Services.Server
                 })
                 .UseServer()
                 .UseClient()
-                .RunConsoleAsync();
+                .Build().RunAsync();
+            
         }
     }
 }
