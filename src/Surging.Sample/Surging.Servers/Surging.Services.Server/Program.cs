@@ -8,6 +8,7 @@ using Surging.Cloud.Zookeeper.Configurations;
 //using Surging.Cloud.Zookeeper.Configurations;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Surging.Cloud.System;
 
 namespace Surging.Services.Server
 {
@@ -84,6 +85,7 @@ namespace Surging.Services.Server
                 })
                 .UseServer()
                 .UseClient()
+                .UseDefaultCacheInterceptor()
                 .Build().RunAsync();
             
         }

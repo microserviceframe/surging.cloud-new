@@ -41,6 +41,7 @@ namespace Surging.Cloud.CPlatform
             return hostBuilder.UseEngine(typeof(T));
         }
         
+        
         public static IHostBuilder UseEngine(this IHostBuilder hostBuilder, Type type)
         {
             if (!typeof(IServiceEngine).IsAssignableFrom(type))
@@ -53,12 +54,14 @@ namespace Surging.Cloud.CPlatform
                 containerBuilder.GetServiceBuilder().AddServiceEngine(type);
             });
         }
+        
 
         public static IHostBuilder UseServer(this IHostBuilder hostBuilder)
         {
             return hostBuilder.ConfigureServices((hostContext,services) =>
             {
                 services.AddHostedService<ServerHostedService>();
+                
             });
         }
 

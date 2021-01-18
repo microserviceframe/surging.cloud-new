@@ -21,7 +21,7 @@ namespace Surging.Cloud.ProxyGenerator
             var services = builder.Services;
             services.RegisterType<ServiceProxyGenerater>().As<IServiceProxyGenerater>().SingleInstance();
             services.RegisterType<ServiceProxyProvider>().As<IServiceProxyProvider>().SingleInstance();
-            builder.Services.Register(provider =>new ServiceProxyFactory(
+            builder.Services.Register(provider => new ServiceProxyFactory(
                  provider.Resolve<IRemoteInvokeService>(),
                  provider.Resolve<ITypeConvertibleService>(),
                  provider.Resolve<IServiceProvider>(),

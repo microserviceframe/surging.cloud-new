@@ -6,6 +6,7 @@ using Surging.Cloud.CPlatform;
 using Microsoft.Extensions.Hosting;
 using Surging.Cloud.Caching.Configurations;
 using Surging.Cloud.CPlatform.Configurations;
+using Surging.Cloud.System;
 using Surging.Cloud.Zookeeper.Configurations;
 
 namespace Surging.Services.Server
@@ -83,6 +84,7 @@ namespace Surging.Services.Server
                 })
                 .UseServer()
                 .UseClient()
+                .UseDefaultCacheInterceptor()
                 .Build().RunAsync();
 
 

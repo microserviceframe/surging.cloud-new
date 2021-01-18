@@ -21,9 +21,5 @@
     <ProjectReference Include="..\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
     <ProjectReference Include="..\Surging.Cloud.ProxyGenerator\Surging.Cloud.ProxyGenerator.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-
+  
 </Project>
