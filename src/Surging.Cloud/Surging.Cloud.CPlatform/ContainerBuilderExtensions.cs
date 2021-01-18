@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyModel;
 using Microsoft.Extensions.Logging;
 using Surging.Cloud.CPlatform.Cache;
@@ -47,6 +46,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
+using Autofac.Core;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Surging.Cloud.CPlatform
 {
@@ -58,7 +59,7 @@ namespace Surging.Cloud.CPlatform
         /// <summary>
         /// 服务集合。
         /// </summary>
-        ContainerBuilder Services { get; set; }
+        ContainerBuilder Services { get; }
     }
 
     /// <summary>
@@ -66,19 +67,29 @@ namespace Surging.Cloud.CPlatform
     /// </summary>
     internal sealed class ServiceBuilder : IServiceBuilder
     {
-        public ServiceBuilder(ContainerBuilder services)
+        private ServiceBuilder(ContainerBuilder services)
         {
             if (services == null)
                 throw new ArgumentNullException(nameof(services));
             Services = services;
         }
 
+        private static ServiceBuilder _instance;
+        
+        public static ServiceBuilder CreateServiceBuilder(ContainerBuilder builder)
+        {
+            _instance = new ServiceBuilder(builder);
+
+            return _instance;
+        }
+
+
         #region Implementation of IServiceBuilder
 
         /// <summary>
         /// 服务集合。
         /// </summary>
-        public ContainerBuilder Services { get; set; }
+        public ContainerBuilder Services { get; private set; }
 
         #endregion Implementation of IServiceBuilder
     }
@@ -188,32 +199,7 @@ namespace Surging.Cloud.CPlatform
         }
 
         #endregion RouteManager
-
-        /// <summary>
-        /// 设置共享文件路由管理者。
-        /// </summary>
-        /// <param name="builder">服务构建者。</param>
-        /// <param name="filePath">文件路径。</param>
-        /// <returns>服务构建者。</returns>
-        public static IServiceBuilder UseSharedFileRouteManager(this IServiceBuilder builder, string filePath)
-        {
-            return builder.UseRouteManager(provider =>
-            new SharedFileServiceRouteManager(
-                filePath,
-                provider.GetRequiredService<ISerializer<string>>(),
-                provider.GetRequiredService<IServiceRouteFactory>(),
-                provider.GetRequiredService<ILogger<SharedFileServiceRouteManager>>()));
-        }
-
-        public static IServiceBuilder UseSharedFileRouteManager(this IServiceBuilder builder, string ip, string port)
-        {
-            return builder.UseRouteManager(provider =>
-            new SharedFileServiceRouteManager(
-                ip,
-                provider.GetRequiredService<ISerializer<string>>(),
-                provider.GetRequiredService<IServiceRouteFactory>(),
-                provider.GetRequiredService<ILogger<SharedFileServiceRouteManager>>()));
-        }
+        
 
         #region AddressSelector
         /// <summary>
@@ -332,6 +318,11 @@ namespace Surging.Cloud.CPlatform
 
         #endregion Codec Factory
 
+        public static IServiceBuilder GetServiceBuilder(this ContainerBuilder containerBuilder)
+        {
+            return ServiceBuilder.CreateServiceBuilder(containerBuilder);
+        }
+
         /// <summary>
         /// 使用Json编解码器。
         /// </summary>
@@ -353,7 +344,7 @@ namespace Surging.Cloud.CPlatform
             services.RegisterType(typeof(DefaultHealthCheckService)).As(typeof(IHealthCheckService)).SingleInstance();
             services.RegisterType(typeof(DefaultAddressResolver)).As(typeof(IAddressResolver)).SingleInstance();
             services.RegisterType(typeof(RemoteInvokeService)).As(typeof(IRemoteInvokeService)).SingleInstance();
-            return builder.UseAddressSelector().AddRuntime().AddClusterSupport();
+            return builder.UseAddressSelector().AddClusterSupport();
         }
 
         /// <summary>
@@ -408,8 +399,14 @@ namespace Surging.Cloud.CPlatform
             builder.Services.RegisterType(typeof(DefaultServiceEntryLocate)).As(typeof(IServiceEntryLocate)).SingleInstance();
             builder.Services.RegisterType(typeof(DefaultServiceExecutor)).As(typeof(IServiceExecutor))
                 .Named<IServiceExecutor>(CommunicationProtocol.Tcp.ToString()).SingleInstance();
-
-            return builder.RegisterServices().RegisterRepositories().RegisterServiceBus().RegisterModules().RegisterInstanceByConstraint().AddRuntime();
+            return builder
+                .AddCoreService()
+                .RegisterServices()
+                .RegisterRepositories()
+                .RegisterServiceBus()
+                .RegisterModules()
+                .RegisterInstanceByConstraint()
+                .AddRuntime();
         }
 
         /// <summary>
@@ -429,40 +426,41 @@ namespace Surging.Cloud.CPlatform
         /// <summary>
         /// 添加核心服务。
         /// </summary>
-        /// <param name="services">服务集合。</param>
+        /// <param name="builder">服务集合。</param>
         /// <returns>服务构建者。</returns>
-        public static IServiceBuilder AddCoreService(this ContainerBuilder services)
+        public static IServiceBuilder AddCoreService(this IServiceBuilder builder)
         {
-            Check.NotNull(services, "services");
+            Check.NotNull(builder, "builder");
             //注册服务ID生成实例 
-            services.RegisterType<DefaultServiceIdGenerator>().As<IServiceIdGenerator>().SingleInstance();
-            services.Register(p => new CPlatformContainer(p));
+            builder.Services.RegisterType<DefaultServiceIdGenerator>().As<IServiceIdGenerator>().SingleInstance();
+            builder.Services.Register(p =>
+            {   
+                var context = p.Resolve<IComponentContext>();
+                return new CPlatformContainer(context);
+            });
             //注册默认的类型转换 
-            services.RegisterType(typeof(DefaultTypeConvertibleProvider)).As(typeof(ITypeConvertibleProvider)).SingleInstance();
+            builder.Services.RegisterType(typeof(DefaultTypeConvertibleProvider)).As(typeof(ITypeConvertibleProvider)).SingleInstance();
             //注册默认的类型转换服务 
-            services.RegisterType(typeof(DefaultTypeConvertibleService)).As(typeof(ITypeConvertibleService)).SingleInstance();
+            builder.Services.RegisterType(typeof(DefaultTypeConvertibleService)).As(typeof(ITypeConvertibleService)).SingleInstance();
             //注册权限过滤 
-            services.RegisterType(typeof(AuthorizationAttribute)).As(typeof(IAuthorizationFilter)).SingleInstance();
+            builder.Services.RegisterType(typeof(AuthorizationAttribute)).As(typeof(IAuthorizationFilter)).SingleInstance();
             //注册基本过滤 
-            services.RegisterType(typeof(AuthorizationAttribute)).As(typeof(IFilter)).SingleInstance();
+            builder.Services.RegisterType(typeof(AuthorizationAttribute)).As(typeof(IFilter)).SingleInstance();
             //注册服务器路由接口 
-            services.RegisterType(typeof(DefaultServiceRouteProvider)).As(typeof(IServiceRouteProvider)).SingleInstance();
+            builder.Services.RegisterType(typeof(DefaultServiceRouteProvider)).As(typeof(IServiceRouteProvider)).SingleInstance();
             //注册服务路由工厂 
-            services.RegisterType(typeof(DefaultServiceRouteFactory)).As(typeof(IServiceRouteFactory)).SingleInstance();
+            builder.Services.RegisterType(typeof(DefaultServiceRouteFactory)).As(typeof(IServiceRouteFactory)).SingleInstance();
             //注册服务订阅工厂 
-            services.RegisterType(typeof(DefaultServiceSubscriberFactory)).As(typeof(IServiceSubscriberFactory)).SingleInstance();
+            builder.Services.RegisterType(typeof(DefaultServiceSubscriberFactory)).As(typeof(IServiceSubscriberFactory)).SingleInstance();
             //注册服务token生成接口 
-            services.RegisterType(typeof(ServiceTokenGenerator)).As(typeof(IServiceTokenGenerator)).SingleInstance();
+            builder.Services.RegisterType(typeof(ServiceTokenGenerator)).As(typeof(IServiceTokenGenerator)).SingleInstance();
             //注册哈希一致性算法 
-            services.RegisterType(typeof(HashAlgorithm)).As(typeof(IHashAlgorithm)).SingleInstance();
-            //注册组件生命周期接口 
-            services.RegisterType(typeof(ServiceEngineLifetime)).As(typeof(IServiceEngineLifetime)).SingleInstance();
+            builder.Services.RegisterType(typeof(HashAlgorithm)).As(typeof(IHashAlgorithm)).SingleInstance();
             //注册服务心跳管理 
-            services.RegisterType(typeof(DefaultServiceHeartbeatManager)).As(typeof(IServiceHeartbeatManager)).SingleInstance();
-            return new ServiceBuilder(services)
+            builder.Services.RegisterType(typeof(DefaultServiceHeartbeatManager)).As(typeof(IServiceHeartbeatManager)).SingleInstance();
+            return builder
                 .AddJsonSerialization()
                 .UseJsonCodec();
-
         }
 
         public static IServiceBuilder RegisterInstanceByConstraint(this IServiceBuilder builder, params string[] virtualPaths)
@@ -487,7 +485,6 @@ namespace Surging.Cloud.CPlatform
             var services = builder.Services;
 
             services.RegisterType(typeof(ClrServiceEntryFactory)).As(typeof(IClrServiceEntryFactory)).SingleInstance();
-
             services.Register(provider =>
             {
                 try
@@ -495,26 +492,17 @@ namespace Surging.Cloud.CPlatform
                     var assemblys = GetReferenceAssembly();
                     var types = assemblys.SelectMany(i => i.ExportedTypes).ToArray();
                     return new AttributeServiceEntryProvider(types, provider.Resolve<IClrServiceEntryFactory>(),
-                         provider.Resolve<ILogger<AttributeServiceEntryProvider>>(), provider.Resolve<CPlatformContainer>());
+                        provider.Resolve<ILogger<AttributeServiceEntryProvider>>(), provider.Resolve<CPlatformContainer>());
                 }
                 finally
                 {
                     builder = null;
                 }
-            }).As<IServiceEntryProvider>();
+            }).As<IServiceEntryProvider>().SingleInstance();
             builder.Services.RegisterType(typeof(DefaultServiceEntryManager)).As(typeof(IServiceEntryManager)).SingleInstance();
             return builder;
         }
-
-       /// <summary>
-       /// 添加微服务
-       /// </summary>
-       /// <param name="builder"></param>
-       /// <param name="option"></param>
-        public static void AddMicroService(this ContainerBuilder builder, Action<IServiceBuilder> option)
-        {
-            option.Invoke(builder.AddCoreService());
-        }
+        
 
         /// <summary>.
         /// 依赖注入业务模块程序集
@@ -637,7 +625,7 @@ namespace Surging.Cloud.CPlatform
                 });
             }
             builder.Services.Register(provider => new ModuleProvider(
-               _modules, virtualPaths, provider.Resolve<ILogger<ModuleProvider>>(), provider.Resolve<CPlatformContainer>()
+               _modules, virtualPaths, provider.Resolve<ILogger<ModuleProvider>>()
                 )).As<IModuleProvider>().SingleInstance();
             return builder;
         }

@@ -86,7 +86,7 @@ namespace Surging.Cloud.DNS
             {
                 await _channel.EventLoop.ShutdownGracefullyAsync();
                 await _channel.CloseAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         #region Implementation of IDisposable
@@ -97,7 +97,7 @@ namespace Surging.Cloud.DNS
             Task.Run(async () =>
             {
                 await _channel.DisconnectAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         public async Task OnReceived(IMessageSender sender, TransportMessage message)

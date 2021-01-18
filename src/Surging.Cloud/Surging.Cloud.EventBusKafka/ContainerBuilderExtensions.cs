@@ -17,11 +17,11 @@ namespace Surging.Cloud.EventBusKafka
 {
     public static class ContainerBuilderExtensions
     {
-
         /// <summary>
         /// 使用KafkaMQ进行传输。
         /// </summary>
         /// <param name="builder">服务构建者。</param>
+        /// <param name="options"></param>
         /// <returns>服务构建者。</returns>
         public static IServiceBuilder UseKafkaMQTransport(this IServiceBuilder builder,Action<KafkaOptions> options)
         {
@@ -33,7 +33,6 @@ namespace Surging.Cloud.EventBusKafka
                 AppConfig.Options = AppConfig.Configuration.Get<KafkaOptions>();
             options.Invoke(AppConfig.Options);
             AppConfig.KafkaConsumerConfig = AppConfig.Options.GetConsumerConfig();
-            AppConfig.KafkaProducerConfig = AppConfig.Options.GetProducerConfig();
             var services = builder.Services;
             builder.Services.RegisterType(typeof(Implementation.EventBusKafka)).As(typeof(IEventBus)).SingleInstance();
             builder.Services.RegisterType(typeof(DefaultConsumeConfigurator)).As(typeof(IConsumeConfigurator)).SingleInstance();

@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Surging.Cloud.CPlatform.EventBus.Implementation;
 using Surging.Cloud.CPlatform.Engines;
 using System.Threading.Tasks;
+using Autofac;
+using Microsoft.Extensions.Hosting;
 
 namespace Surging.Cloud.EventBusKafka
 {
@@ -20,10 +22,10 @@ namespace Surging.Cloud.EventBusKafka
         {
             var serviceProvider = context.ServiceProvoider;
             base.Initialize(context);
-            serviceProvider.GetInstances<ISubscriptionAdapt>().SubscribeAt();
-            serviceProvider.GetInstances<IServiceEngineLifetime>().ServiceEngineStarted.Register(() =>
+            serviceProvider.Resolve<ISubscriptionAdapt>().SubscribeAt();
+            serviceProvider.Resolve<IHostApplicationLifetime>().ApplicationStarted.Register(() =>
              {
-                 KafkaConsumerPersistentConnection connection = serviceProvider.GetInstances<IKafkaPersisterConnection>(KafkaConnectionType.Consumer.ToString()) as KafkaConsumerPersistentConnection;
+                 KafkaConsumerPersistentConnection connection = serviceProvider.ResolveNamed<IKafkaPersisterConnection>(KafkaConnectionType.Consumer.ToString()) as KafkaConsumerPersistentConnection;
                  connection.Listening(TimeSpan.FromMilliseconds(AppConfig.Options.Timeout));
             });
         }

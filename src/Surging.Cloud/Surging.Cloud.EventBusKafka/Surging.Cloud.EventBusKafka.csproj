@@ -8,16 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="0.11.5" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
     <PackageReference Include="Polly" Version="6.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Attributes\" />
-  </ItemGroup>
-
+  
 </Project>

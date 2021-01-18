@@ -1,10 +1,6 @@
-﻿using Autofac;
-using Surging.Cloud.CPlatform.Utilities;
+﻿using Surging.Cloud.CPlatform.Utilities;
 using Surging.Cloud.ProxyGenerator;
-using Surging.Cloud.ProxyGenerator.Utilitys;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Surging.Cloud.System
 {

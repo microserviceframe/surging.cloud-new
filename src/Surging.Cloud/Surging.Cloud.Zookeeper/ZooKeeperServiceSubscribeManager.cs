@@ -12,6 +12,8 @@ using System.Linq;
 using Surging.Cloud.Zookeeper.WatcherProvider;
 using Surging.Cloud.Zookeeper.Internal;
 using Rabbit.Zookeeper;
+using Surging.Cloud.CPlatform.Address;
+using Surging.Cloud.CPlatform.Utilities;
 
 namespace Surging.Cloud.Zookeeper
 {
@@ -35,7 +37,7 @@ namespace Surging.Cloud.Zookeeper
             _serializer = serializer;
             _logger = logger;
             _zookeeperClientProvider = zookeeperClientProvider;
-            EnterSubscribers().Wait();
+            EnterSubscribers().GetAwaiter().GetResult();
             
         }
         
@@ -122,33 +124,17 @@ namespace Surging.Cloud.Zookeeper
                     foreach (var deletedSubscriberId in deletedSubscriberIds)
                     {
                         var nodePath = $"{path}{deletedSubscriberId}";
-                        await zooKeeperClient.DeleteAsync(nodePath);
+                        if (await zooKeeperClient.ExistsAsync(nodePath))
+                        {
+                            await zooKeeperClient.DeleteAsync(nodePath);
+                        }
+                        
                     }
                 }
 
                 foreach (var serviceSubscriber in subscribers)
                 {
-                    var nodePath = $"{path}{serviceSubscriber.ServiceDescriptor.Id}";
-                    var nodeData = _serializer.Serialize(serviceSubscriber);
-                    //var watcher = nodeWatchers.GetOrAdd(nodePath, f => new NodeMonitorWatcher(path, async (oldData, newData) => await NodeChange(oldData, newData)));
-                    //await zooKeeperClient.SubscribeDataChange(nodePath, watcher.HandleNodeDataChange);
                     
-                    if (!await zooKeeperClient.ExistsAsync(nodePath))
-                    {
-                        if (_logger.IsEnabled(LogLevel.Debug))
-                            _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
-
-                        await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                    }
-                    else
-                    {
-                        if (_logger.IsEnabled(LogLevel.Debug))
-                            _logger.LogDebug($"将更新节点：{nodePath}的数据。");
-
-                        var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
-                        await zooKeeperClient.SetDataAsync(nodePath, nodeData);
-                            
-                    }
                 }
                 if (_logger.IsEnabled(LogLevel.Information))
                     _logger.LogInformation("服务订阅者添加成功。");
@@ -220,11 +206,6 @@ namespace Surging.Cloud.Zookeeper
             {
                 var data = (await zooKeeperClient.GetDataAsync(path)).ToArray();
                 result = await GetSubscriber(data);
-                //var watcher = nodeWatchers.GetOrDefault(path);
-                //if (watcher != null)
-                //{
-                //    watcher.SetCurrentData(data);
-                //}
             }
             return result;
         }
@@ -260,9 +241,6 @@ namespace Surging.Cloud.Zookeeper
             {
                 return;
             }
-            //          var watcher = new ChildrenMonitorWatcher(_configInfo.RoutePath,
-            //async (oldChildrens, newChildrens) => await ChildrenChange(oldChildrens, newChildrens));
-            //          await zooKeeperClient.SubscribeChildrenChange(_configInfo.RoutePath, watcher.HandleChildrenChange);
             if (await zooKeeperClient.ExistsAsync(_configInfo.SubscriberPath))
             {
                 var childrens = (await zooKeeperClient.GetChildrenAsync(_configInfo.SubscriberPath)).ToArray();
@@ -275,23 +253,57 @@ namespace Surging.Cloud.Zookeeper
                 _subscribers = new ServiceSubscriber[0];
             }
         }
-
-        private static bool DataEquals(IReadOnlyList<byte> data1, IReadOnlyList<byte> data2)
+        
+        public async Task RemveAddressAsync(IEnumerable<AddressModel> address)
         {
-            if (data1.Count != data2.Count)
-                return false;
-            for (var i = 0; i < data1.Count; i++)
+            var subscribers = _subscribers.Where(subscriber => subscriber.Address.Any(p => address.Any(q => q.Equals(p))));
+            foreach (var subscriber in subscribers)
             {
-                var b1 = data1[i];
-                var b2 = data2[i];
-                if (b1 != b2)
-                    return false;
+                await RemveAddressAsync(address, subscriber);
             }
-            return true;
+        }
+
+        private async Task RemveAddressAsync(IEnumerable<AddressModel> address, ServiceSubscriber subscriber)
+        {
+            subscriber.Address = subscriber.Address.Except(address).ToList();
+            var zookeeperClients = await _zookeeperClientProvider.GetZooKeeperClients();
+            foreach (var zookeeperClient in zookeeperClients)
+            {
+                await SetSubscriberAsync(subscriber, zookeeperClient);
+            }
+        }
+
+        private async Task SetSubscriberAsync(ServiceSubscriber subscriber, IZookeeperClient zooKeeperClient)
+        {
+            
+            var path = _configInfo.SubscriberPath;
+            if (!path.EndsWith("/"))
+                path += "/";
+
+            var nodePath = $"{path}{subscriber.ServiceDescriptor.Id}";
+            var nodeData = _serializer.Serialize(subscriber);
+   
+            if (!await zooKeeperClient.ExistsAsync(nodePath))
+            {
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
+
+                await zooKeeperClient.CreateAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            }
+            else
+            {
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogDebug($"将更新节点：{nodePath}的数据。");
+
+                var onlineData = (await zooKeeperClient.GetDataAsync(nodePath)).ToArray();
+                await zooKeeperClient.SetDataAsync(nodePath, nodeData);
+                            
+            }
         }
 
         public void Dispose()
         { 
+           RemveAddressAsync(new List<AddressModel>() {NetUtils.GetHostAddress()}).GetAwaiter().GetResult();
         }
 
         

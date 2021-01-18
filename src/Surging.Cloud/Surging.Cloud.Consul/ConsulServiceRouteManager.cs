@@ -53,7 +53,7 @@ namespace Surging.Cloud.Consul
             _consulClientProvider = consulClientProvider;
             _manager = manager;
             _serviceHeartbeatManager = serviceHeartbeatManager;
-            EnterRoutes().Wait();
+            EnterRoutes().GetAwaiter().GetResult();
            
         }
 

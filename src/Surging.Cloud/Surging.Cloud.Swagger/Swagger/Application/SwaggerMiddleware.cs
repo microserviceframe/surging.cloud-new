@@ -19,18 +19,16 @@ namespace Surging.Cloud.Swagger
 
         public SwaggerMiddleware(
             RequestDelegate next,
-            IOptions<MvcJsonOptions> mvcJsonOptionsAccessor,
             IOptions<SwaggerOptions> optionsAccessor)
-            : this(next, mvcJsonOptionsAccessor, optionsAccessor.Value)
+            : this(next, optionsAccessor.Value)
         { }
 
         public SwaggerMiddleware(
             RequestDelegate next,
-            IOptions<MvcJsonOptions> mvcJsonOptions,
             SwaggerOptions options)
         {
             _next = next;
-            _swaggerSerializer = SwaggerSerializerFactory.Create(mvcJsonOptions);
+            _swaggerSerializer = SwaggerSerializerFactory.Create();
             _options = options ?? new SwaggerOptions();
             _requestMatcher = new TemplateMatcher(TemplateParser.Parse(options.RouteTemplate), new RouteValueDictionary());
         }

@@ -6,17 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AspectCore.Extensions.Reflection" Version="1.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
+    <PackageReference Include="AspectCore.Extensions.Reflection" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Surging.Cloud\Surging.Cloud.CPlatform\Surging.Cloud.CPlatform.csproj" />
     <ProjectReference Include="..\SkyApm.Transport.Grpc.Protocol\SkyApm.Transport.Grpc.Protocol.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Configuration\" />
-  </ItemGroup>
-
+  
 </Project>

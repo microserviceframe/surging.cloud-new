@@ -116,6 +116,7 @@ namespace Surging.Cloud.KestrelHttpServer
         {
             HttpResultMessage<object> resultMessage = new HttpResultMessage<object>();
             try {
+                
                 var resultData = await _serviceProxyProvider.Invoke<object>(httpMessage.Parameters, httpMessage.RoutePath, httpMessage.HttpMethod.To<HttpMethod>(), httpMessage.ServiceKey);
                 resultMessage.Data = HandleResultData(resultData);
                 resultMessage.IsSucceed = true;
@@ -163,7 +164,7 @@ namespace Surging.Cloud.KestrelHttpServer
                 }
                 else
                 {
-                    task.Wait();
+                    task.GetAwaiter().GetResult();
                     var taskType = task.GetType().GetTypeInfo();
                     if (taskType.IsGenericType)
                         resultMessage.Data = taskType.GetProperty("Result").GetValue(task);

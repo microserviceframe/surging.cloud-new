@@ -20,7 +20,7 @@ namespace Surging.Cloud.CPlatform.Runtime.Client
         /// <summary>
         /// 设置服务订阅者。
         /// </summary>
-        /// <param name="routes">服务路由集合。</param>
+        /// <param name="subscibers"></param>
         /// <returns>一个任务。</returns>
         Task SetSubscribersAsync(IEnumerable<ServiceSubscriber> subscibers);
 

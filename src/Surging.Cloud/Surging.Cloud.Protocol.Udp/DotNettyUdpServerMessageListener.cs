@@ -85,7 +85,7 @@ namespace Surging.Cloud.Protocol.Udp
             {
                 await _channel.EventLoop.ShutdownGracefullyAsync();
                 await _channel.CloseAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         public void Dispose()
@@ -93,7 +93,7 @@ namespace Surging.Cloud.Protocol.Udp
             Task.Run(async () =>
             {
                 await _channel.DisconnectAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         #endregion

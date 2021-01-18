@@ -28,7 +28,7 @@ namespace Surging.Apm.Skywalking
         public override void Initialize(AppModuleContext context)
         {
             base.Initialize(context);
-            context.ServiceProvoider.GetInstances<IInstrumentStartup>().StartAsync();
+            context.ServiceProvoider.Resolve<IInstrumentStartup>().StartAsync();
         }
 
         /// <summary>

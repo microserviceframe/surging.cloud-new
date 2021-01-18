@@ -40,7 +40,7 @@ namespace Surging.Cloud.Zookeeper
             _serviceRouteManager = serviceRouteManager;
             _logger = logger;
             _zookeeperClientProvider = zookeeperClientProvider;
-            EnterServiceCommands().Wait();
+            EnterServiceCommands().GetAwaiter().GetResult();
             _serviceRouteManager.Removed += ServiceRouteManager_Removed;
             
         }

@@ -46,7 +46,7 @@ namespace Surging.Cloud.Consul
             _manager = manager;
             _serviceHeartbeatManager = serviceHeartbeatManager;
             _consulClientFactory = consulClientFactory;
-            EnterRoutes().Wait();
+            EnterRoutes().GetAwaiter().GetResult();
         }
 
         public override async Task ClearAsync()

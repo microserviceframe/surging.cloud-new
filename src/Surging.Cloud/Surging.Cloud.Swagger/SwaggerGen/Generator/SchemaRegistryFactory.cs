@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -10,9 +11,9 @@ namespace Surging.Cloud.SwaggerGen
         private readonly SchemaRegistryOptions _schemaRegistryOptions;
 
         public SchemaRegistryFactory(
-            IOptions<MvcJsonOptions> mvcJsonOptionsAccessor,
+            IOptions<JsonSerializerSettings> mvcJsonOptionsAccessor,
             IOptions<SchemaRegistryOptions> schemaRegistryOptionsAccessor)
-            : this(mvcJsonOptionsAccessor.Value.SerializerSettings, schemaRegistryOptionsAccessor.Value)
+            : this(mvcJsonOptionsAccessor.Value, schemaRegistryOptionsAccessor.Value)
         { }
 
         public SchemaRegistryFactory(
@@ -25,7 +26,7 @@ namespace Surging.Cloud.SwaggerGen
 
         public ISchemaRegistry Create()
         {
-            return new SchemaRegistry(_jsonSerializerSettings, _schemaRegistryOptions);
+            return new SchemaRegistry( _jsonSerializerSettings, _schemaRegistryOptions);
         }
     }
 }

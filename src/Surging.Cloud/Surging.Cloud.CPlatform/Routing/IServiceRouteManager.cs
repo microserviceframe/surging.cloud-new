@@ -12,7 +12,7 @@ namespace Surging.Cloud.CPlatform.Routing
      /// <summary>
     /// 一个抽象的服务路由发现者。
     /// </summary>
-    public interface IServiceRouteManager
+    public interface IServiceRouteManager : IDisposable
     {
 
         /// <summary>

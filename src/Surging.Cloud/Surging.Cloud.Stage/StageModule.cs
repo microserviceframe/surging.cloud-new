@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
+using Autofac;
 
 namespace Surging.Cloud.Stage
 {
@@ -26,7 +27,7 @@ namespace Surging.Cloud.Stage
         private IWebServerListener _listener;
         public override void Initialize(AppModuleContext context)
         {
-            _listener = context.ServiceProvoider.GetInstances<IWebServerListener>();
+            _listener = context.ServiceProvoider.Resolve<IWebServerListener>();
         }
 
         public override void RegisterBuilder(WebHostContext context)
@@ -70,31 +71,32 @@ namespace Surging.Cloud.Stage
                 ApiGateWay.AppConfig.JwtSecret = apiConfig.JwtSecret;
                 ApiGateWay.AppConfig.DefaultExpired = apiConfig.DefaultExpired;
             }
-            context.Services.AddMvc().AddJsonOptions(options => {
-                options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
-                if (AppConfig.Options.IsCamelCaseResolver)
-                {
-                    JsonConvert.DefaultSettings= new Func<JsonSerializerSettings>(() =>
-                    {
-                       JsonSerializerSettings setting = new Newtonsoft.Json.JsonSerializerSettings();
-                        setting.DateFormatString = "yyyy-MM-dd HH:mm:ss";
-                        setting.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                        return setting;
-                    });
-                    options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                }
-                else
-                {
-                    JsonConvert.DefaultSettings = new Func<JsonSerializerSettings>(() =>
-                    {
-                        JsonSerializerSettings setting = new JsonSerializerSettings();
-                        setting.DateFormatString = "yyyy-MM-dd HH:mm:ss";
-                        setting.ContractResolver= new DefaultContractResolver();
-                        return setting;
-                    });
-                    options.SerializerSettings.ContractResolver = new DefaultContractResolver();
-                }
-            });
+            // context.Services.AddMvc().AddJsonOptions(options => {
+            //    
+            //     // options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
+            //     // if (AppConfig.Options.IsCamelCaseResolver)
+            //     // {
+            //     //     JsonConvert.DefaultSettings= new Func<JsonSerializerSettings>(() =>
+            //     //     {
+            //     //        JsonSerializerSettings setting = new Newtonsoft.Json.JsonSerializerSettings();
+            //     //         setting.DateFormatString = "yyyy-MM-dd HH:mm:ss";
+            //     //         setting.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            //     //         return setting;
+            //     //     });
+            //     //     options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            //     // }
+            //     // else
+            //     // {
+            //     //     JsonConvert.DefaultSettings = new Func<JsonSerializerSettings>(() =>
+            //     //     {
+            //     //         JsonSerializerSettings setting = new JsonSerializerSettings();
+            //     //         setting.DateFormatString = "yyyy-MM-dd HH:mm:ss";
+            //     //         setting.ContractResolver= new DefaultContractResolver();
+            //     //         return setting;
+            //     //     });
+            //     //     options.SerializerSettings.ContractResolver = new DefaultContractResolver();
+            //     // }
+            // });
             context.Services.AddSingleton<IHttpContextAccessor,HttpContextAccessor>();
             context.Services.AddSingleton<IIPChecker,IPAddressChecker>();
             context.Services.AddFilters(typeof(AuthorizationFilterAttribute));

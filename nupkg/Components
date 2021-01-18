@@ -14,7 +14,6 @@ Surging.Cloud.NLog
 Surging.Cloud.Protocol.Http
 Surging.Cloud.Protocol.WS
 Surging.Cloud.ProxyGenerator
-Surging.Cloud.ServiceHosting
 Surging.Cloud.Swagger
 Surging.Cloud.System
 Surging.Cloud.Zookeeper

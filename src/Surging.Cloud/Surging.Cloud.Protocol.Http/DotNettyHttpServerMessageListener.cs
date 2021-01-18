@@ -114,7 +114,7 @@ namespace Surging.Cloud.Protocol.Http
             {
                 await _channel.EventLoop.ShutdownGracefullyAsync();
                 await _channel.CloseAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         #region Implementation of IDisposable
@@ -125,7 +125,7 @@ namespace Surging.Cloud.Protocol.Http
             Task.Run(async () =>
             {
                 await _channel.DisconnectAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         #endregion Implementation of IDisposable

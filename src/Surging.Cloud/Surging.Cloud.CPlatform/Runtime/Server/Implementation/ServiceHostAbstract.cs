@@ -44,11 +44,8 @@ namespace Surging.Cloud.CPlatform.Runtime.Server.Implementation
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public virtual void Dispose() 
         {
-            var serviceRouteManager = ServiceLocator.GetService<IServiceRouteManager>();
-            if (serviceRouteManager != null)
-            {
-                serviceRouteManager.RemveAddressAsync(new List<AddressModel>() { NetUtils.GetHostAddress() });
-            }
+            
+            
         }
 
         #endregion Implementation of IDisposable

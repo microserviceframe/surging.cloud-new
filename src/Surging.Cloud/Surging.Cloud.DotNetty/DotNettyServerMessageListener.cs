@@ -122,20 +122,15 @@ namespace Surging.Cloud.DotNetty
             {
                 await _channel.EventLoop.ShutdownGracefullyAsync();
                 await _channel.CloseAsync();
-            }).Wait();
+            }).GetAwaiter().GetResult();
         }
 
         #region Implementation of IDisposable
 
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-        public void Dispose()
+        public async void Dispose()
         {
-            Task.Run(async () =>
-            {
-                await _channel.EventLoop.ShutdownGracefullyAsync();
-                await _channel.CloseAsync();
-                await _channel.DisconnectAsync();
-            }).Wait();
+            await _channel.CloseAsync();
         }
 
         #endregion Implementation of IDisposable

@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
-using Surging.Cloud.CPlatform;
+﻿using Autofac;
+using Microsoft.Extensions.Configuration;
 using Surging.Cloud.CPlatform.Module;
 using CPlatformAppConfig = Surging.Cloud.CPlatform.AppConfig;
 
@@ -11,7 +11,7 @@ namespace Surging.Cloud.AutoMapper
         public override void Initialize(AppModuleContext context)
         {
             base.Initialize(context);
-            context.ServiceProvoider.GetInstances<IAutoMapperBootstrap>().Initialize();
+            context.ServiceProvoider.Resolve<IAutoMapperBootstrap>().Initialize();
         }
 
         protected override void RegisterBuilder(ContainerBuilderWrapper builder)

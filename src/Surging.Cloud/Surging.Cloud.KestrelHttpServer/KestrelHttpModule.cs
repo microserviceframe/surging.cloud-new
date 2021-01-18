@@ -15,17 +15,13 @@ using Surging.Cloud.KestrelHttpServer.Filters;
 using Surging.Cloud.KestrelHttpServer.Filters.Implementation;
 using System;
 using System.Net;
+using Microsoft.Extensions.Hosting;
 
 namespace Surging.Cloud.KestrelHttpServer
 {
     public class KestrelHttpModule : EnginePartModule
     {
-        public override void Initialize(AppModuleContext context)
-        {
-            base.Initialize(context);
-            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", AppConfig.ServerOptions.Environment.ToString());
-        }
-
+        
         public virtual void Initialize(ApplicationInitializationContext builder)
         {
         }
@@ -68,10 +64,10 @@ namespace Surging.Cloud.KestrelHttpServer
                 return new KestrelHttpMessageListener(
                     provider.Resolve<ILogger<KestrelHttpMessageListener>>(),
                     provider.Resolve<ISerializer<string>>(),
-                     provider.Resolve<IServiceEngineLifetime>(),
+                     provider.Resolve<IHostApplicationLifetime>(),
                      provider.Resolve<IModuleProvider>(),
                     provider.Resolve<IServiceRouteProvider>(),
-                     provider.Resolve<CPlatformContainer>()
+                    builder.ContainerBuilder
                       );
             }).SingleInstance();
             builder.Register(provider =>
@@ -95,10 +91,10 @@ namespace Surging.Cloud.KestrelHttpServer
                 return new KestrelHttpMessageListener(
                     provider.Resolve<ILogger<KestrelHttpMessageListener>>(),
                     provider.Resolve<ISerializer<string>>(),
-                     provider.Resolve<IServiceEngineLifetime>(),
+                     provider.Resolve<IHostApplicationLifetime>(),
                        provider.Resolve<IModuleProvider>(),
                        provider.Resolve<IServiceRouteProvider>(),
-                     provider.Resolve<CPlatformContainer>()
+                        builder.ContainerBuilder
 
                       );
             }).SingleInstance();

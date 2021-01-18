@@ -53,6 +53,8 @@ namespace Surging.Cloud.CPlatform.Module
         /// </summary>
         public List<Component> Components { get; set; }
 
+        public bool IsInitialize { get; set; } = false;
+        
         #endregion
 
         #region 构造函数
@@ -74,7 +76,7 @@ namespace Surging.Cloud.CPlatform.Module
         /// 判断组件是否可用，并注册模块组件
         /// </summary>
         /// <param name="builder"></param>
-        protected override  void Load(ContainerBuilder builder)
+        protected override void Load(ContainerBuilder builder)
         {
             try
             {

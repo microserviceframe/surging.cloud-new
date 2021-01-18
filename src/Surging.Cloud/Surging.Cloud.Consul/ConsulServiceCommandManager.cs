@@ -45,7 +45,7 @@ namespace Surging.Cloud.Consul
             _manager = manager;
             _serviceRouteManager = serviceRouteManager;
             _serviceHeartbeatManager = serviceHeartbeatManager;
-            EnterServiceCommands().Wait();
+            EnterServiceCommands().GetAwaiter().GetResult();
             _serviceRouteManager.Removed += ServiceRouteManager_Removed;
         }
 
@@ -161,7 +161,7 @@ namespace Surging.Cloud.Consul
             var clients = _consulClientFactory.GetClients().Result;
             foreach (var client in clients)
             {
-                client.KV.Delete($"{_configInfo.CommandPath}{e.Route.ServiceDescriptor.Id}").Wait();
+                client.KV.Delete($"{_configInfo.CommandPath}{e.Route.ServiceDescriptor.Id}").GetAwaiter().GetResult();
             }
         }
 
