@@ -39,9 +39,8 @@ namespace Surging.Cloud.CPlatform.Runtime.Server.Implementation
             if (httpMessage.RoutePath.AsSpan().IndexOf("/") == -1)
                 routePath = $"/{routePath}";
             var serviceEntries = _serviceEntryManager.GetEntries(); //_serviceEntryManager.GetAllEntries();
-            var requestServiceEntries = serviceEntries.Where(i => i.RoutePath == routePath );
-                // && i.Methods.Contains(httpMessage.HttpMethod) && !i.Descriptor.GetMetadata<bool>("IsOverload")
-         
+            var requestServiceEntries = serviceEntries.Where(i => i.RoutePath == routePath && i.Methods.Contains(httpMessage.HttpMethod) && !i.Descriptor.GetMetadata<bool>("IsOverload"));
+            
             if (requestServiceEntries.Count() > 1) 
             {
                 throw new CPlatformException($"存在{requestServiceEntries.Count()}个{httpMessage.RoutePath}-{httpMessage.HttpMethod}的路由配置,请检查路由配置信息",StatusCode.RouteError);
